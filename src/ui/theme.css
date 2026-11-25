@@ -1,0 +1,128 @@
+/* ArchiLite design tokens and app shell. Original to ArchiLite.
+   Fonts are system stacks: nothing is downloaded or bundled. */
+
+:root {
+  --al-bg: #f4f1ea;
+  --al-surface: #fbfaf6;
+  --al-ink: #1f2a33;
+  --al-ink-muted: #5d6871;
+  --al-rule: #ddd6c8;
+  --al-accent: #0e7c7b;
+  --al-accent-soft: #d8ecea;
+  --al-font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --al-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  --al-bar-h: 44px;
+  --al-status-h: 26px;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  grid-template-rows: var(--al-bar-h) 1fr var(--al-status-h);
+  background: var(--al-bg);
+  color: var(--al-ink);
+  font: 13px/1.4 var(--al-font-ui);
+  overflow: hidden;
+}
+
+.al-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  background: var(--al-surface);
+  border-bottom: 1px solid var(--al-rule);
+}
+
+.al-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  font-size: 15px;
+}
+
+.al-mark {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.al-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--al-accent-soft);
+  color: var(--al-accent);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.al-spacer {
+  flex: 1;
+}
+
+.al-coords {
+  display: flex;
+  gap: 14px;
+  font: 12px/1 var(--al-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--al-ink);
+}
+
+.al-coords b {
+  color: var(--al-ink-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.al-coords output {
+  display: inline-block;
+  min-width: 8ch;
+  text-align: right;
+}
+
+.al-unit {
+  color: var(--al-ink-muted);
+}
+
+.al-renderer {
+  color: var(--al-ink-muted);
+  font-size: 12px;
+}
+
+.al-stage {
+  position: relative;
+  min-height: 0;
+}
+
+#al-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.al-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  background: var(--al-surface);
+  border-top: 1px solid var(--al-rule);
+  color: var(--al-ink-muted);
+  font-size: 11.5px;
+}

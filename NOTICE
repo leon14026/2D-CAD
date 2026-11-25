@@ -1,0 +1,27 @@
+ArchiLite
+Copyright (c) 2026 the ArchiLite contributors.
+Licensed under the MIT License or the Apache License, Version 2.0, at your option
+(LICENSE-MIT, LICENSE-APACHE).
+
+Independence
+
+ArchiLite is an independent project. It is not affiliated with, sponsored by or endorsed by
+Autodesk, Inc., or by the ArtCraft team. AutoCAD and DWG are trademarks of Autodesk, Inc.
+ArtCraft and CADCraft are names of the ArtCraft team. All other trademarks belong to their
+respective owners. Product names appear in ArchiLite's documentation only to describe
+inspiration and file-format compatibility.
+
+Inspiration
+
+ArchiLite's feature set was informed by CADCraft (https://github.com/storytold/cadcraft),
+which is licensed under MIT OR Apache-2.0. As of this release, ArchiLite contains no code,
+assets or text copied or adapted from CADCraft. If any is adapted in future, the affected
+files will carry a header naming the source, and the adaptation will be listed here with the
+upstream copyright notice: "Copyright (c) 2026 ArtCraft Team and the CADCraft contributors".
+
+Third-party material
+
+ArchiLite currently ships no third-party runtime code, fonts, icons or images. The user
+interface uses the operating system's own fonts. Development tools (used to build and test,
+not shipped) are listed in package-lock.json and are checked by scripts/license-gate.mjs.
+Every shipped asset and dependency is listed in ATTRIBUTION.md.

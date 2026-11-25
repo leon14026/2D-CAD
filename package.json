@@ -1,0 +1,30 @@
+{
+  "name": "archilite",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ArchiLite: a lightweight, browser-based 2D CAD application for engineering drawings.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "license:check": "node scripts/license-gate.mjs",
+    "brand:check": "node scripts/brand-guard.mjs",
+    "size:check": "node scripts/size-budget.mjs",
+    "ci": "npm run typecheck && npm test && npm run license:check && npm run brand:check && npm run build && npm run size:check && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "22.20.7",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.2"
+  }
+}
