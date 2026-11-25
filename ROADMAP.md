@@ -98,9 +98,9 @@ Builds: licence files and notices, README with disclaimer, Vite + TypeScript app
 Canvas 2D page, CI workflow, GitHub Pages deploy workflow, licence gate, brand guard, size budget.
 
 Gate:
-- [ ] Typecheck, unit tests, licence gate, brand guard, build and size budget pass in CI.
-- [ ] Licence gate tests prove a GPL dependency is rejected.
-- [ ] Browser test: the built page loads in Chromium with the GPU disabled, the canvas draws, and
+- [x] Typecheck, unit tests, licence gate, brand guard, build and size budget pass in CI.
+- [x] Licence gate tests prove a GPL dependency is rejected.
+- [x] Browser test: the built page loads in Chromium with the GPU disabled, the canvas draws, and
       there are no console errors.
 - [ ] The GitHub Pages URL loads.
 
