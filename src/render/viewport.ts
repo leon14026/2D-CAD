@@ -1,3 +1,5 @@
+import type { Vec2 } from '../core/geom/vec';
+
 /**
  * Mapping between screen space (CSS pixels, y down) and world space
  * (drawing units, y up, the usual engineering-drawing convention).
@@ -11,10 +13,7 @@ export interface Viewport {
   readonly pxPerUnit: number;
 }
 
-export interface Point {
-  readonly x: number;
-  readonly y: number;
-}
+export type Point = Vec2;
 
 export function worldToScreen(vp: Viewport, p: Point): Point {
   return {

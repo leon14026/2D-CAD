@@ -11,10 +11,10 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 0 (foundations). See [ROADMAP.md](ROADMAP.md) for the phases and the tests each
-must pass.
+**Status:** Phase 1 (geometry kernel). See [ROADMAP.md](ROADMAP.md) for the phases and the tests
+each must pass.
 
-**Live site:** https://leon14026.github.io/2D-CAD/ (once GitHub Pages is enabled)
+**Live site:** https://leon14026.github.io/2D-CAD/
 
 ## Development
 
@@ -34,7 +34,7 @@ to an installed Chrome.
 | Check | Command | What it proves |
 |---|---|---|
 | Typecheck | `npm run typecheck` | Strict TypeScript across app, tests and scripts |
-| Unit tests | `npm test` | Maths, licence gate, brand guard and size budget behave as specified |
+| Unit and property tests | `npm run test:coverage` | Hand-calculated geometry to 1e-9, 10,000-case property tests, 100% kernel coverage, kernel isolated from the DOM; licence gate, brand guard and size budget behave as specified |
 | Licence gate | `npm run license:check` | No copyleft or unlicensed dependencies |
 | Brand guard | `npm run brand:check` | No third-party product names in the app |
 | Size budget | `npm run size:check` | Built site ≤ 300 KB gzipped |
