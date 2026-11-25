@@ -110,11 +110,11 @@ Builds: vectors and points, lines, circles, arcs, polylines with bulges, interse
 and angles, transforms, tolerance model, units.
 
 Gate:
-- [ ] 150+ unit tests with hand-calculated answers, accurate to 1e-9.
-- [ ] Property tests (10,000 random cases each): rotate 360° is identity; mirror twice is identity;
-      move then move back is identity; intersection points lie on both curves.
-- [ ] 100% line coverage of the kernel.
-- [ ] Architecture guard: `src/core` imports nothing outside itself and uses no DOM globals.
+- [x] 150+ unit tests with hand-calculated answers, accurate to 1e-9 (254).
+- [x] Property tests (10,000 random cases each): rotate 360° is identity; mirror twice is identity;
+      move then move back is identity; intersection points lie on both curves (16 properties).
+- [x] 100% line coverage of the kernel (enforced in CI).
+- [x] Architecture guard: `src/core` imports nothing outside itself and uses no DOM globals.
 
 Implementation notes (for later phases):
 - Shapes are immutable plain objects: `segment`, `circle`, `arc` (start angle in [0, 2π) plus a
