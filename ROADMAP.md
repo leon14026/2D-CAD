@@ -4,7 +4,9 @@ ArchiLite is a lightweight, browser-based 2D CAD application for engineering dra
 entirely in the browser from a static site (GitHub Pages), processes everything locally, and needs
 no dedicated graphics card.
 
-**Stage:** Phase 1 (geometry kernel). Phase 0 complete.
+**Stage:** see [PROGRESS.md](PROGRESS.md) for where the project stands and
+[TEST-BACKLOG.md](TEST-BACKLOG.md) for the owner's manual tests. Working conventions for Claude are in
+[CLAUDE.md](CLAUDE.md).
 
 ## Decisions (recorded 2026-11-25)
 

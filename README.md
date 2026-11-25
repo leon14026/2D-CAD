@@ -11,8 +11,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 1 (geometry kernel). See [ROADMAP.md](ROADMAP.md) for the phases and the tests
-each must pass.
+**Status:** Phase 1 (geometry kernel) complete; Phase 2 in progress. See [PROGRESS.md](PROGRESS.md)
+for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
+[TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
 
 **Live site:** https://leon14026.github.io/2D-CAD/
 
