@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="%APP_NAME%: a lightweight, browser-based 2D CAD application for engineering drawings." />
+    <meta name="color-scheme" content="light" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMi41JyB5PScyLjUnIHdpZHRoPScxNScgaGVpZ2h0PScxNScgcng9JzInIGZpbGw9JyNmYmZhZjYnIHN0cm9rZT0nIzFmMmEzMycgc3Ryb2tlLXdpZHRoPScxLjYnLz48cGF0aCBkPSdNNSAxNSAxNSA1JyBzdHJva2U9JyMwZTdjN2InIHN0cm9rZS13aWR0aD0nMS42JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48Y2lyY2xlIGN4PScxMCcgY3k9JzEwJyByPScyJyBmaWxsPScjMGU3YzdiJy8+PC9zdmc+"
+    />
+    <title>%APP_NAME%</title>
+  </head>
+  <body>
+    <header class="al-bar">
+      <div class="al-brand">
+        <svg class="al-mark" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2.5" y="2.5" width="15" height="15" rx="2" fill="#fbfaf6" stroke="#1f2a33" stroke-width="1.6" />
+          <path d="M5 15 15 5" stroke="#0e7c7b" stroke-width="1.6" stroke-linecap="round" />
+          <circle cx="10" cy="10" r="2" fill="#0e7c7b" />
+        </svg>
+        <span id="al-name">%APP_NAME%</span>
+      </div>
+      <span class="al-pill">Phase 0 · foundations</span>
+      <span class="al-spacer"></span>
+      <div class="al-coords" aria-label="Cursor position">
+        <span><b>X</b><output id="al-coord-x">0.000</output></span>
+        <span><b>Y</b><output id="al-coord-y">0.000</output></span>
+        <span class="al-unit">mm</span>
+      </div>
+      <span class="al-renderer">Canvas 2D · no GPU needed</span>
+    </header>
+    <main class="al-stage">
+      <canvas id="al-canvas" aria-label="Drawing area"></canvas>
+    </main>
+    <footer class="al-status">
+      <span id="al-build"></span>
+      <span>MIT OR Apache-2.0</span>
+      <span>Runs locally in your browser</span>
+    </footer>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
