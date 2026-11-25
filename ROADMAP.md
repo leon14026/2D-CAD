@@ -141,13 +141,13 @@ format with schema validation, command registry. Added: an example drawing
 inspector page (`inspect.html`) so the owner can test files in a browser.
 
 Gate:
-- [ ] Save → load round-trip produces an identical document (10,000 random documents, plus
+- [x] Save → load round-trip produces an identical document (10,000 random documents, plus
       hand-built edge cases).
-- [ ] 1,000 random edits, all undone, return exactly to the starting state; redo replays exactly
+- [x] 1,000 random edits, all undone, return exactly to the starting state; redo replays exactly
       (20 sequences of 1,000 edits, checked at every step).
-- [ ] Malformed or future-version files are rejected with a clear message (35+ named cases, plus
+- [x] Malformed or future-version files are rejected with a clear message (35+ named cases, plus
       20,000 randomly damaged files that must load cleanly or be refused, never crash).
-- [ ] 100% line coverage of `src/core` (kernel and document model).
+- [x] 100% line coverage of `src/core` (kernel and document model).
 
 Implementation notes (for later phases):
 - `src/core/doc` holds the document: `Doc` (settings, `nextId`, layers, entities),

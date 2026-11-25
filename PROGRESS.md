@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
-| 2. Document model, file format, commands | Done, gate passed locally; awaiting CI and merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
+| 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Not started | — | — |
 | 4. Precision drafting | Not started | — | — |
 | 5. Modify tools | Not started | — | — |
@@ -36,7 +36,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   - An example bracket drawing, built entirely by commands.
   - The file-format guide (`docs/file-format.md`).
   - A file inspector page (`/inspect.html`) for checking files in the browser.
-- Gate (passed locally):
+- Gate (passed in CI):
   - 10,000 random documents round-trip exactly.
   - 20 sequences of 1,000 random edits undo and redo exactly, checked at every step.
   - 35+ named malformed files are refused with clear messages.
