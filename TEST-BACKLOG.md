@@ -49,12 +49,39 @@ Nothing new is visible in the app; these check the maths behind the tests.
       drawing's size (1e-9 mm for small parts, 1e-5 mm across a 10 m drawing). Confirm that's tight
       enough for your work. Most machining needs about 0.001 mm.
 
+### Phase 2: document model and file format
+
+Use the file inspector at https://leon14026.github.io/2D-CAD/inspect.html (live once PR #3 is
+merged) or the "File inspector" link at the bottom right of the main page.
+
+- [ ] **M2.1 Example drawing by hand.** Press "Load example". Check these against your own
+      calculation:
+      - Overall size: 100.000 × 60.000 mm.
+      - Outline area: 100 × 60 minus four corner pieces of (1 − π/4) × 5² = **5978.540 mm²**.
+      - Four holes at Ø 8.000, each 50.265 mm².
+      - Slot area: 20 × 10 + π × 5² = **278.540 mm²**.
+      - Layers: Outline (1 entity), Holes (5) and Centre lines (10).
+- [ ] **M2.2 Read the file.** Open `public/examples/bracket.archilite` on GitHub. It should read
+      sensibly with `docs/file-format.md` beside it: one layer or entity per line, units, layer
+      names. Note anything confusing.
+- [ ] **M2.3 Break it on purpose.** In the inspector, edit the text and press Check after each
+      change. Expect a red "This file cannot be opened" with a plain message and a location:
+      1. Change `"version": 1` to `2`. Expect the message to say a newer ArchiLite saved it.
+      2. Change a hole's `"radius":4` to `-4`. Expect the location `entities[1].geom.radius`.
+      3. Rename the Holes layer to `OUTLINE`. Expect that the name is already used.
+      4. Delete a comma. Expect "not valid JSON".
+      5. Change `"units": "mm"` to `"yd"`. Expect a list of allowed units.
+- [ ] **M2.4 Open a file from disk.** Download `bracket.archilite` from GitHub (Raw → save), then
+      use "Open file…". Expect "Valid ArchiLite drawing". Try this on the work laptop too.
+- [ ] **M2.5 Style choices (decision).** Check the linetype names (continuous, dashed, dash-dot,
+      dash-double-dot, dotted) and the ISO lineweights (0.13–2 mm) against what your courses or
+      co-op drawings use. Tell Claude if you need others (for example 0.6 mm, or a "phantom"
+      name).
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 2:** read the example drawing file and file-format guide; try broken files in the file
-  inspector.
 - **Phase 3:** pan and zoom a large drawing on the work laptop and judge smoothness; select by
   window and crossing.
 - **Phase 4:** draw a part from one of your own sketches using typed coordinates and snaps; check
