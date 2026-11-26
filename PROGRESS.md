@@ -4,7 +4,8 @@
 A second follow-up explodes DXF block inserts ([#15](https://github.com/leon14026/2D-CAD/pull/15), in review).
 Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
 ([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 12 (live DXF dimensions)
-is planned and does not wait on Phase 10 or 11. Merge #15 first.
+is planned in [#16](https://github.com/leon14026/2D-CAD/pull/16) and does not wait on
+Phase 10 or 11. Merge #15 first.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -22,7 +23,7 @@ is planned and does not wait on Phase 10 or 11. Merge #15 first.
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
-| 12. Live DXF dimensions | Planned | — | — |
+| 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
@@ -35,7 +36,8 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ### 2026-11-26: Phase 12 (live DXF dimensions) planned
 
-- Decision, not code. Option 2 from the floorplan review: a DXF `DIMENSION` becomes an
+- Decision, not code. Recorded in PR [#16](https://github.com/leon14026/2D-CAD/pull/16).
+  Option 2 from the floorplan review: a DXF `DIMENSION` becomes an
   ArchiLite note that stores where to measure, never the other program's number. Unbound
   defpoints, text overrides, and ordinate dims stay skipped. Hatches stay skipped.
 - Independent of Phase 10 (DWG) and Phase 11 (phone). DWG import will use the same mapper
