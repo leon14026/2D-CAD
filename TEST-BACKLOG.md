@@ -274,4 +274,9 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
 - **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
   features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
-  paper space). Until this phase, use DXF.
+  paper space). Until this phase, use DXF. This can wait until after the phone work.
+- **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
+  Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
+  `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
+  where the save went (Files, the share sheet, or a download). Phase 10 is not required for
+  this.

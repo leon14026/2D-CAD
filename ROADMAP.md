@@ -499,8 +499,8 @@ Gate:
 
 Builds: open a `.dwg` into the same kind of document DXF import already produces. No DWG writer.
 
-This phase does not start until Phase 7's gate has passed in CI. It does not have to wait for
-Phase 8 or 9, but it is not next: Phase 8 is next.
+This phase does not start until Phase 7's gate has passed in CI. It does not wait for Phase 9
+or Phase 11, and Phase 11 does not wait for it. Either can follow Phase 8.
 
 Method:
 
@@ -541,7 +541,63 @@ Gate:
 - [ ] Manual: open a DWG from LibreCAD or from Onshape or SolidWorks, measure 5 features, agree
       to 0.001 mm (`TEST-BACKLOG.md`).
 
+### Phase 11 — Phone browser
+
+Builds: the same site, usable in a phone browser. Same document, same commands, same Canvas 2D
+painter. No second app, no install step, no store listing.
+
+This phase does not use anything from Phase 9 or Phase 10. It can be built as soon as Phase 8
+has merged, and Phase 10 can be built before it, after it, or left for later. A phone build
+without DWG is complete.
+
+What a phone gets today: below 900px the layer and selection panels are removed
+(`theme.css`) and there is no control that brings them back. A one-finger drag on empty
+paper starts a selection box (`interaction.ts` keeps a single pointer). Pinch is not a
+gesture. The top bar is a desk bar. Typed coordinates sit beside a cursor the phone does not
+have.
+
+Method:
+
+- **One page.** `index.html` stays the app. A phone is a width of 700px or less
+  (`matchMedia`), which adds a class on `body`. A wider window, including a touch laptop and
+  a tablet in landscape, keeps the desk layout. The class changes layout and gestures only.
+  Geometry, commands, and the file format stay as they are.
+- **The drawing fills the screen.** The top bar keeps the mark, the title, undo, redo, and
+  the command search. Open, Save, Export, and Script stay in the command palette, which is
+  already the menu. The tool rail becomes one horizontal strip of the current group (Draw,
+  Modify, or Annotate) with targets at least 44px, over the bottom of the drawing. Fit
+  measures that strip the way it already measures the rail's width. Layers and the selection
+  are the existing panels, opened as sheets from the palette. The script panel is a sheet
+  too. The steel rulers stay. The status line keeps X, Y, the unit, and the scale, and uses
+  the safe area (`viewport-fit=cover`). The coordinate box anchors to the visual viewport so
+  the on-screen keyboard does not cover it. The grammar is unchanged: `x,y`, `@dx,dy`,
+  `@length<angle`.
+- **Gestures.** Two fingers drag to pan, and pinch to zoom about the midpoint (`zoomAt`).
+  With no tool, one finger also pans, and a tap picks. Box selection is a palette command,
+  so a drag is not a window by accident. With a tool that wants a point, a tap places it and
+  two fingers still pan and zoom. The snap marker is drawn above the finger; the hit is the
+  touch itself. The canvas keeps `touch-action: none` and does not open the browser menu.
+- **Files stay on the phone.** Open keeps the file input. Save uses the file-picker API when
+  the browser has it, otherwise the share sheet with one file, otherwise the download used on
+  the desk. A toast says which one happened. Nothing is uploaded.
+- **Python is still on demand.** The first Python run on a phone says that it downloads about
+  12 MB from this site, then loads the same `./pyodide/` files. JavaScript scripts do not
+  load them.
+
+Gate:
+
+- [ ] Playwright with a 390×844 touch viewport: the example opens fitted, one finger pans, a
+      pinch zooms about the fingers, a tap selects the outline, the line tool places a point,
+      the layers sheet hides a layer, and Save writes the same `.archilite` bytes as the desk.
+      No console errors and no request to another origin.
+- [ ] The desk screenshots and the 20,000-entity frame budget are unchanged. The phone layout
+      adds no per-entity work in the frame loop. The download stays ≤ 300 KB, with no new
+      runtime package.
+- [ ] Manual: on an iPhone in Safari and on an Android phone in Chrome, type a 100 mm line,
+      read 100.000 in the selection sheet, save, and open that file again
+      (`TEST-BACKLOG.md`).
+
 ## Out of scope for v1
 
-DWG export, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration.
-DWG import is Phase 10, above.
+DWG export, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration,
+a native phone app. DWG import is Phase 10. The phone browser is Phase 11.

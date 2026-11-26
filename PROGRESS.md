@@ -1,7 +1,9 @@
 # ArchiLite progress
 
 **Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
-Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (stretch).
+Phase 8 (scripting) is in review (#9) on top of that branch. Next up is whichever of
+Phase 9 (stretch), Phase 10 (DWG), or Phase 11 (phone) you pick. Phase 10 and Phase 11 do
+not depend on each other.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -18,10 +20,21 @@ Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (s
 | 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
 | 10. DWG import (read only) | Not started | — | — |
+| 11. Phone browser | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 11 (phone browser) planned
+
+- Decision, not code. The phone is the same site at 700px or narrower: drawing full screen,
+  tool strip along the bottom, layers and selection as sheets, two-finger pan and pinch.
+  One finger pans when no tool is active, and places a point when a tool wants one.
+- It does not use Phase 9 or Phase 10. DWG can be skipped and done later, or done first.
+  A phone build without DWG is complete.
+- The gate is an emulated 390×844 touch browser in CI, plus the owner's iPhone and Android
+  phone (`TEST-BACKLOG.md`). The 300 KB budget and the desk screenshots stay.
 
 ### 2026-11-26: Phase 8 (scripting) started
 

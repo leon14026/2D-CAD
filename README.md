@@ -12,10 +12,12 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 - **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
   open one. Until then, export DXF from the other program and open that.
+- **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
+  browser. It does not need DWG, so it can land before or after Phase 10.
 
 **Status:** Phase 8 (scripting) built: JavaScript and Python (`cad` API, script panel, Pyodide
-on demand) on top of Phase 7's import and export. Phase 9 (blocks, sheets, constraints) is
-stretch. See
+on demand) on top of Phase 7's import and export. Phase 9 is stretch. Phase 11 (phone browser)
+is planned and does not wait on Phase 10. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.

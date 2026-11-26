@@ -167,6 +167,9 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Icons are ArchiLite's own line drawings in `src/ui/dom.ts` (16 × 16, 1.6 stroke).
 - The steel rulers are the one bold element. Keep everything else quiet.
 - Look at screenshots of any visual change before committing it.
+- Below 900px the side panels are hidden and cannot be opened. That is the desk layout
+  squeezed, not the phone layout. Phase 11 (700px and under) is the plan for a phone browser:
+  same page, tool strip, sheets, two-finger pan and pinch. Do not invent a second app for it.
 
 ## Performance rules
 
