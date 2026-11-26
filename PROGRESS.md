@@ -72,6 +72,10 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     also differs per build and shifted the status bar.
   - Fix: the browser tests now use their own font setup (`tests/e2e/fonts.conf`), and the
     build label gets a fixed text in that screenshot.
+  - That brought it to 5,236 pixels. The rest came from the runner itself: `ubuntu-latest`
+    is now Ubuntu 26.04, whose newer FreeType draws glyphs slightly differently from the
+    workspace's Ubuntu 24.04 (lines and shapes matched exactly). The CI job is now pinned to
+    `ubuntu-24.04`.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

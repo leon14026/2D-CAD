@@ -239,6 +239,9 @@ Implementation notes (for later phases):
     substitutes). The browser tests point Chromium at `tests/e2e/fonts.conf`, so text renders
     the same everywhere. Text that changes per build (the build label) gets a fixed value
     before a screenshot.
+  - Glyphs themselves are drawn by the system's FreeType, so the CI job runs on
+    `ubuntu-24.04`, the workspace's release. `ubuntu-latest` is 26.04, whose newer FreeType
+    smooths text slightly differently; lines and shapes are unaffected.
 
 ### Phase 4 — Precision drafting
 

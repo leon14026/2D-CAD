@@ -15,7 +15,10 @@ concurrency:
 jobs:
   gate:
     name: Phase gate
-    runs-on: ubuntu-latest
+    # Pinned to the cloud workspace's Ubuntu release: text in the screenshot baselines is
+    # drawn by the system's FreeType and fontconfig, and ubuntu-latest (26.04) draws it
+    # slightly differently. Move this only together with the workspace and the baselines.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
