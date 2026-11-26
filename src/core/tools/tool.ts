@@ -52,17 +52,22 @@ export interface ToolState {
   readonly flag: boolean;
   /** How many objects this run of the tool has made so far. */
   readonly count: number;
+  /** The entities a modify tool works on. */
+  readonly ids: readonly number[];
 }
 
-export const EMPTY_STATE: ToolState = Object.freeze({ step: 0, points: [], values: [], picks: [], flag: false, count: 0 });
+export const EMPTY_STATE: ToolState = Object.freeze({ step: 0, points: [], values: [], picks: [], flag: false, count: 0, ids: [] });
 
 /** Values tools remember between uses, offered again as defaults. */
 export interface ToolMemory {
   readonly radius: number | null;
   readonly sides: number;
+  readonly offset: number | null;
+  readonly fillet: number;
+  readonly chamfer: number | null;
 }
 
-export const DEFAULT_MEMORY: ToolMemory = Object.freeze({ radius: null, sides: 6 });
+export const DEFAULT_MEMORY: ToolMemory = Object.freeze({ radius: null, sides: 6, offset: null, fillet: 0, chamfer: null });
 
 export interface ToolContext {
   readonly doc: Doc;

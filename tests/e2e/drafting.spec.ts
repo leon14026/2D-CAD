@@ -2,20 +2,14 @@
  * Phase 4: drawing with snaps, tracking and typed input, in the real app with the GPU off.
  */
 import { expect, test, type Page } from '@playwright/test';
+import { TOOL_BUTTONS } from '../../src/app/tools';
 import { entitiesInDrawOrder, loadDocument } from '../../src/core/doc';
 import type { Segment, Shape } from '../../src/core/geom';
 import { REFERENCE_SHAPES, REFERENCE_STEPS, shapeDifference } from '../fixtures/reference-part';
 import { openExample, state, toPage, watchErrors } from './helpers';
 
-const RAIL_NAMES = {
-  line: 'Line',
-  polyline: 'Polyline',
-  circle: 'Circle',
-  arc: 'Arc through three points',
-  arcCenter: 'Arc from its centre',
-  rectangle: 'Rectangle',
-  polygon: 'Polygon',
-} as const;
+/** The rail button for a tool, by its name. */
+const railName = (id: string) => (TOOL_BUTTONS.find((b) => b.id === id) as { label: string }).label;
 
 async function shapes(page: Page): Promise<Shape[]> {
   const text = await page.evaluate(() => (window as unknown as { __archilite: { saveText(): string } }).__archilite.saveText());
@@ -47,7 +41,7 @@ test('the reference part drawn by typed input alone matches its specification to
   const errors = watchErrors(page);
   await newDrawing(page);
   for (const step of REFERENCE_STEPS) {
-    if ('tool' in step) await page.getByRole('button', { name: RAIL_NAMES[step.tool], exact: true }).click();
+    if ('tool' in step) await page.getByRole('button', { name: railName(step.tool), exact: true }).click();
     else if ('type' in step) await typeIn(page, step.type);
     else if ('option' in step) await page.keyboard.press(step.option);
     else await page.keyboard.press('Enter');

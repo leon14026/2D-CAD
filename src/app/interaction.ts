@@ -78,7 +78,7 @@ export function attachInteraction(
       e.preventDefault();
       gesture = { kind: 'pan', last: p, pointer: e.pointerId };
       view.stage.classList.add('is-panning');
-    } else if (e.button === 0 && placing()) {
+    } else if (e.button === 0 && (placing() || drafting.prompt()?.accepts === 'pick')) {
       gesture = { kind: 'tool', pointer: e.pointerId };
     } else if (e.button === 0) {
       gesture = { kind: 'press', start: p, shift: e.shiftKey, pointer: e.pointerId };
@@ -127,7 +127,10 @@ export function attachInteraction(
     const s = store.get();
     const doc = s.session.doc;
     if (gesture.kind === 'tool') {
-      if (e.type === 'pointerup') drafting.click(p);
+      if (e.type === 'pointerup') {
+        if (drafting.prompt()?.accepts === 'pick') drafting.pick(p);
+        else drafting.click(p);
+      }
     } else if (gesture.kind === 'press') {
       const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit);
       if (gesture.shift) {

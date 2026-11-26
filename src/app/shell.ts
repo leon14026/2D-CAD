@@ -15,13 +15,16 @@ import type { Actions } from './actions';
 import type { DraftingController } from './drafting';
 import { isTyping } from './interaction';
 import { isDirty, type AppState, type Store } from './store';
-import { DRAW_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
+import { DRAW_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
 
 export function paletteEntries(actions: Actions, store: Store, drafting: DraftingController): PaletteEntry[] {
   const s = () => store.get();
   return [
     ...TOOL_BUTTONS.map((b) => ({ label: b.palette, ...(b.key && { keys: b.key.toUpperCase() }), run: () => drafting.start(b.id) })),
     { label: 'Stop the tool in use', keys: 'Esc', run: () => drafting.stop(), enabled: () => drafting.active },
+    { label: 'Join the selected pieces into one polyline', run: () => actions.joinSelection(), enabled: () => s().selection.size >= 2 },
+    { label: 'Explode the selected polylines into lines and arcs', run: () => actions.explodeSelection(), enabled: () => s().selection.size > 0 },
+    { label: 'Delete the selection', keys: 'Del', run: () => actions.deleteSelection(), enabled: () => s().selection.size > 0 },
     { label: `Turn snaps ${s().snapOn ? 'off' : 'on'}`, keys: 'Shift S', run: () => actions.toggleSnaps() },
     { label: `Turn ortho ${s().ortho ? 'off' : 'on'} (horizontal and vertical only)`, keys: 'Shift O', run: () => actions.toggleOrtho() },
     { label: `Turn angle tracking ${s().polarOn ? 'off' : 'on'}`, keys: 'Shift T', run: () => actions.togglePolar() },
@@ -58,8 +61,14 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   const palette = new CommandPalette(() => paletteEntries(actions, store, drafting));
 
   // Tool rail.
-  const rail = new ToolRail(requireElement('#al-tools', HTMLElement), [{ label: 'Draw', buttons: DRAW_BUTTONS }], (id) =>
-    id === null ? drafting.stop() : drafting.start(id),
+  const rail = new ToolRail(
+    requireElement('#al-tools', HTMLElement),
+    [
+      { label: 'Draw', buttons: DRAW_BUTTONS },
+      { label: 'Modify', buttons: MODIFY_BUTTONS },
+    ],
+    (id) =>
+      id === null ? drafting.stop() : drafting.start(id),
   );
 
   // Top bar.
@@ -205,6 +214,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     const tool = e.shiftKey ? undefined : TOOL_BUTTONS.find((b) => b.key === key);
     if (tool) return run(() => drafting.start(tool.id));
     if (key === 'escape') return run(() => actions.clearSelection());
+    if (key === 'delete' || key === 'backspace') return run(() => actions.deleteSelection());
     if (key === 'f') return run(() => actions.fit());
     if (key === 'g') return run(() => actions.toggleGrid());
     if (key === 'w') return run(() => actions.toggleLineweights());

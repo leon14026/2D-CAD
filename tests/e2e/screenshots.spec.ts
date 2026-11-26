@@ -6,7 +6,7 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 import { bigDrawingText } from '../fixtures/big-drawing';
-import { dragWorld, openExample, openText, toPage } from './helpers';
+import { dragWorld, drawModifyReference, openExample, openText, toPage } from './helpers';
 
 /** The drawing area without the rulers, which carry text. */
 async function drawingClip(page: Page) {
@@ -73,6 +73,14 @@ test('drawing a line: the preview, a snap marker and the box beside the cursor',
   await page.mouse.move(p.x, p.y);
   await expect(page.locator('.al-entry-readout')).toBeVisible();
   await expect(page).toHaveScreenshot('drafting-line-snap.png', { clip: await drawingClip(page) });
+});
+
+test('the Phase 5 reference drawing, made with every modify tool', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto('./?test');
+  await drawModifyReference(page);
+  await parkMouse(page);
+  await expect(page).toHaveScreenshot('modify-reference.png', { clip: await drawingClip(page) });
 });
 
 test('the whole window: panels, rulers and status bar', async ({ page }) => {

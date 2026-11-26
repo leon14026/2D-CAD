@@ -1,3 +1,4 @@
+import { quarterTurns } from './angle';
 import { boundsOfPoints, unionBounds, type Bounds } from './bounds';
 import {
   arc,
@@ -57,9 +58,16 @@ export function bulgeToArc(p1: Vec2, p2: Vec2, bulge: number): Arc {
   return arc(center, radius, angleOf(sub(p1, center)), sweep);
 }
 
+/** Bulge for an edge that turns through `sweep`: tan(sweep / 4), exactly ±1 for a half turn. */
+export function sweepToBulge(sweep: number): number {
+  const k = quarterTurns(sweep);
+  if (k === 2 || k === -2) return k / 2;
+  return Math.tan(sweep / 4);
+}
+
 /** Bulge value for an arc used as a polyline edge from its start point to its end point. */
 export function arcToBulge(a: Arc): number {
-  return Math.tan(a.sweep / 4);
+  return sweepToBulge(a.sweep);
 }
 
 /** Number of edges: n - 1 for an open polyline, n for a closed one. */

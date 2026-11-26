@@ -31,3 +31,8 @@ export function unionBounds(a: Bounds, b: Bounds): Bounds {
     maxY: Math.max(a.maxY, b.maxY),
   };
 }
+
+/** True if two boxes overlap or touch, allowing `tol` of slack. */
+export function boxesOverlap(a: Bounds, b: Bounds, tol = 0): boolean {
+  return a.minX <= b.maxX + tol && b.minX <= a.maxX + tol && a.minY <= b.maxY + tol && b.minY <= a.maxY + tol;
+}

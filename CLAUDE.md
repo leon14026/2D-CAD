@@ -85,9 +85,11 @@ npm run ci                # all of the above, in CI order
 ```text
 src/core/      pure TypeScript: no DOM, no imports from outside src/core, no packages
   geom/        geometry kernel (Phase 1)
-  doc/         document model, commands, undo/redo, file format (Phase 2)
+  doc/         document model, commands, undo/redo, file format (Phase 2); modify commands
+               in edit-commands.ts, shared command helpers in command-kit.ts (Phase 5)
   spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4)
-  tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4)
+  tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4);
+               modify tools in modify.ts (Phase 5)
 src/render/    Canvas 2D: scene.ts (entities), view.ts (canvases), rulers, grid, viewport maths
 src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
                panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor)
@@ -127,6 +129,10 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   in `src/app/tools.ts` (rail button, palette label, key).
 - Refusals are explained in plain words and change nothing: tools return `refuse(state, why)`,
   commands throw `CommandError`.
+- Commands that split or rebuild an entity keep its layer, style and draw order, and the first
+  piece keeps its id (`replaceWith` in `edit-commands.ts`).
+- Reference drawings are approved files compared exactly: `tests/fixtures/*.archilite`,
+  refreshed only with `UPDATE_REFERENCES=1` and a look at the diff.
 
 ## Design system (v0, Phase 3)
 

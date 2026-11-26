@@ -1,9 +1,10 @@
 # ArchiLite progress
 
-**Now:** Phase 4 (precision drafting) is built and in review as [PR #5](https://github.com/leon14026/2D-CAD/pull/5);
-Phase 5 (modify tools) is being built on top of it. Merge in order:
-[PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1), [PR #3](https://github.com/leon14026/2D-CAD/pull/3)
-(Phase 2), [PR #4](https://github.com/leon14026/2D-CAD/pull/4) (Phase 3), then PR #5.
+**Now:** Phases 4 (precision drafting) and 5 (modify tools) are built and in review as
+[PR #5](https://github.com/leon14026/2D-CAD/pull/5) and [PR #6](https://github.com/leon14026/2D-CAD/pull/6).
+Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1),
+[PR #3](https://github.com/leon14026/2D-CAD/pull/3) (Phase 2), [PR #4](https://github.com/leon14026/2D-CAD/pull/4)
+(Phase 3), PR #5, then PR #6. Next up: Phase 6, annotation (dimensions and text).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -14,7 +15,7 @@ Phase 5 (modify tools) is being built on top of it. Merge in order:
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
 | 4. Precision drafting | Done, gate passed in CI; awaiting merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
-| 5. Modify tools | Not started | — | — |
+| 5. Modify tools | Done, gate passed locally; awaiting CI and merge | [#6](https://github.com/leon14026/2D-CAD/pull/6) | — |
 | 6. Annotation | Not started | — | — |
 | 7. Import and export | Not started | — | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
@@ -23,6 +24,58 @@ Phase 5 (modify tools) is being built on top of it. Merge in order:
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-25: Phase 5 (modify tools) complete, PR #6
+
+- Started once Phase 4's gate passed in CI, on a branch from it.
+- Built:
+  - **Geometry** (`src/core/geom`):
+    - offset, with mitre and round joins;
+    - trim and extend on exact intersection points;
+    - fillet and chamfer for two lines and for polyline corners;
+    - join (chaining pieces end to end in any order and direction) and explode.
+  - **Ten new undoable commands** (`src/core/doc/edit-commands.ts`): offset, trim, extend,
+    fillet, chamfer, round or cut every polyline corner, arrays (rectangular and polar), join
+    and explode.
+  - **Fourteen tools:** move, copy, rotate, scale, mirror, offset, trim, extend, fillet,
+    chamfer, both arrays, and round or cut every corner.
+    - Selection tools use what is selected, or ask for a selection first.
+    - Pick tools take clicks on objects and repeat until Enter.
+  - **In the app:** a Modify group on the tool rail; buttons in the selection panel (move,
+    copy, rotate, scale, mirror, arrays, join, explode, round off, delete); the Delete key;
+    palette entries for everything.
+- Decisions:
+  - Keys: M move, O offset, T trim, E extend, Delete deletes the selection. The other modify
+    tools are on the rail, in the selection panel and in the command palette.
+  - Mirror keeps the originals unless K is pressed.
+  - Fillet's default radius is 0, which joins two lines in a sharp corner.
+- Gate (passed locally):
+  - **Offsets:** 10,000-case property tests. Each offset line, circle and arc is at exactly the
+    set distance. Each edge of an offset convex polygon, inwards and outwards, is the distance
+    from its own edge, and no part of the offset comes closer.
+  - **Trim and extend:** every new end lies on a cutting or boundary edge (10,000 random
+    cases each, mixing lines, circles, arcs and polylines).
+  - **Fillets:** tangent at both ends (radius square to each line, at the radius), for two
+    lines and for every corner of random convex polygons.
+  - **Reference drawing** (`tests/fixtures/modify-reference.ts`), made with every modify tool:
+    - through the engine, it equals the approved file exactly, and all 25 hand-worked shapes
+      to 1e-9;
+    - typed and clicked into the real app, it equals the same file exactly.
+  - 100% line coverage of `src/core`. 934 unit and property tests; 52 browser tests; 9 approved
+    screenshots (new: the reference drawing).
+- Found and fixed while building:
+  - **Trimming a circle** kept only half of the remaining arc when the kept part wrapped past
+    0°. Circles are now trimmed as one arc.
+  - **Fillet points** came out at 2.0000000000000004 instead of 2 at a square corner, because
+    tan(π/4) is not exactly 1 in floating point. The tangent distance now uses
+    r (1 + cos θ) / sin θ, and the centre is set square off the first tangent point, so square
+    corners are exact and tangency holds by construction.
+  - **Mitres** were computed on long extended lines and lost digits (11.000000000000007).
+    Lines now meet by a direct formula that keeps horizontal and vertical lines' exact
+    coordinates.
+  - **Half-circle bulges** were 0.9999999999999999; `sweepToBulge` now gives exactly ±1.
+  - A Phase 2 test used `entity.explode` as its example of an unknown command; it now uses a
+    made-up name.
 
 ### 2026-11-25: Phase 4 (precision drafting) complete, PR #5
 
