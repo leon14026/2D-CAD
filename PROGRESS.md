@@ -63,6 +63,15 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     they were. Each timing run now starts fitted and swings back and forth.
 - Playwright is pinned to 1.63.0 so CI uses the same Chromium build (153) as the screenshot
   baselines.
+- **First CI run:** everything passed except the whole-window screenshot, where 6,385 pixels
+  of text differed. In CI, pan averaged 30.9 ms and zoom 27.2 ms, within the 33.3 ms budget
+  (GitHub's runners are slower than the workspace).
+  - Cause: Chromium takes system fonts and text smoothing from each machine's fontconfig.
+    The workspace has no hinting and swaps in other fonts (Anonymous Pro for Consolas, Inter
+    for sans-serif); GitHub's Ubuntu runner uses slight hinting. The build label's commit id
+    also differs per build and shifted the status bar.
+  - Fix: the browser tests now use their own font setup (`tests/e2e/fonts.conf`), and the
+    build label gets a fixed text in that screenshot.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

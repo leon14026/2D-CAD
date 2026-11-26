@@ -68,5 +68,10 @@ test('the whole window: panels, rulers and status bar', async ({ page }) => {
   await dragWorld(page, [58, 36], [42, 24]);
   const p = await toPage(page, 90, 50);
   await page.mouse.move(p.x, p.y);
+  // The build label carries the commit id, which differs on every machine and shifts the
+  // status bar. smoke.spec.ts checks its real format; here it gets a fixed text.
+  await page.locator('#al-build').evaluate((label) => {
+    label.textContent = 'v0.0.0 [build]';
+  });
   await expect(page).toHaveScreenshot('app-window.png');
 });

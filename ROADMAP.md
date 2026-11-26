@@ -234,6 +234,11 @@ Implementation notes (for later phases):
   - Upgrading Playwright means regenerating them:
     `npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`.
   - Then look at every image before committing.
+  - Chromium on Linux takes system fonts and text smoothing from fontconfig, which differs
+    between machines (the workspace and GitHub's runners disagree on hinting and font
+    substitutes). The browser tests point Chromium at `tests/e2e/fonts.conf`, so text renders
+    the same everywhere. Text that changes per build (the build label) gets a fixed value
+    before a screenshot.
 
 ### Phase 4 — Precision drafting
 

@@ -46,6 +46,10 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
   Chromium changes. If you do, regenerate the baselines
   (`npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`) and look at every
   image before committing.
+- **Browser tests use their own font setup** (`tests/e2e/fonts.conf`, wired in
+  `playwright.config.ts`): fixed text smoothing and Liberation as the only system fonts, so
+  text renders the same on every machine. Any text that changes per build or per machine
+  (the build label) gets a fixed value before a screenshot.
 - After pushing, wait for the PR's "Phase gate" check to pass before reporting done.
 
 ### Commit and PR text

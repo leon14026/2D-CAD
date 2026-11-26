@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
@@ -8,8 +9,12 @@ const isCi = Boolean(process.env['CI']);
  * and the software rasteriser for WebGL disabled: if ArchiLite works here, it works on any
  * laptop without a dedicated graphics card.
  *
+ * The browser gets its own font setup (tests/e2e/fonts.conf), so text renders the same on
+ * every machine and screenshot baselines match in CI.
+ *
  * Locally, set CHROME_PATH to use an installed Chrome instead of Playwright's download.
  */
+const FONTCONFIG_FILE = resolve('tests/e2e/fonts.conf');
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
@@ -34,6 +39,7 @@ export default defineConfig({
         launchOptions: {
           ...(process.env['CHROME_PATH'] ? { executablePath: process.env['CHROME_PATH'] } : {}),
           args: ['--disable-gpu', '--disable-software-rasterizer'],
+          env: { ...process.env, FONTCONFIG_FILE },
         },
       },
     },
