@@ -364,9 +364,9 @@ ISO-style defaults; text; leaders; centre marks; ArchiLite's own hatch patterns;
 title blocks.
 
 Gate:
-- [ ] Over 500 random cases, every dimension shows exactly the measured value.
-- [ ] Dimensions follow their geometry after modify operations.
-- [ ] Hatch areas match `shapely`.
+- [x] Over 500 random cases, every dimension shows exactly the measured value.
+- [x] Dimensions follow their geometry after modify operations.
+- [x] Hatch areas match `shapely`.
 
 Implementation notes (for later phases):
 - **Notes are a second kind of object.** `Doc.notes` (a map, like `entities`) holds every
