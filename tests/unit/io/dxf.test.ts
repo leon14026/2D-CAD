@@ -293,6 +293,65 @@ describe('DXF import of a minimal file', () => {
     expect(texts).toEqual(['GREAT ROOM', 'Ø10°', '±0.1%', 'A%%z%%']);
   });
 
+  it('strips MTEXT alignment, font and paragraph commands', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'MTEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '40',
+      '5',
+      '1',
+      '\\A1;PROVIDE 20 MIN. DOOR\\PW/ SELF CLOSING HINGES',
+      '0',
+      'MTEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '10',
+      '40',
+      '5',
+      '1',
+      '\\Farchquik.shx|c0;SHEAR PANELS, 3/8" OSB',
+      '0',
+      'MTEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '20',
+      '40',
+      '5',
+      '1',
+      'half \\S1#2; inch',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const texts = [...importDxf(dxf).doc.notes.values()]
+      .map((n) => n.body)
+      .filter((b) => b.kind === 'text')
+      .map((b) => (b.kind === 'text' ? b.text : ''));
+    expect(texts).toEqual([
+      'PROVIDE 20 MIN. DOOR\nW/ SELF CLOSING HINGES',
+      'SHEAR PANELS, 3/8" OSB',
+      'half 1/2 inch',
+    ]);
+  });
+
   it('explodes INSERT into the block’s geometry at the insert point', () => {
     const dxf = [
       '0',

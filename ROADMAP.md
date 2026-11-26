@@ -454,7 +454,8 @@ Implementation notes (for later phases):
 - **DXF** is the R2000 (AC1015) text form. Geometry is LINE, CIRCLE, ARC and LWPOLYLINE (with
   bulges). Notes export as the same primitives the screen draws (lines, arrows, text) plus a
   HATCH whose boundary is the hatch's loops, so areas survive. Import reads those entity types
-  and simple TEXT/MTEXT (`%%c`/`%%d`/`%%p` become Ø/°/±; `%%u`/`%%o` toggles are dropped).
+  and simple TEXT/MTEXT (`%%c`/`%%d`/`%%p` become Ø/°/±; `%%u`/`%%o` toggles are dropped;
+  MTEXT `\A1;` / `\F…;` / `\P` markup is dropped or becomes a newline).
   INSERT is exploded into those same types (nested inserts included; layer 0 takes the
   insert's layer). Non-uniform X/Y scale, rows-and-columns INSERT arrays, missing blocks,
   DIMENSION, HATCH and the rest are skipped and counted (DIMENSION becomes a live note in

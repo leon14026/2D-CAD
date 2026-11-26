@@ -2,10 +2,10 @@
 
 **Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
 and [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT) are on `main`.
-Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
+MTEXT markup codes are in review. The Phase 11 phone plan is on `main`
 ([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 12 (live DXF dimensions)
 is planned in [#16](https://github.com/leon14026/2D-CAD/pull/16) and does not wait on
-Phase 10 or 11.
+Phase 10 or 11. Merge #16 first.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -38,6 +38,12 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 - PR [#11](https://github.com/leon14026/2D-CAD/pull/11) merged to `main`. Docs only; no phone
   layout yet. Phase 10 (DWG) and Phase 11 (phone) still do not depend on each other.
+
+### 2026-11-26: DXF MTEXT markup
+
+- Follow-up on #15: floorplan MTEXT still showed `\A1;` before “PROVIDE 20 MIN. DOOR”
+  and a font command on a shear-panel note. Import now drops alignment, font, height and
+  paragraph commands; `\P` is a newline; stacked `\S1#2;` becomes `1/2`.
 
 ### 2026-11-26: Phase 12 (live DXF dimensions) planned
 
