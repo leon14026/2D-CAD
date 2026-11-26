@@ -37,6 +37,15 @@ export const ICONS = {
   eyeOff: ['M1.5 8c1.8-3 4-4.5 6.5-4.5S12.7 5 14.5 8c-1.8 3-4 4.5-6.5 4.5S3.3 11 1.5 8z', 'M2.5 13.5l11-11'],
   lock: ['M3.5 7.5h9v6.5h-9z', 'M5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5'],
   unlock: ['M3.5 7.5h9v6.5h-9z', 'M5.5 7.5V5a2.5 2.5 0 0 1 5 0'],
+  // Tools: a pointer for selecting, then one drawing per tool.
+  select: ['M4 2.5v10.5l2.9-2.5 2 4.2 1.8-.9-2-4.1h3.8z'],
+  line: ['M3.5 12.5l9-9', 'M2.5 11.5h2v2h-2z', 'M11.5 2.5h2v2h-2z'],
+  polyline: ['M2 12.5 5.5 5l4 5.5L14 3.5'],
+  circle: ['M8 2.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z', 'M8 7.4v1.2'],
+  arc: ['M2.5 12.5a5.5 5.5 0 0 1 11 0', 'M1.5 12.5h2', 'M12.5 12.5h2', 'M8 6.2v1.6'],
+  arcCenter: ['M2.5 12.5a5.5 5.5 0 0 1 11 0', 'M8 12.5h.01', 'M8 12.5 12 8.7'],
+  rectangle: ['M2.5 4h11v8h-11z'],
+  polygon: ['M8 2 13.2 5v6L8 14l-5.2-3V5z'],
 } as const;
 
 export type IconName = keyof typeof ICONS;

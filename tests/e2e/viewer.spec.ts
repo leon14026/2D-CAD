@@ -51,8 +51,8 @@ test('window selection (left to right) takes only what is entirely inside', asyn
   await openExample(page);
   await dragWorld(page, [3, 17], [17, 3]);
   expect((await state(page)).selection).toEqual([EX.holes[0], ...EX.hole1Lines]);
-  // A box over half the hole takes nothing.
-  await dragWorld(page, [3, 17], [10, 3]);
+  // A box over half the hole takes nothing (its right edge stays clear of the centre line at x = 10).
+  await dragWorld(page, [3, 17], [9.5, 3]);
   expect((await state(page)).selection).toEqual([]);
 });
 
@@ -110,8 +110,9 @@ test('wheel zooms about the cursor; middle-drag and Space-drag pan; F fits', asy
   await page.mouse.move(p.x - 120, p.y + 40, { steps: 5 });
   await page.mouse.up({ button: 'middle' });
   const v1 = (await state(page)).viewport;
-  expect(v1.originX - v0.originX).toBeCloseTo(-120, 6);
-  expect(v1.originY - v0.originY).toBeCloseTo(40, 6);
+  // Browsers report mouse positions in single precision, so compare to 0.001 px.
+  expect(v1.originX - v0.originX).toBeCloseTo(-120, 3);
+  expect(v1.originY - v0.originY).toBeCloseTo(40, 3);
   expect((await state(page)).selection).toEqual([]); // panning never selects
 
   await page.keyboard.down('Space');
@@ -119,7 +120,7 @@ test('wheel zooms about the cursor; middle-drag and Space-drag pan; F fits', asy
   await page.mouse.move(p.x - 60, p.y + 40, { steps: 5 });
   await page.mouse.up();
   await page.keyboard.up('Space');
-  expect((await state(page)).viewport.originX - v1.originX).toBeCloseTo(60, 6);
+  expect((await state(page)).viewport.originX - v1.originX).toBeCloseTo(60, 3);
 
   await page.keyboard.press('f');
   const refit = (await state(page)).viewport;
@@ -196,12 +197,12 @@ test('opening a file from disk shows it fitted', async ({ page }) => {
 
 test('panels can be hidden and shown', async ({ page }) => {
   await openExample(page);
-  await page.keyboard.press('l');
+  await page.keyboard.press('[');
   await expect(page.locator('#al-layers-panel')).toBeHidden();
-  await page.keyboard.press('p');
+  await page.keyboard.press(']');
   await expect(page.locator('#al-selection-panel')).toBeHidden();
-  await page.keyboard.press('l');
-  await page.keyboard.press('p');
+  await page.keyboard.press('[');
+  await page.keyboard.press(']');
   await expect(page.locator('#al-layers-panel')).toBeVisible();
   await expect(page.locator('#al-selection-panel')).toBeVisible();
 });

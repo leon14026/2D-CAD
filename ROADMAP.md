@@ -244,11 +244,54 @@ Implementation notes (for later phases):
 ### Phase 4 — Precision drafting
 
 Builds: line, polyline, circle, arc, rectangle, polygon; all snaps; ortho and polar tracking;
-typed absolute, relative (`@dx,dy`) and polar (`@d<a`) input.
+typed absolute, relative (`@dx,dy`) and polar (`@d<a`) input. Added:
+- two arc tools (through three points, and from the centre with a typed angle);
+- a single typed distance along the cursor or tracking direction;
+- a tool rail and a box beside the cursor for typed input, prompts and errors.
 
 Gate:
 - [ ] A reference part drawn by typed input alone matches its specification to 1e-9.
 - [ ] Every snap type is tested against every pair of entity types.
+
+Implementation notes (for later phases):
+- **Tools are pure state machines** in `src/core/tools` (no DOM).
+  - Each asks for one thing at a time (`Prompt.accepts`: point, number, point or number, a
+    selection, or a pick) and returns document commands. It never edits the drawing itself, so
+    every object is one undo step.
+  - `drafting.ts` runs tools against a session: `feed` (click, number, option, Enter) and
+    `feedTyped` (text). A refused input changes nothing and explains why in plain words. The
+    app and the tests both drive tools through it.
+  - Every tool shares one state shape (`ToolState`: step, points, values, picks, flag, count).
+  - Values tools remember (last radius, polygon sides) live in `ToolMemory`. Phase 5 adds its
+    own (offset distance, fillet radius).
+- **Typed input:** `input.ts`.
+  - Forms: `x,y`, `@dx,dy`, `@d<a`, `d<a`, and a bare number.
+  - A bare number is a value where the step wants one (radius, sides, angle). Where it wants a
+    point, it is a distance along the tracking line, or towards the cursor.
+  - Angles are typed in degrees. Quarter turns are exact: `cosSin` snaps them.
+- **Snaps:** `src/core/spatial/snap.ts`.
+  - All analytic: endpoint (every polyline vertex), midpoint, centre, quadrant, intersection,
+    perpendicular and tangent from the last point, and nearest.
+  - The nearest snap point within 10 px wins; ties go by the order in `SNAP_KINDS` (endpoint
+    first).
+  - With nearest off, a cursor resting on a circle or arc snaps to its centre.
+  - Snaps see visible layers, locked ones included.
+  - Nearest is off by default.
+- **Tracking:** `tracking.ts`.
+  - Ortho is horizontal or vertical. Polar is every 15°, 30°, 45° or 90° within 8 px.
+  - On horizontal and vertical lines, the cursor's other coordinate is kept, so no rounding
+    creeps in.
+  - Order of precedence: a snap wins over tracking.
+- **Keys:** a tool sees keys first.
+  - Digits, `@`, `.`, `+` and `-` start typing in the box.
+  - The tool's option letters apply. Enter (or a right-click) finishes; Esc stops.
+  - Any other letter starts that tool: L line, P polyline, C circle, A arc, R rectangle,
+    N polygon.
+  - Shift+S, Shift+O and Shift+T toggle snaps, ortho and tracking. Holding Shift forces
+    ortho.
+  - The panel toggles moved from L and P to `[` and `]`.
+- **Layout:** the tool rail sits inside the drawing area's left edge. "Zoom to fit" leaves room
+  for it (`RAIL_WIDTH` in `actions.ts`).
 
 ### Phase 5 — Modify tools
 

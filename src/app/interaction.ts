@@ -6,11 +6,15 @@
  * - Click: pick the nearest entity (Shift adds or removes it).
  * - Drag left to right: window selection (entirely inside).
  * - Drag right to left: crossing selection (inside or touching).
+ *
+ * While a tool wants a point, a click places it (after snaps and tracking) and a right-click
+ * is Enter. Shift held while moving forces horizontal or vertical.
  */
 import { boxFromCorners, pickAt, selectInBox, type BoxMode } from '../core/spatial';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Point } from '../render/viewport';
 import { formatCoordinate } from '../ui/format';
+import type { DraftingController } from './drafting';
 import type { Store } from './store';
 
 /** How far the pointer must move, in CSS pixels, before a press becomes a box. */
@@ -22,7 +26,8 @@ type Gesture =
   | { kind: 'idle' }
   | { kind: 'press'; start: Point; shift: boolean; pointer: number }
   | { kind: 'box'; start: Point; shift: boolean; pointer: number }
-  | { kind: 'pan'; last: Point; pointer: number };
+  | { kind: 'pan'; last: Point; pointer: number }
+  | { kind: 'tool'; pointer: number };
 
 export function wheelFactor(e: Pick<WheelEvent, 'deltaY' | 'deltaMode' | 'ctrlKey'>): number {
   const perUnit = e.deltaMode === 1 ? 0.05 : e.deltaMode === 2 ? 0.5 : 0.0015;
@@ -37,6 +42,7 @@ export function boxMode(start: Point, end: Point): BoxMode {
 export function attachInteraction(
   store: Store,
   view: CanvasView,
+  drafting: DraftingController,
   readout: { x: HTMLElement; y: HTMLElement },
 ): void {
   const target = view.overlayCanvas;
@@ -50,9 +56,15 @@ export function attachInteraction(
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
 
+  /** True while the active tool wants a point placed, so clicks don't select. */
+  const placing = () => {
+    const accepts = drafting.prompt()?.accepts;
+    return accepts === 'point' || accepts === 'number' || accepts === 'pointOrNumber';
+  };
+
   const updateHover = () => {
     hoverFrame = 0;
-    if (!lastPoint || gesture.kind !== 'idle') return;
+    if (!lastPoint || gesture.kind !== 'idle' || placing()) return;
     const s = store.get();
     const world = screenToWorld(s.viewport, lastPoint);
     const hover = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit);
@@ -66,9 +78,12 @@ export function attachInteraction(
       e.preventDefault();
       gesture = { kind: 'pan', last: p, pointer: e.pointerId };
       view.stage.classList.add('is-panning');
+    } else if (e.button === 0 && placing()) {
+      gesture = { kind: 'tool', pointer: e.pointerId };
     } else if (e.button === 0) {
       gesture = { kind: 'press', start: p, shift: e.shiftKey, pointer: e.pointerId };
     } else {
+      if (e.button === 2 && drafting.active) drafting.enter();
       return;
     }
     target.setPointerCapture(e.pointerId);
@@ -78,7 +93,7 @@ export function attachInteraction(
     const p = local(e);
     lastPoint = p;
     const s = store.get();
-    const world = screenToWorld(s.viewport, p);
+    const world = drafting.move(p, e.shiftKey) ?? screenToWorld(s.viewport, p);
     readout.x.textContent = formatCoordinate(world.x);
     readout.y.textContent = formatCoordinate(world.y);
     view.setCursor(p);
@@ -101,6 +116,8 @@ export function attachInteraction(
       case 'idle':
         if (!hoverFrame) hoverFrame = requestAnimationFrame(updateHover);
         break;
+      case 'tool':
+        break;
     }
   });
 
@@ -109,7 +126,9 @@ export function attachInteraction(
     const p = local(e);
     const s = store.get();
     const doc = s.session.doc;
-    if (gesture.kind === 'press') {
+    if (gesture.kind === 'tool') {
+      if (e.type === 'pointerup') drafting.click(p);
+    } else if (gesture.kind === 'press') {
       const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit);
       if (gesture.shift) {
         if (id !== null) {
@@ -140,6 +159,7 @@ export function attachInteraction(
   target.addEventListener('pointerleave', () => {
     lastPoint = null;
     view.setCursor(null);
+    drafting.move(null);
     if (gesture.kind === 'idle' && store.get().hover !== null) store.set({ hover: null });
   });
 
@@ -153,10 +173,11 @@ export function attachInteraction(
     { passive: false },
   );
 
-  // Middle-click auto-scroll would fight panning.
+  // Middle-click auto-scroll would fight panning; the right button is Enter for tools.
   target.addEventListener('mousedown', (e) => {
     if (e.button === 1) e.preventDefault();
   });
+  target.addEventListener('contextmenu', (e) => e.preventDefault());
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !isTyping(e)) {

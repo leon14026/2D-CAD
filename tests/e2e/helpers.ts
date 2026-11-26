@@ -6,6 +6,7 @@ export interface ViewState {
   viewport: { originX: number; originY: number; pxPerUnit: number };
   hover: number | null;
   undo: number;
+  tool: string | null;
 }
 
 type Hook = {

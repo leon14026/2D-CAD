@@ -86,12 +86,14 @@ npm run ci                # all of the above, in CI order
 src/core/      pure TypeScript: no DOM, no imports from outside src/core, no packages
   geom/        geometry kernel (Phase 1)
   doc/         document model, commands, undo/redo, file format (Phase 2)
-  spatial/     R-tree index, window/crossing/pick selection (Phase 3)
+  spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4)
+  tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4)
 src/render/    Canvas 2D: scene.ts (entities), view.ts (canvases), rulers, grid, viewport maths
 src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
-               panels, command palette
+               panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor)
 src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
-               palette list), interaction.ts (mouse), testing.ts (?test hook);
+               palette list), interaction.ts (mouse), drafting.ts (tools on screen: snaps,
+               tracking, keys), tools.ts (tool names, icons, keys), testing.ts (?test hook);
                brand.ts holds the product name (the only place it is defined)
 src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
 public/        static files copied to the site as-is (examples/bracket.archilite)
@@ -119,6 +121,12 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Every user action goes in `src/app/actions.ts` and, if it changes the drawing, through a
   document command, so it can be undone. Then give it a key or a command-palette entry in
   `src/app/shell.ts`.
+- Interactive tools live in `src/core/tools` as state machines (`ToolDef`): they ask for one
+  thing at a time and return commands, never touching the document. Drive them through
+  `drafting.ts` (`feed`, `feedTyped`) in both the app and tests. A new tool also gets an entry
+  in `src/app/tools.ts` (rail button, palette label, key).
+- Refusals are explained in plain words and change nothing: tools return `refuse(state, why)`,
+  commands throw `CommandError`.
 
 ## Design system (v0, Phase 3)
 

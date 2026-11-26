@@ -1,9 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phase 3 (viewer) is built and in review as [PR #4](https://github.com/leon14026/2D-CAD/pull/4).
-Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1), then
-[PR #3](https://github.com/leon14026/2D-CAD/pull/3) (Phase 2), then PR #4. Next up: Phase 4,
-precision drafting (the first drawing tools).
+**Now:** Phase 4 (precision drafting) is built and in review as [PR #5](https://github.com/leon14026/2D-CAD/pull/5);
+Phase 5 (modify tools) is being built on top of it. Merge in order:
+[PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1), [PR #3](https://github.com/leon14026/2D-CAD/pull/3)
+(Phase 2), [PR #4](https://github.com/leon14026/2D-CAD/pull/4) (Phase 3), then PR #5.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -13,7 +13,7 @@ precision drafting (the first drawing tools).
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
-| 4. Precision drafting | Not started | — | — |
+| 4. Precision drafting | Done, gate passed locally; awaiting CI and merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
 | 5. Modify tools | Not started | — | — |
 | 6. Annotation | Not started | — | — |
 | 7. Import and export | Not started | — | — |
@@ -23,6 +23,48 @@ precision drafting (the first drawing tools).
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-25: Phase 4 (precision drafting) complete, PR #5
+
+- Owner asked for Phases 4 and 5 in one go. Each still gets its own branch and pull request, and
+  Phase 5 starts only after Phase 4's gate passes in CI.
+- Built:
+  - **Drafting engine** (`src/core/tools`, pure and fully tested): typed points and numbers,
+    ortho and polar tracking, and tools as state machines that return undoable commands.
+  - **Seven drawing tools:** line, polyline, circle, arc through three points, arc from its
+    centre, rectangle and regular polygon.
+  - **Analytic snaps** (`src/core/spatial/snap.ts`): endpoint, intersection, midpoint, centre,
+    quadrant, perpendicular, tangent and nearest.
+  - **In the app:** a tool rail and a box beside the cursor that shows the prompt, takes typed
+    input, gives the distance and angle from the last point, and explains refusals.
+    - Snap markers with their names, and dotted brass tracking lines.
+    - Status bar toggles for snaps, ortho and tracking; command palette entries for every tool,
+      snap kind and tracking angle.
+- Decisions:
+  - Single-letter keys start tools: L line, P polyline, C circle, A arc, R rectangle,
+    N polygon.
+  - The panel toggles moved from L and P to `[` and `]`. Shift+S, Shift+O and Shift+T toggle
+    snaps, ortho and tracking; holding Shift forces ortho.
+  - Tracking is on at 15° by default. Snaps are on by default, all except nearest.
+- Gate (passed locally):
+  - The reference part (`tests/fixtures/reference-part.ts`), a plate with holes, a slot, a
+    hexagon, a triangle and an arc, drawn by typed input alone, matches its hand-worked
+    specification to 1e-9: in the engine, and again typed into the real app.
+  - The snap matrix: every snap kind on all 5 entity types, with each of the 5 types crossing
+    it, plus intersections for all 15 pairs of types at hand-calculated points.
+  - 100% line coverage of `src/core`, now including `tools`. 794 unit and property tests.
+  - 47 browser tests and 8 approved screenshots. The new screenshot shows a line being drawn,
+    with a snap marker.
+  - Performance with 20,000 entities: pan about 21 ms per frame, zoom about 23–28 ms; the budget
+    is 33.3 ms.
+- Found and fixed while building:
+  - **Tracking:** a vertical line through (1.1, 2.2) came out at y = -30.000000000000004 rather
+    than -30, from projecting through the base point. On horizontal and vertical lines the
+    tracker now keeps the cursor's own coordinate, so axis-aligned points are exact.
+  - **Viewer tests:** two had boundaries that depended on rounding. Moving the fitted view (for
+    the rail) exposed them: a selection box edge sat exactly on a centre line, and a pan was
+    compared at 1e-6 px when browsers report mouse positions in single precision. Both now test
+    what they meant to test.
 
 ### 2026-11-25: Phase 3 (viewer) complete, PR #4
 

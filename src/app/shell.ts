@@ -5,16 +5,31 @@
 import { canRedo, canUndo, redoLabel, undoLabel } from '../core/doc';
 import { APP_NAME } from './brand';
 import { convertLength } from '../core/geom';
+import { SNAP_KINDS } from '../core/spatial';
+import { POLAR_STEPS_DEGREES } from '../core/tools';
 import { screenScaleLabel } from '../render/viewport';
 import { CommandPalette, type PaletteEntry } from '../ui/command-palette';
 import { el, icon, requireElement } from '../ui/dom';
+import { ToolRail } from '../ui/rail';
 import type { Actions } from './actions';
+import type { DraftingController } from './drafting';
 import { isTyping } from './interaction';
 import { isDirty, type AppState, type Store } from './store';
+import { DRAW_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
 
-export function paletteEntries(actions: Actions, store: Store): PaletteEntry[] {
+export function paletteEntries(actions: Actions, store: Store, drafting: DraftingController): PaletteEntry[] {
   const s = () => store.get();
   return [
+    ...TOOL_BUTTONS.map((b) => ({ label: b.palette, ...(b.key && { keys: b.key.toUpperCase() }), run: () => drafting.start(b.id) })),
+    { label: 'Stop the tool in use', keys: 'Esc', run: () => drafting.stop(), enabled: () => drafting.active },
+    { label: `Turn snaps ${s().snapOn ? 'off' : 'on'}`, keys: 'Shift S', run: () => actions.toggleSnaps() },
+    { label: `Turn ortho ${s().ortho ? 'off' : 'on'} (horizontal and vertical only)`, keys: 'Shift O', run: () => actions.toggleOrtho() },
+    { label: `Turn angle tracking ${s().polarOn ? 'off' : 'on'}`, keys: 'Shift T', run: () => actions.togglePolar() },
+    ...POLAR_STEPS_DEGREES.map((step) => ({ label: `Track angles every ${step}°`, run: () => actions.setPolarStep(step) })),
+    ...SNAP_KINDS.map((k) => ({
+      label: s().snapKinds.has(k) ? `Stop snapping to ${SNAP_NAMES[k]}` : `Snap to ${SNAP_NAMES[k]}`,
+      run: () => actions.toggleSnapKind(k),
+    })),
     { label: 'Zoom to fit the drawing', keys: 'F', run: () => actions.fit() },
     { label: 'Zoom in', keys: '+', run: () => actions.zoom(1.25) },
     { label: 'Zoom out', keys: '−', run: () => actions.zoom(0.8) },
@@ -24,8 +39,8 @@ export function paletteEntries(actions: Actions, store: Store): PaletteEntry[] {
     { label: 'Redo', keys: 'Ctrl Y', run: () => actions.redo(), enabled: () => canRedo(s().session) },
     { label: 'Show or hide the grid', keys: 'G', run: () => actions.toggleGrid() },
     { label: 'Show or hide lineweights', keys: 'W', run: () => actions.toggleLineweights() },
-    { label: 'Show or hide the layers panel', keys: 'L', run: () => actions.toggleLayersPanel() },
-    { label: 'Show or hide the selection panel', keys: 'P', run: () => actions.toggleSelectionPanel() },
+    { label: 'Show or hide the layers panel', keys: '[', run: () => actions.toggleLayersPanel() },
+    { label: 'Show or hide the selection panel', keys: ']', run: () => actions.toggleSelectionPanel() },
     { label: 'Open a drawing…', keys: 'Ctrl O', run: () => requireElement('#al-file', HTMLInputElement).click() },
     { label: 'Save the drawing', keys: 'Ctrl S', run: () => actions.save() },
     { label: 'Load the example bracket', run: () => void actions.loadExample() },
@@ -39,8 +54,13 @@ export function paletteEntries(actions: Actions, store: Store): PaletteEntry[] {
   ];
 }
 
-export function mountShell(store: Store, actions: Actions, build: string): CommandPalette {
-  const palette = new CommandPalette(() => paletteEntries(actions, store));
+export function mountShell(store: Store, actions: Actions, drafting: DraftingController, build: string): CommandPalette {
+  const palette = new CommandPalette(() => paletteEntries(actions, store, drafting));
+
+  // Tool rail.
+  const rail = new ToolRail(requireElement('#al-tools', HTMLElement), [{ label: 'Draw', buttons: DRAW_BUTTONS }], (id) =>
+    id === null ? drafting.stop() : drafting.start(id),
+  );
 
   // Top bar.
   const title = requireElement('#al-title', HTMLElement);
@@ -89,8 +109,14 @@ export function mountShell(store: Store, actions: Actions, build: string): Comma
   const units = requireElement('#al-units', HTMLElement);
   const grid = requireElement('#al-grid-toggle', HTMLButtonElement);
   const weights = requireElement('#al-weight-toggle', HTMLButtonElement);
+  const snaps = requireElement('#al-snap-toggle', HTMLButtonElement);
+  const ortho = requireElement('#al-ortho-toggle', HTMLButtonElement);
+  const polar = requireElement('#al-polar-toggle', HTMLButtonElement);
   grid.addEventListener('click', () => actions.toggleGrid());
   weights.addEventListener('click', () => actions.toggleLineweights());
+  snaps.addEventListener('click', () => actions.toggleSnaps());
+  ortho.addEventListener('click', () => actions.toggleOrtho());
+  polar.addEventListener('click', () => actions.togglePolar());
   requireElement('#al-build', HTMLElement).textContent = build;
 
   // Messages.
@@ -117,6 +143,14 @@ export function mountShell(store: Store, actions: Actions, build: string): Comma
     grid.textContent = s.showGrid ? 'Grid on' : 'Grid off';
     weights.setAttribute('aria-pressed', String(s.lineweights));
     weights.textContent = s.lineweights ? 'Lineweights on' : 'Lineweights off';
+    snaps.setAttribute('aria-pressed', String(s.snapOn));
+    snaps.textContent = s.snapOn ? 'Snaps on' : 'Snaps off';
+    ortho.setAttribute('aria-pressed', String(s.ortho));
+    ortho.textContent = s.ortho ? 'Ortho on' : 'Ortho off';
+    polar.setAttribute('aria-pressed', String(s.polarOn));
+    polar.textContent = s.polarOn ? `Tracking ${s.polarStep}°` : 'Tracking off';
+    rail.show(s.tool?.id ?? null);
+    document.body.classList.toggle('al-drafting', s.tool !== null);
     document.body.classList.toggle('al-hide-left', !s.showLayers);
     document.body.classList.toggle('al-hide-right', !s.showSelection);
     if (s.message !== p?.message) {
@@ -136,6 +170,19 @@ export function mountShell(store: Store, actions: Actions, build: string): Comma
   render(store.get(), null);
   store.subscribe(render);
 
+  // Keyboard: the tool in use sees keys first (typed points, options, Enter, Esc).
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (palette.isOpen || (isTyping(e) && !drafting.ownsInput(e.target))) return;
+      if (drafting.key(e)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },
+    { capture: true },
+  );
+
   // Keyboard shortcuts.
   window.addEventListener('keydown', (e) => {
     if (palette.isOpen || isTyping(e)) return;
@@ -152,12 +199,17 @@ export function mountShell(store: Store, actions: Actions, build: string): Comma
     if (mod && key === 's') return run(() => actions.save());
     if (mod && key === 'o') return run(() => fileInput.click());
     if (mod || e.altKey) return;
+    if (e.shiftKey && key === 's') return run(() => actions.toggleSnaps());
+    if (e.shiftKey && key === 'o') return run(() => actions.toggleOrtho());
+    if (e.shiftKey && key === 't') return run(() => actions.togglePolar());
+    const tool = e.shiftKey ? undefined : TOOL_BUTTONS.find((b) => b.key === key);
+    if (tool) return run(() => drafting.start(tool.id));
     if (key === 'escape') return run(() => actions.clearSelection());
     if (key === 'f') return run(() => actions.fit());
     if (key === 'g') return run(() => actions.toggleGrid());
     if (key === 'w') return run(() => actions.toggleLineweights());
-    if (key === 'l') return run(() => actions.toggleLayersPanel());
-    if (key === 'p') return run(() => actions.toggleSelectionPanel());
+    if (key === '[') return run(() => actions.toggleLayersPanel());
+    if (key === ']') return run(() => actions.toggleSelectionPanel());
     if (key === '+' || key === '=') return run(() => actions.zoom(1.25));
     if (key === '-' || key === '_') return run(() => actions.zoom(0.8));
     const step = 60;

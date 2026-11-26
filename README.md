@@ -11,8 +11,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 3 (viewer) complete: open, view, pan, zoom and select drawings. Phase 4
-(drawing tools) next. See [PROGRESS.md](PROGRESS.md)
+**Status:** Phase 4 (precision drafting) complete: draw lines, polylines, circles, arcs,
+rectangles and polygons with exact snaps, tracking and typed coordinates. Phase 5 (modify tools)
+next. See [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
 
@@ -31,7 +32,11 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Select | Click; Shift+click adds or removes |
 | Select by box | Drag left to right (entirely inside) or right to left (inside or touching) |
 | Show, hide or lock layers | Eye and padlock in the Layers panel; Ctrl+Z undoes |
-| Panels, grid, lineweights | L, P, G, W |
+| Draw | Tool rail on the left, or L line, P polyline, C circle, A arc, R rectangle, N polygon |
+| Type a point | Just start typing: `x,y`, `@dx,dy` (from the last point), `@length<angle`, or one distance along the cursor direction; Enter |
+| Finish or stop a tool | Enter or right-click finishes; Esc stops |
+| Snaps, ortho, tracking | Status bar, or Shift+S, Shift+O, Shift+T; hold Shift for horizontal or vertical |
+| Panels, grid, lineweights | `[`, `]`, G, W |
 
 Drawings are saved as `.archilite` files on your computer; nothing is uploaded.
 

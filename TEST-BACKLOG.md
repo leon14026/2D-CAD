@@ -113,12 +113,43 @@ On the live site once PRs #2, #3 and #4 are merged. Press Ctrl+K and type to fin
 - [ ] **M3.8 High-DPI and scaling.** On a laptop with Windows display scaling at 125% or 150%,
       check that lines, grid and ruler labels stay sharp and that clicks land where you point.
 
+### Phase 4: precision drafting
+
+On the live site once PRs #2 to #5 are merged. The tool rail is at the left of the drawing; the
+box beside the cursor shows what each tool wants next.
+
+- [ ] **M4.1 A part from your own sketch.** Pick a simple part from a course or from work. Draw
+      it using typed points only (`x,y`, `@dx,dy`, `@length<angle`) plus snaps. Then click each
+      line and circle and check its length or diameter in the selection panel against your
+      sketch.
+- [ ] **M4.2 Typed input, step by step.** Start a new drawing (Ctrl+K → "Start a new drawing").
+      1. Press R, type `0,0` Enter, then `@120,80` Enter, then Esc. Click the rectangle:
+         width **120.000**, height **80.000**, area **9600.000**.
+      2. Press C, type `15,15` Enter, `4` Enter, then Esc. Click the circle: Ø **8.000**.
+      3. Press L, type `10,40` Enter, `@20<60` Enter, `@20<-60` Enter, then press C to close.
+         Click each of the three lines: length **20.000**.
+      4. Press N, type `6` Enter, `60,40` Enter, `10` Enter, Esc. Click the hexagon: its
+         perimeter should be **60.000** (6 sides of 10).
+- [ ] **M4.3 Snaps on your screen.** Start a line and move near ends, middles, centres and
+      crossings of the example bracket. The point snaps within about 10 pixels, with a small
+      square and a label. Decide: too sticky, too loose, or right? Does the label ever hide
+      what you need?
+- [ ] **M4.4 Tracking.** With a line started, move the cursor round: a dotted line appears every
+      15°. Decide: keep 15° as the default, or prefer 45° or 90°? (Ctrl+K → "Track angles
+      every …" to try them.)
+- [ ] **M4.5 Keys.** L, P, C, A, R and N start tools. Shift+S, Shift+O and Shift+T switch snaps,
+      ortho and tracking. Holding Shift forces horizontal or vertical. `[` and `]` hide the
+      panels. Any of these awkward on your keyboard or against habits from other programs?
+- [ ] **M4.6 The box beside the cursor.** Is it readable, and is it in the way near the edges of
+      the drawing? Try a single typed distance: start a line, point the cursor in a direction,
+      type `25` and Enter. Is that intuitive?
+- [ ] **M4.7 Touchpad only.** Draw a polyline with a touchpad: tap to place points, two-finger
+      tap (right-click) to finish. Does it work smoothly?
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 4:** draw a part from one of your own sketches using typed coordinates and snaps; check
-  the dimensions against your sketch.
 - **Phase 5:** offset, trim, fillet and chamfer on a real part outline; check by measuring.
 - **Phase 6:** dimension a part and compare every dimension with your own calculation; check that
   the dimension style matches what your courses or co-op use.
