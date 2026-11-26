@@ -249,7 +249,8 @@ describe('registry and history', () => {
     expect(isCommandId('entity.add')).toBe(true);
     expect(isCommandId('toString')).toBe(false);
     expect(Object.values(COMMANDS).every((c) => c.label.length > 0)).toBe(true);
-    harness().fails('entity.explode', {}, /no command called "entity.explode"/);
+    for (const [id, def] of Object.entries(COMMANDS)) expect(def.id).toBe(id);
+    harness().fails('entity.teleport', {}, /no command called "entity.teleport"/);
   });
 
   it('undo and redo walk the history with labels', () => {

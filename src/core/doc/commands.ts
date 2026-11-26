@@ -1,7 +1,9 @@
 /**
  * The command registry. Every change to a document goes through a named command, so the UI,
  * keyboard, scripts and tests all share one validated path, and every change can be undone.
+ * The modify commands (offset, trim, fillet and the rest) are in edit-commands.ts.
  */
+export type { CommandDef } from './command-kit';
 import {
   convertLength,
   LENGTH_UNITS,
@@ -12,7 +14,21 @@ import {
   type Shape,
   type Transform,
 } from '../geom';
-import { CommandError, Draft } from './draft';
+import {
+  applyTransform,
+  define,
+  optional,
+  readIds,
+  readStyleProps,
+  requireEditable,
+  requireLayer,
+  requireUnlocked,
+  requireUniqueName,
+  type CommandDef,
+  type StyleProps,
+} from './command-kit';
+import { CommandError } from './draft';
+import { EDIT_COMMANDS } from './edit-commands';
 import { MAX_NAME_LENGTH, MAX_TITLE_LENGTH, type Entity, type Layer } from './model';
 import {
   BY_LAYER,
@@ -44,79 +60,6 @@ import {
   ValidationError,
   type Obj,
 } from './validate';
-
-export interface CommandDef<P, R> {
-  readonly id: string;
-  /** Shown in the undo/redo menu, e.g. "Undo Move". */
-  readonly label: string;
-  /** Validates untrusted parameters (from a script or the UI). */
-  parse(raw: unknown): P;
-  run(draft: Draft, params: P): R;
-}
-
-function define<P, R>(def: CommandDef<P, R>): CommandDef<P, R> {
-  return def;
-}
-
-// ---------- shared parameter readers ----------
-
-function readIds(v: unknown, path: string): number[] {
-  const list = readArray(v, path);
-  if (list.length === 0) throw new ValidationError(path, 'must list at least one id');
-  return [...new Set(list.map((item, i) => readPositiveInteger(item, join(path, i))))];
-}
-
-function optional<T>(o: Obj, key: string, read: (v: unknown, path: string) => T): T | undefined {
-  return Object.hasOwn(o, key) ? read(o[key], key) : undefined;
-}
-
-interface StyleProps {
-  readonly color?: ColorRef;
-  readonly linetype?: LinetypeRef;
-  readonly lineweight?: LineweightRef;
-}
-
-function readStyleProps(o: Obj): StyleProps {
-  const color = optional(o, 'color', readColorRef);
-  const linetype = optional(o, 'linetype', readLinetypeRef);
-  const lineweight = optional(o, 'lineweight', readLineweightRef);
-  return {
-    ...(color !== undefined && { color }),
-    ...(linetype !== undefined && { linetype }),
-    ...(lineweight !== undefined && { lineweight }),
-  };
-}
-
-// ---------- shared rules ----------
-
-function requireLayer(draft: Draft, id: number): Layer {
-  const layer = draft.layer(id);
-  if (!layer) throw new CommandError(`There is no layer with id ${id}.`);
-  return layer;
-}
-
-function requireUnlocked(draft: Draft, layerId: number): Layer {
-  const layer = requireLayer(draft, layerId);
-  if (layer.locked) throw new CommandError(`Layer "${layer.name}" is locked. Unlock it to change its contents.`);
-  return layer;
-}
-
-function requireEditable(draft: Draft, id: number): Entity {
-  const e = draft.entity(id);
-  if (!e) throw new CommandError(`There is no entity with id ${id}.`);
-  requireUnlocked(draft, e.layer);
-  return e;
-}
-
-function requireUniqueName(draft: Draft, name: string, exceptId?: number): void {
-  const key = name.toLowerCase();
-  const clash = draft.layers.find((l) => l.id !== exceptId && l.name.toLowerCase() === key);
-  if (clash) throw new CommandError(`A layer called "${clash.name}" already exists.`);
-}
-
-function applyTransform(t: Transform, s: Shape): Shape {
-  return canonicalShape(transformShape(t, s));
-}
 
 // ---------- entity commands ----------
 
@@ -417,6 +360,7 @@ const setUnits = define<SetUnitsParams, Record<string, never>>({
 // ---------- registry ----------
 
 export const COMMANDS = {
+  ...EDIT_COMMANDS,
   'entity.add': addEntity,
   'entity.delete': deleteEntities,
   'entity.transform': transformEntities,

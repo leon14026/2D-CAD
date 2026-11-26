@@ -4,7 +4,7 @@
  * the active tool takes.
  */
 import { angleOf, degToRad, distance, normalizeAngle, radToDeg, sub, type Vec2 } from '../core/geom';
-import { findSnap, type SnapHit } from '../core/spatial';
+import { findSnap, pickAt, type SnapHit } from '../core/spatial';
 import {
   currentBase,
   currentPreview,
@@ -24,6 +24,7 @@ import type { CanvasView } from '../render/view';
 import { screenToWorld, type Point } from '../render/viewport';
 import type { CursorEntry } from '../ui/entry';
 import { formatCoordinate } from '../ui/format';
+import { PICK_RADIUS } from './interaction';
 import type { AppState, Store } from './store';
 
 /** How close (CSS pixels) the cursor must be to a snap point. */
@@ -161,6 +162,15 @@ export class DraftingController {
 
   enter(): void {
     this.input({ kind: 'enter' });
+  }
+
+  /** A click while the tool wants an object picked. */
+  pick(p: Point): void {
+    const s = this.store.get();
+    const world = screenToWorld(s.viewport, p);
+    const id = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit);
+    if (id === null) this.store.set({ toolError: 'Nothing there to pick. Click on a line, arc or circle.' });
+    else this.input({ kind: 'pick', id, point: world });
   }
 
   /** Submits what is typed in the box; nothing typed is the same as Enter. */

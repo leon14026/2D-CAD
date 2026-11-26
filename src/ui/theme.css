@@ -394,6 +394,39 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
+/* Buttons that change the selection, under its properties. */
+.al-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: var(--al-chrome);
+  font-size: var(--al-text-small);
+  cursor: pointer;
+}
+
+.al-action:hover {
+  border-color: var(--al-ink-muted);
+}
+
+.al-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-color: var(--al-rule);
+}
+
 /* ---------- drawing area ---------- */
 
 .al-stage {
@@ -469,6 +502,9 @@ kbd {
   border: 1px solid var(--al-rule);
   border-radius: 6px;
   background: var(--al-chrome);
+  /* On short windows the rail scrolls rather than running off the drawing area. */
+  max-height: calc(100% - 56px);
+  overflow-y: auto;
 }
 
 .al-rail-group {

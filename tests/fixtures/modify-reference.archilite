@@ -1,0 +1,42 @@
+{
+  "format": "archilite",
+  "version": 1,
+  "title": "Modify reference",
+  "units": "mm",
+  "currentLayer": 1,
+  "nextId": 32,
+  "layers": [
+    {"id":1,"name":"Default","color":"#1f2a33","linetype":"continuous","lineweight":0.25,"visible":true,"locked":false}
+  ],
+  "entities": [
+    {"id":2,"layer":1,"z":2,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":0,"y":10,"bulge":0.41421356237309503},{"x":10,"y":0,"bulge":0},{"x":110,"y":0,"bulge":0.41421356237309503},{"x":120,"y":10,"bulge":0},{"x":120,"y":70,"bulge":0.41421356237309503},{"x":110,"y":80,"bulge":0},{"x":10,"y":80,"bulge":0.41421356237309503},{"x":0,"y":70,"bulge":0}],"closed":true}},
+    {"id":3,"layer":1,"z":3,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":5,"y":10,"bulge":0.41421356237309503},{"x":10,"y":4.999999999999998,"bulge":0},{"x":110,"y":5,"bulge":0.41421356237309503},{"x":115,"y":10,"bulge":0},{"x":115,"y":70,"bulge":0.41421356237309503},{"x":110,"y":75,"bulge":0},{"x":10,"y":75,"bulge":0.41421356237309503},{"x":4.999999999999998,"y":70,"bulge":0}],"closed":true}},
+    {"id":4,"layer":1,"z":4,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":20,"y":20},"radius":4}},
+    {"id":5,"layer":1,"z":5,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":100,"y":20},"radius":4}},
+    {"id":6,"layer":1,"z":6,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":20,"y":60},"radius":4}},
+    {"id":7,"layer":1,"z":7,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":100,"y":60},"radius":4}},
+    {"id":8,"layer":1,"z":8,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":30,"y":40},"end":{"x":60,"y":40}}},
+    {"id":9,"layer":1,"z":9,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":60,"y":10},"end":{"x":60,"y":30.000000000000004}}},
+    {"id":11,"layer":1,"z":9,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":60,"y":50},"end":{"x":60,"y":70}}},
+    {"id":10,"layer":1,"z":10,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":60,"y":40},"radius":10}},
+    {"id":12,"layer":1,"z":12,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":70,"y":55},"end":{"x":92,"y":55}}},
+    {"id":13,"layer":1,"z":13,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":95,"y":58},"end":{"x":95,"y":72}}},
+    {"id":14,"layer":1,"z":14,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"arc","center":{"x":92,"y":58},"radius":3,"start":4.71238898038469,"sweep":1.5707963267948966}},
+    {"id":15,"layer":1,"z":15,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":25,"y":72},"end":{"x":43,"y":72}}},
+    {"id":16,"layer":1,"z":16,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":45,"y":70},"end":{"x":45,"y":60}}},
+    {"id":17,"layer":1,"z":17,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":43,"y":72},"end":{"x":45,"y":70}}},
+    {"id":18,"layer":1,"z":18,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":50,"y":55},"end":{"x":28,"y":55}}},
+    {"id":19,"layer":1,"z":19,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":25,"y":58},"end":{"x":25,"y":72}}},
+    {"id":20,"layer":1,"z":20,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"arc","center":{"x":28,"y":58},"radius":3,"start":4.71238898038469,"sweep":-1.5707963267948966}},
+    {"id":21,"layer":1,"z":21,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":60,"y":62},"radius":1.5}},
+    {"id":22,"layer":1,"z":22,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":38,"y":40},"radius":1.5}},
+    {"id":23,"layer":1,"z":23,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":60,"y":18},"radius":1.5}},
+    {"id":24,"layer":1,"z":24,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":82,"y":40},"radius":1.5}},
+    {"id":25,"layer":1,"z":25,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":110.19615242270663,"y":41,"bulge":0},{"x":102,"y":43.19615242270663,"bulge":0},{"x":99.80384757729337,"y":35,"bulge":0},{"x":108,"y":32.80384757729337,"bulge":0}],"closed":true}},
+    {"id":26,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":20.196152422706632,"y":41},"end":{"x":12,"y":43.19615242270663}}},
+    {"id":29,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":12,"y":43.19615242270663},"end":{"x":9.803847577293368,"y":35}}},
+    {"id":30,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":9.803847577293368,"y":35},"end":{"x":18,"y":32.80384757729337}}},
+    {"id":31,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":18,"y":32.80384757729337},"end":{"x":20.196152422706632,"y":41}}},
+    {"id":27,"layer":1,"z":27,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":130,"y":0,"bulge":0},{"x":140,"y":0,"bulge":0},{"x":140,"y":10,"bulge":0}],"closed":false}}
+  ]
+}

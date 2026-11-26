@@ -7,7 +7,8 @@ import { polylineArea, shapeLength, unionBounds, type Bounds, type Shape } from 
 import { entityBounds } from '../core/spatial';
 import type { Actions } from '../app/actions';
 import type { AppState, Store } from '../app/store';
-import { el, icon } from './dom';
+import type { ToolId } from '../core/tools';
+import { el, icon, type IconName } from './dom';
 import { formatCoordinate } from './format';
 
 const f = (n: number) => formatCoordinate(n, 3);
@@ -145,7 +146,42 @@ function styleRows(doc: Doc, e: Entity): [string, string][] {
   ];
 }
 
-export function mountSelectionPanel(root: HTMLElement, store: Store): void {
+/** What the selection panel's buttons do. */
+export interface SelectionActions {
+  tool(id: ToolId): void;
+  join(): void;
+  explode(): void;
+  remove(): void;
+}
+
+/** Buttons that change the selection, shown under its properties. */
+function changeButtons(picked: readonly Entity[], a: SelectionActions): HTMLElement {
+  const anyPolyline = picked.some((e) => e.geom.kind === 'polyline');
+  const items: [string, IconName, () => void, boolean, string?][] = [
+    ['Move', 'move', () => a.tool('move'), true],
+    ['Copy', 'copy', () => a.tool('copy'), true],
+    ['Rotate', 'rotate', () => a.tool('rotate'), true],
+    ['Scale', 'scale', () => a.tool('scale'), true],
+    ['Mirror', 'mirror', () => a.tool('mirror'), true],
+    ['Array', 'array', () => a.tool('array'), true],
+    ['Polar array', 'polarArray', () => a.tool('polarArray'), true],
+    ['Join', 'join', () => a.join(), picked.length >= 2],
+    ['Explode', 'explode', () => a.explode(), anyPolyline],
+    ['Round off', 'corners', () => a.tool('roundCorners'), anyPolyline, 'Round every corner of the selected polylines'],
+    ['Delete', 'remove', () => a.remove(), true],
+  ];
+  return el(
+    'div',
+    { className: 'al-actions', attrs: { role: 'group', 'aria-label': 'Change the selection' } },
+    ...items.map(([label, name, run, enabled, title]) => {
+      const b = el('button', { className: 'al-action', attrs: { type: 'button', ...(title && { title }) }, on: { click: run } }, icon(name), label);
+      b.disabled = !enabled;
+      return b;
+    }),
+  );
+}
+
+export function mountSelectionPanel(root: HTMLElement, store: Store, actions: SelectionActions): void {
   const head = el('span');
   const body = el('div', { className: 'al-panel-body' });
   root.append(el('div', { className: 'al-panel-head' }, el('h2', { text: 'Selection' }), head), body);
@@ -170,6 +206,7 @@ export function mountSelectionPanel(root: HTMLElement, store: Store): void {
         props([['Kind', KIND[e.geom.kind]], ['Id', String(e.id)]], false),
         props(styleRows(doc, e), false),
         props(shapeRows(e.geom)),
+        changeButtons(picked, actions),
       );
       return;
     }
@@ -191,6 +228,7 @@ export function mountSelectionPanel(root: HTMLElement, store: Store): void {
         ['Height', f(b.maxY - b.minY)],
         ['Lower left', `${f(b.minX)}, ${f(b.minY)}`],
       ]),
+      changeButtons(picked, actions),
     );
   };
   render(store.get());

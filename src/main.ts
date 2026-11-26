@@ -20,7 +20,12 @@ const actions = new Actions(store, view);
 const drafting = new DraftingController(store, view, new CursorEntry(requireElement('#al-entry', HTMLElement)));
 
 mountLayersPanel(requireElement('#al-layers-panel', HTMLElement), store, actions);
-mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store);
+mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store, {
+  tool: (id) => drafting.start(id),
+  join: () => actions.joinSelection(),
+  explode: () => actions.explodeSelection(),
+  remove: () => actions.deleteSelection(),
+});
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);
 attachInteraction(store, view, drafting, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });
 installTestHook(store, view, actions);

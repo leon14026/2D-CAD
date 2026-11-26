@@ -146,11 +146,38 @@ box beside the cursor shows what each tool wants next.
 - [ ] **M4.7 Touchpad only.** Draw a polyline with a touchpad: tap to place points, two-finger
       tap (right-click) to finish. Does it work smoothly?
 
+### Phase 5: modify tools
+
+On the live site once PRs #2 to #6 are merged. The Modify group is the lower half of the tool
+rail; select something to see more in the selection panel.
+
+- [ ] **M5.1 Offset, trim, fillet and chamfer on a real outline.** Draw an outline from one of
+      your parts (or load the example). Offset it 2 mm inside (O, type `2`, click the outline,
+      click inside). Round two corners with Fillet (radius 3, click the two lines either side of
+      each corner). Trim a centre line back to a hole (T, click the part to remove). Measure
+      the results in the selection panel against your own working.
+- [ ] **M5.2 Rounding a whole outline.** Press R, type `0,0` Enter and `@100,60` Enter, then Esc.
+      Click the rectangle, then Round off in the selection panel, type `5` Enter. Click it again:
+      length should be **2 × (90 + 50) + 2π × 5 = 311.416**.
+- [ ] **M5.3 Arrays.** Draw a Ø8 hole at `10,10`. Select it, choose Array in the selection panel,
+      and type 4 columns, 3 rows, 20, 15. Expect 12 holes, the last centred at (70, 40). Then
+      try a polar array of 6 round a centre.
+- [ ] **M5.4 Move, copy, rotate, mirror with typed values.** Select something and use each from
+      the selection panel. Base point first, then `@dx,dy` or an angle in degrees. Mirror keeps
+      the original unless you press K. Does each do what you expect?
+- [ ] **M5.5 Join and explode.** Draw three lines end to end. Select them, Join; the selection
+      panel should now show one polyline. Explode it back into three lines.
+- [ ] **M5.6 Mistakes.** Try to trim something nothing crosses, fillet two parallel lines, and
+      offset a small circle inwards by more than its radius. Is each message clear about what
+      went wrong and what to do?
+- [ ] **M5.7 Keys and layout (decision).** M move, O offset, T trim, E extend, Delete deletes.
+      Copy, rotate, mirror and fillet are on the rail; scale, chamfer and the arrays are in the
+      selection panel and the palette. Tell Claude what you'd want on keys or on the rail.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 5:** offset, trim, fillet and chamfer on a real part outline; check by measuring.
 - **Phase 6:** dimension a part and compare every dimension with your own calculation; check that
   the dimension style matches what your courses or co-op use.
 - **Phase 7:** open exported DXF files in LibreCAD and in Onshape or SolidWorks and measure 5

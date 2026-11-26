@@ -304,12 +304,58 @@ Implementation notes (for later phases):
 ### Phase 5 — Modify tools
 
 Builds: move, copy, rotate, scale, mirror, offset, trim, extend, fillet, chamfer, array, join,
-explode.
+explode. Added:
+- rounding or cutting every corner of a polyline at once;
+- delete (Delete key);
+- buttons in the selection panel for everything that works on a selection.
 
 Gate:
-- [ ] Offsets lie exactly at the set distance.
-- [ ] Trimmed and extended ends lie on the boundary edge.
-- [ ] Fillets are tangent at both ends; reference drawings match.
+- [x] Offsets lie exactly at the set distance.
+- [x] Trimmed and extended ends lie on the boundary edge.
+- [x] Fillets are tangent at both ends; reference drawings match.
+
+Implementation notes (for later phases):
+- **Geometry** lives in `src/core/geom`:
+  - `offset.ts`: lines move along their left normal; circles and arcs change radius.
+    - Polylines offset edge by edge, then neighbours are extended or cut back to meet (a
+      mitre). Where they can't meet, or the mitre would be over 100× the distance away, a round
+      join about the original corner fills the gap.
+    - An offset that turns an edge over or shrinks an arc to nothing is refused.
+    - Sides follow the direction of travel: positive is left; a circle's left is its inside.
+  - `cut.ts`: trim and extend work on a path (a shape's curves plus the exact points between
+    them, skipping zero-length polyline edges).
+    - New ends are the computed intersection points themselves.
+    - A circle or closed polyline needs two crossings to trim and becomes one open piece.
+    - Extending carries a line straight on and an arc round its circle.
+  - `corner.ts`: fillet and chamfer for two lines, and for polyline corners between straight
+    edges.
+    - The tangent distance is r (1 + cos θ) / sin θ rather than r / tan(θ/2), and the centre is
+      set square off the first tangent point. Square corners come out exact, and tangency
+      holds by construction.
+  - `chain.ts`: join chains lines, arcs and open polylines end to end in any order and
+    direction, and closes the loop if it returns to its start.
+  - `sweepToBulge` gives exactly ±1 for half turns.
+- **Commands** are in `src/core/doc/edit-commands.ts`:
+  - `entity.offset`, `entity.trim`, `entity.extend`, `entity.fillet`, `entity.chamfer`,
+    `polyline.fillet`, `polyline.chamfer`, `entity.array`, `entity.join` and
+    `entity.explode`.
+  - Shared building blocks are in `command-kit.ts`.
+  - Pieces keep their source's layer, style and draw order; the first piece keeps its id.
+  - Trim cuts back to every shown entity whose bounds touch the target, unless `edges` names
+    them. Extend looks at every shown entity.
+  - One array makes at most 100,000 copies.
+  - Fillet or chamfer of one polyline's two neighbouring edges works on that corner.
+- **Tools** (`src/core/tools/modify.ts`):
+  - Selection tools (move, copy, rotate, scale, mirror, arrays, round or cut every corner) use
+    the current selection, or first ask for one: select, then Enter.
+  - Offset, trim, extend, fillet and chamfer ask for picks (`accepts: 'pick'`); a click picks
+    the nearest object within 6 px. They repeat until Enter or Esc.
+  - Remembered values: offset distance, fillet radius, chamfer distance.
+- **Reference drawing:** `tests/fixtures/modify-reference.ts` uses every modify tool, with typed
+  points and clicks on objects.
+  - Drawn through the engine and again through the real app, it must equal the approved file
+    `tests/fixtures/modify-reference.archilite` exactly, and 25 hand-worked shapes to 1e-9.
+  - Refresh it with `UPDATE_REFERENCES=1 npx vitest run tests/unit/core/tools/modify-reference.test.ts`.
 
 ### Phase 6 — Annotation
 

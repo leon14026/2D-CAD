@@ -11,9 +11,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 4 (precision drafting) complete: draw lines, polylines, circles, arcs,
-rectangles and polygons with exact snaps, tracking and typed coordinates. Phase 5 (modify tools)
-next. See [PROGRESS.md](PROGRESS.md)
+**Status:** Phase 5 (modify tools) complete: move, copy, rotate, scale, mirror, offset, trim,
+extend, fillet, chamfer, arrays, join and explode, on top of Phase 4's precision drafting.
+Phase 6 (annotation) next. See [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
 
@@ -36,6 +36,8 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Type a point | Just start typing: `x,y`, `@dx,dy` (from the last point), `@length<angle`, or one distance along the cursor direction; Enter |
 | Finish or stop a tool | Enter or right-click finishes; Esc stops |
 | Snaps, ortho, tracking | Status bar, or Shift+S, Shift+O, Shift+T; hold Shift for horizontal or vertical |
+| Modify | Lower half of the tool rail, or M move, O offset, T trim, E extend; select something for more in the selection panel |
+| Delete | Delete key or the selection panel; Ctrl+Z brings it back |
 | Panels, grid, lineweights | `[`, `]`, G, W |
 
 Drawings are saved as `.archilite` files on your computer; nothing is uploaded.

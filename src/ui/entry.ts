@@ -64,6 +64,8 @@ export class CursorEntry {
 
   show(content: EntryContent | null): void {
     if (!content) {
+      // Called on every pan and zoom frame with no tool in use: only touch the page if needed.
+      if (this.root.hidden && this.input.value === '') return;
       this.root.hidden = true;
       this.clear();
       return;

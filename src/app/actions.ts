@@ -131,6 +131,29 @@ export class Actions {
     }
   }
 
+  /** Joins the selected pieces into one polyline. */
+  joinSelection(): void {
+    const ids = [...this.store.get().selection];
+    if (ids.length < 2) {
+      this.store.set({ message: { kind: 'error', text: 'Select at least two pieces that meet end to end, then join them.' } });
+      return;
+    }
+    if (this.run('entity.join', { ids })) this.store.set({ selection: new Set([ids[0] as number]) });
+  }
+
+  /** Breaks the selected polylines into separate lines and arcs. */
+  explodeSelection(): void {
+    const ids = [...this.store.get().selection];
+    if (ids.length === 0) return;
+    this.run('entity.explode', { ids });
+  }
+
+  deleteSelection(): void {
+    const ids = [...this.store.get().selection];
+    if (ids.length === 0) return;
+    if (this.run('entity.delete', { ids })) this.store.set({ message: { kind: 'info', text: `Deleted ${ids.length === 1 ? 'one object' : `${ids.length} objects`}. Ctrl+Z brings ${ids.length === 1 ? 'it' : 'them'} back.` } });
+  }
+
   setLayerVisible(id: number, visible: boolean): void {
     this.run('layer.update', { id, visible });
   }

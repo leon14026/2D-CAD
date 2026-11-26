@@ -46,6 +46,23 @@ export const ICONS = {
   arcCenter: ['M2.5 12.5a5.5 5.5 0 0 1 11 0', 'M8 12.5h.01', 'M8 12.5 12 8.7'],
   rectangle: ['M2.5 4h11v8h-11z'],
   polygon: ['M8 2 13.2 5v6L8 14l-5.2-3V5z'],
+  // Modify tools.
+  move: ['M8 1.5v13', 'M1.5 8h13', 'M6 3.5 8 1.5l2 2', 'M6 12.5l2 2 2-2', 'M3.5 6 1.5 8l2 2', 'M12.5 6l2 2-2 2'],
+  copy: ['M2.5 5.5h8v8h-8z', 'M5.5 5.5v-3h8v8h-3'],
+  rotate: ['M13 8a5 5 0 1 1-1.5-3.6', 'M11.8 1.8v2.8H9'],
+  scale: ['M2.5 7.5v6h6', 'M2.5 2.5h11v11', 'M6 10l7.5-7.5', 'M9.5 2.5h4v4'],
+  mirror: ['M8 1.5v13', 'M6 4 2 12h4z', 'M10 4l4 8h-4z'],
+  offset: ['M2 12.5c2-6 10-6 12 0', 'M2 8.5c2-6 10-6 12 0'],
+  trim: ['M2 8h4.5', 'M9.5 8H14', 'M8 2v12', 'M4.5 6l3 4', 'M7.5 6l-3 4'],
+  extend: ['M2 8h8', 'M13 2v12', 'M8 6l2 2-2 2'],
+  fillet: ['M2.5 13.5v-6a5 5 0 0 1 5-5h6'],
+  chamfer: ['M2.5 13.5V7l4.5-4.5h6.5'],
+  array: ['M2.5 2.5h4v4h-4z', 'M9.5 2.5h4v4h-4z', 'M2.5 9.5h4v4h-4z', 'M9.5 9.5h4v4h-4z'],
+  polarArray: ['M8 1.8v.01', 'M14.2 8h-.01', 'M8 14.2v.01', 'M1.8 8h.01', 'M8 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4z'],
+  join: ['M2 12 6 4h4l4 8', 'M5.2 5.6h.01', 'M10.8 5.6h.01'],
+  explode: ['M2 12l4-8', 'M10 4l4 8', 'M7.5 3h1'],
+  remove: ['M3 4.5h10', 'M6.5 4.5V2.5h3v2', 'M4.5 4.5l.7 9h5.6l.7-9'],
+  corners: ['M2.5 13.5v-6a5 5 0 0 1 5-5h6', 'M9 13.5h4.5V9'],
 } as const;
 
 export type IconName = keyof typeof ICONS;
