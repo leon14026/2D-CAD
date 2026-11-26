@@ -1,7 +1,7 @@
 # ArchiLite progress
 
 **Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
-Phase 8 (scripting) is in progress on top of that branch. Next up: Phase 9 (stretch).
+Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (stretch).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -38,14 +38,15 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     bundle. `ws` comes with the npm package for Node tests; the page never loads it.
   - Scripts have no network: JS shadows `fetch`/XHR/WebSocket/Worker; Python patches
     `js.fetch` and `urllib`. The page's `fetch` stays intact so Pyodide can load.
-- Gate (passed locally; CI on the PR):
+- Gate (passed in CI, Ubuntu runner: 70 browser tests; pan 10.3 ms, zoom 15.1 ms per frame):
   - JS and Python examples write identical `.archilite` files (`saveDocument`).
   - JS `fetch` and Python `js.fetch` / `urllib` are refused; the drawing is unchanged.
   - Opening the app, and opening the script panel on JavaScript, does not request
     `/pyodide/`. Size 111.9 KB of 300 KB (Pyodide is 12 MB under `dist/pyodide/`, excluded).
   - 1,142 unit tests; 70 browser tests; `app-window` refreshed for the Script button and
     Phase 8 pill (`--repeat-each=5`). 100% line coverage of `src/core` (branches 99.41%).
-  - Performance with 20,000 entities, GPU off: pan 7.5 ms, zoom 11.5 ms per frame.
+  - Performance with 20,000 entities, GPU off: pan 7.5 ms, zoom 11.5 ms per frame on the
+    workspace; pan 10.3 ms, zoom 15.1 ms on the GitHub runner.
 
 ### 2026-11-26: Phase 10 (DWG import) planned
 
