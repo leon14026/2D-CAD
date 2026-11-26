@@ -11,9 +11,8 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 6 (annotation) built: associative dimensions (linear, aligned, radius, diameter,
-angle) with dimension styles, text, leaders, centre marks, hatching and title blocks, on top of
-Phase 5's modify tools and Phase 4's precision drafting. Phase 7 (import and export) next. See
+**Status:** Phase 7 (import and export) built: DXF in and out, SVG, 1:1 PDF and PNG, on top of
+Phase 6's annotations. Phase 8 (scripting) next. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
@@ -27,7 +26,8 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | To | Do this |
 |---|---|
 | Find any command | Ctrl+K, then type |
-| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing |
+| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite or DXF) |
+| Export | Export button, or Ctrl+K then "Export as DXF / SVG / PDF / PNG" |
 | Zoom | Mouse wheel or pinch (about the cursor); F fits the drawing |
 | Pan | Middle-drag, or hold Space and drag; arrow keys |
 | Select | Click; Shift+click adds or removes |
@@ -53,10 +53,10 @@ GitHub Actions runs every check on each pull request, so local setup is optional
 npm ci
 npm run dev          # local dev server
 npm run ci           # the full Phase gate: typecheck, unit tests, licence gate,
-                     # brand guard, hatch-area oracle, build, size budget, browser tests (GPU disabled)
+                     # brand guard, hatch-area and DXF oracles, build, size budget, browser tests (GPU disabled)
 ```
 
-The hatch-area check needs Python 3 with `shapely` (`pip install shapely`). Browser tests serve
+The oracles need Python 3 with `shapely` and `ezdxf` (`pip install shapely ezdxf`). Browser tests serve
 the built site, so run `npm run build` after changing any source before running them by hand.
 
 Browser tests use Playwright's Chromium (`npx playwright install chromium`). Playwright is pinned to
@@ -69,9 +69,9 @@ Browser tests use Playwright's Chromium (`npx playwright install chromium`). Pla
 | Licence gate | `npm run license:check` | No copyleft or unlicensed dependencies |
 | Brand guard | `npm run brand:check` | No third-party product names in the app |
 | Size budget | `npm run size:check` | Built site ≤ 300 KB gzipped |
-| Browser tests | `npm run test:e2e` | Works in Chromium with no GPU; no console errors; correct coordinates; selection, pan, zoom, layers, palette, open and save behave; the file inspector refuses bad files clearly and never runs file contents as HTML |
+| Browser tests | `npm run test:e2e` | Works in Chromium with no GPU; no console errors; correct coordinates; selection, pan, zoom, layers, palette, open, save and export behave; the file inspector refuses bad files clearly and never runs file contents as HTML |
 | Performance | part of `test:e2e` | 20,000 entities pan and zoom at 30 fps or better with the GPU off |
-| Screenshots | part of `test:e2e` | 7 approved images still match |
+| Screenshots | part of `test:e2e` | approved images still match |
 
 ## Licence
 

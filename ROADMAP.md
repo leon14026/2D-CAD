@@ -58,8 +58,8 @@ no dedicated graphics card.
 ```text
 src/
   core/      geometry kernel, document model, commands  — no DOM; runs in Node, browser or a worker
-  io/        native JSON format, DXF, SVG, PDF, PNG
-  render/    Canvas 2D renderer, viewport transform, spatial index
+  io/        DXF, SVG, PDF (native .archilite stays in core/doc)
+  render/    Canvas 2D renderer, viewport transform, spatial index, PNG export
   ui/        ArchiLite's own interface and design tokens
   script/    JavaScript API and the Pyodide bridge (same commands as the UI)
   app/       wiring, brand constants, entry point
@@ -439,11 +439,24 @@ Implementation notes (for later phases):
 Builds: DXF import and export, SVG, PDF at true scale, PNG.
 
 Gate:
-- [ ] CI Python oracle (`ezdxf` + `shapely`) verifies lengths, areas and positions of every
+- [x] CI Python oracle (`ezdxf` + `shapely`) verifies lengths, areas and positions of every
       exported test drawing.
-- [ ] A 100 mm line in a 1:1 PDF measures 283.4646 pt.
+- [x] A 100 mm line in a 1:1 PDF measures 283.4646 pt.
 - [ ] Manual: open an export in LibreCAD and in Onshape or SolidWorks, measure 5 features, agree to
       0.001 mm.
+
+Implementation notes (for later phases):
+- **`src/io`** holds DXF, SVG and PDF. Native `.archilite` stays in `src/core/doc/file.ts`. PNG
+  uses the Canvas 2D painter (`src/render/png.ts`) because it needs a canvas. No new runtime
+  package: DXF, SVG and PDF are written here. `ezdxf` is CI-only, like `shapely`.
+- **DXF** is the R2000 (AC1015) text form. Geometry is LINE, CIRCLE, ARC and LWPOLYLINE (with
+  bulges). Notes export as the same primitives the screen draws (lines, arrows, text) plus a
+  HATCH whose boundary is the hatch's loops, so areas survive. Import reads those entity types
+  and simple TEXT/MTEXT; anything else is skipped and counted. Binary DXF is refused.
+- **SVG and PDF** are 1:1. One millimetre on the drawing is one millimetre on the page. PDF user
+  space is scaled by `72/25.4` pt per millimetre, so a 100 mm line is 283.4646… pt. PDF text uses
+  Helvetica (a standard PDF font) so the file stays small; the scale is the gate, not the typeface.
+- **Hatch under dimension text** is unchanged: exports match the screen (see Phase 6).
 
 ### Phase 8 — Scripting (JavaScript and Python via Pyodide)
 

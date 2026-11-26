@@ -46,6 +46,10 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     { label: 'Show or hide the selection panel', keys: ']', run: () => actions.toggleSelectionPanel() },
     { label: 'Open a drawing…', keys: 'Ctrl O', run: () => requireElement('#al-file', HTMLInputElement).click() },
     { label: 'Save the drawing', keys: 'Ctrl S', run: () => actions.save() },
+    { label: 'Export as DXF', run: () => actions.exportDxf() },
+    { label: 'Export as SVG', run: () => actions.exportSvg() },
+    { label: 'Export as PDF (1:1)', run: () => actions.exportPdf() },
+    { label: 'Export as PNG', run: () => void actions.exportPng() },
     { label: 'Load the example bracket', run: () => void actions.loadExample() },
     { label: 'Load the large test drawing (20,000 entities)', run: () => void actions.loadExample(true) },
     { label: 'Start a new drawing', run: () => actions.newDrawing() },
@@ -55,6 +59,57 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
       { label: `${l.locked ? 'Unlock' : 'Lock'} layer ${l.name}`, run: () => actions.setLayerLocked(l.id, !l.locked) },
     ]),
   ];
+}
+
+function exportMenu(actions: Actions): HTMLElement {
+  const menu = el('div', { className: 'al-menu', attrs: { role: 'menu', hidden: '' } });
+  const items: { label: string; run: () => void }[] = [
+    { label: 'Export as DXF', run: () => actions.exportDxf() },
+    { label: 'Export as SVG', run: () => actions.exportSvg() },
+    { label: 'Export as PDF (1:1)', run: () => actions.exportPdf() },
+    { label: 'Export as PNG', run: () => void actions.exportPng() },
+  ];
+  for (const item of items) {
+    menu.append(
+      el('button', {
+        className: 'al-menu-item',
+        text: item.label,
+        attrs: { type: 'button', role: 'menuitem' },
+        on: {
+          click: () => {
+            menu.setAttribute('hidden', '');
+            item.run();
+          },
+        },
+      }),
+    );
+  }
+  const wrap = el('div', { className: 'al-menu-wrap' });
+  const button = el(
+    'button',
+    {
+      className: 'al-button',
+      attrs: { type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
+      on: {
+        click: () => {
+          const open = menu.hasAttribute('hidden');
+          if (open) menu.removeAttribute('hidden');
+          else menu.setAttribute('hidden', '');
+          button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        },
+      },
+    },
+    icon('export'),
+    'Export',
+  );
+  wrap.append(button, menu);
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target as Node)) {
+      menu.setAttribute('hidden', '');
+      button.setAttribute('aria-expanded', 'false');
+    }
+  });
+  return wrap;
 }
 
 export function mountShell(store: Store, actions: Actions, drafting: DraftingController, build: string): CommandPalette {
@@ -84,6 +139,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   requireElement('#al-file-actions', HTMLElement).append(
     el('button', { className: 'al-button', attrs: { type: 'button' }, on: { click: () => fileInput.click() } }, icon('open'), 'Open'),
     el('button', { className: 'al-button al-button-primary', attrs: { type: 'button' }, on: { click: () => actions.save() } }, icon('save'), 'Save'),
+    exportMenu(actions),
   );
   fileInput.addEventListener('change', () => {
     const file = fileInput.files?.[0];
@@ -95,7 +151,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   const empty = requireElement('#al-empty', HTMLElement);
   empty.append(
     el('h2', { text: 'Open a drawing to start' }),
-    el('p', { text: 'Open an .archilite file, drop one here, or look around the example bracket.' }),
+    el('p', { text: 'Open an ArchiLite or DXF file, drop one here, or look around the example bracket.' }),
     el(
       'div',
       { className: 'al-group' },
