@@ -56,6 +56,68 @@ test('export as PDF and SVG from the command palette', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('a DXF INSERT is exploded into geometry you can select', async ({ page }) => {
+  await page.goto('./?test');
+  await page.locator('#al-file').setInputFiles({
+    name: 'insert.dxf',
+    mimeType: 'application/dxf',
+    buffer: Buffer.from(
+      [
+        '0',
+        'SECTION',
+        '2',
+        'BLOCKS',
+        '0',
+        'BLOCK',
+        '2',
+        'BAR',
+        '10',
+        '0',
+        '20',
+        '0',
+        '0',
+        'LINE',
+        '8',
+        '0',
+        '10',
+        '0',
+        '20',
+        '0',
+        '11',
+        '40',
+        '21',
+        '0',
+        '0',
+        'ENDBLK',
+        '0',
+        'ENDSEC',
+        '0',
+        'SECTION',
+        '2',
+        'ENTITIES',
+        '0',
+        'INSERT',
+        '8',
+        '0',
+        '2',
+        'BAR',
+        '10',
+        '0',
+        '20',
+        '0',
+        '0',
+        'ENDSEC',
+        '0',
+        'EOF',
+        '',
+      ].join('\n'),
+    ),
+  });
+  await expect(page.locator('#al-toast')).toContainText('Opened');
+  expect((await state(page)).entities).toBe(1);
+  await expect(page.locator('#al-count')).toContainText('1 entit');
+});
+
 test('a DXF with %%u room names opens without the underline codes', async ({ page }) => {
   await page.goto('./?test');
   await page.locator('#al-file').setInputFiles({

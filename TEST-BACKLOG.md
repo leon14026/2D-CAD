@@ -253,9 +253,9 @@ as well as `.archilite`.
       status bar says mm but the rooms are in feet-and-inches, click the unit (or Ctrl+K
       "Treat drawing units as inches") so a 672 wall reads as inches, not millimetres — the
       numbers stay put. Hover a long xref layer name; the tooltip is the full name. A new
-      linear dimension on a wall should measure the geometry you picked. Original CAD
-      dimensions, hatches and block inserts (fixtures) are still left out; the toast says
-      how many.
+      linear dimension on a wall should measure the geometry you picked. Kitchen and bath
+      fixtures that were block inserts should be there as lines, arcs and circles. Original
+      dimensions and hatches are still left out; the toast says how many.
 
 ### Phase 8: scripting
 

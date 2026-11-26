@@ -2,9 +2,8 @@
 
 **Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
 Phase 8 (scripting) is in review (#9). Phase 9 (blocks, sheets, constraints) is in review on
-top of that branch. A follow-up on Phase 9 polishes DXF text codes, the units control, and
-layer-name tooltips ([#13](https://github.com/leon14026/2D-CAD/pull/13)). Merge #8 then #9
-then #12 first.
+top of that branch. Follow-ups: DXF text/units/layer tooltips (#13), and exploding DXF
+block inserts. Merge #8 then #9 then #12 then #13 first.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -25,6 +24,14 @@ then #12 first.
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: DXF INSERT explode
+
+- Follow-up on #13: kitchen and bath fixtures on the floorplan DXF were INSERT and were
+  skipped. Import now reads the BLOCKS section and explodes INSERT (including nested
+  inserts) into LINE/CIRCLE/ARC/LWPOLYLINE/TEXT/MTEXT. Missing blocks, cycles, and
+  non-uniform X/Y scale are skipped and counted. DIMENSION and HATCH stay skipped.
+  The same floorplan now opens as 916 entities and 98 notes, with 89 objects left out.
 
 ### 2026-11-26: DXF text codes, units control, layer-name tooltips
 

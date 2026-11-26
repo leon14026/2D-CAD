@@ -4,7 +4,8 @@
  * Export writes a text DXF that other CAD programs can open: lines, circles, arcs,
  * polylines (with bulges), layers, and annotations as the same line work the screen
  * draws. Import reads those entity types back; TEXT/MTEXT drop %% underline
- * toggles and turn %%c / %%d / %%p into Ø / ° / ±. Anything else is skipped and counted.
+ * toggles and turn %%c / %%d / %%p into Ø / ° / ±. Block INSERT is exploded into those
+ * same types (nested inserts included). Anything else is skipped and counted.
  *
  * The writer targets the R2000 (AC1015) text form. Binary DXF is refused.
  */
@@ -31,18 +32,27 @@ import {
   type Note,
 } from '../core/doc';
 import {
+  ORIGIN,
   arc as makeArc,
   ccwSweep,
   convertLength,
   degToRad,
+  mirror,
   normalizeAngle,
   polyline,
   radToDeg,
+  rotate,
+  scaleAbout,
   segment,
   circle as makeCircle,
+  tolFor,
+  transformPoint,
+  transformShape,
+  translate,
   type LengthUnit,
   type Loop,
   type Shape,
+  type Transform,
   type Vec2,
 } from '../core/geom';
 import { aciToHex, hexToAci } from './color';
@@ -182,6 +192,12 @@ function layerNameFromDxf(name: string): string {
   return trimmed.slice(0, 64);
 }
 
+/** Layer 0 (and ArchiLite's Default) takes the INSERT's layer when exploding. */
+function isDxfLayerZero(name: string): boolean {
+  const trimmed = name.trim();
+  return trimmed === '' || trimmed === '0' || trimmed.toLowerCase() === DEFAULT_LAYER_NAME.toLowerCase();
+}
+
 interface DxfLayer {
   name: string;
   color: string;
@@ -201,6 +217,12 @@ interface DxfEntity {
   pairs: Pair[];
 }
 
+interface DxfBlock {
+  name: string;
+  base: Vec2;
+  entities: DxfEntity[];
+}
+
 function pushVal(map: Map<number, string[]>, code: number, value: string): void {
   const list = map.get(code);
   if (list) list.push(value);
@@ -216,22 +238,51 @@ function allVal(map: Map<number, string[]>, code: number): string[] {
   return map.get(code) ?? [];
 }
 
-function parseTablesAndEntities(pairs: Pair[]): { layers: DxfLayer[]; entities: DxfEntity[]; units: LengthUnit; skipped: number } {
+function parseTablesAndEntities(pairs: Pair[]): {
+  layers: DxfLayer[];
+  entities: DxfEntity[];
+  blocks: Map<string, DxfBlock>;
+  units: LengthUnit;
+  skipped: number;
+} {
   let section = '';
   let table = '';
   let inEntities = false;
   const layers: DxfLayer[] = [];
   const entities: DxfEntity[] = [];
+  const blocks = new Map<string, DxfBlock>();
+  let currentBlock: DxfBlock | null = null;
+  let target: DxfEntity[] = entities;
   let units: LengthUnit = 'mm';
   let skipped = 0;
   let current: DxfEntity | null = null;
   let polyline: DxfEntity | null = null;
   let headerVar = '';
 
+  const saveBlock = (): void => {
+    if (currentBlock?.name) blocks.set(currentBlock.name.toLowerCase(), currentBlock);
+    currentBlock = null;
+    target = entities;
+  };
+
   const flush = (): void => {
     if (!current) return;
+    if (current.type === 'BLOCK') {
+      const name = (lastVal(current.values, 2) ?? '').trim();
+      let base: Vec2 = ORIGIN;
+      try {
+        base = xy(current.values, 10, 20, 'BLOCK base');
+      } catch {
+        base = ORIGIN;
+      }
+      const block: DxfBlock = { name, base, entities: [] };
+      currentBlock = block;
+      target = block.entities;
+      current = null;
+      return;
+    }
     if (current.type === 'SEQEND') {
-      if (polyline) entities.push(polyline);
+      if (polyline) target.push(polyline);
       polyline = null;
       current = null;
       return;
@@ -259,10 +310,11 @@ function parseTablesAndEntities(pairs: Pair[]): { layers: DxfLayer[]; entities: 
       current.type === 'ARC' ||
       current.type === 'LWPOLYLINE' ||
       current.type === 'TEXT' ||
-      current.type === 'MTEXT'
+      current.type === 'MTEXT' ||
+      current.type === 'INSERT'
     ) {
-      entities.push(current);
-    } else if (KNOWN_ENTITIES.has(current.type) || current.type.length > 0) {
+      target.push(current);
+    } else if (!currentBlock && (KNOWN_ENTITIES.has(current.type) || current.type.length > 0)) {
       skipped += 1;
     }
     current = null;
@@ -296,11 +348,22 @@ function parseTablesAndEntities(pairs: Pair[]): { layers: DxfLayer[]; entities: 
       if (type === 'ENDSEC') {
         flush();
         if (polyline) {
-          entities.push(polyline);
+          target.push(polyline);
           polyline = null;
         }
+        saveBlock();
         inEntities = false;
         section = '';
+        continue;
+      }
+      if (type === 'ENDBLK') {
+        flush();
+        if (polyline) {
+          target.push(polyline);
+          polyline = null;
+        }
+        saveBlock();
+        current = null;
         continue;
       }
       if (type === 'TABLE') {
@@ -337,7 +400,7 @@ function parseTablesAndEntities(pairs: Pair[]): { layers: DxfLayer[]; entities: 
         });
         continue;
       }
-      if (inEntities) {
+      if (inEntities || section === 'BLOCKS') {
         flush();
         current = { type, layer: '0', color: BY_LAYER, linetype: undefined, lineweight: undefined, values: new Map(), pairs: [] };
         continue;
@@ -368,16 +431,21 @@ function parseTablesAndEntities(pairs: Pair[]): { layers: DxfLayer[]; entities: 
     }
   }
   flush();
-  if (polyline) entities.push(polyline);
+  if (polyline) target.push(polyline);
+  saveBlock();
 
-  for (const e of entities) {
-    const s = styleOf(e.values);
-    e.layer = s.layer;
-    e.color = s.color;
-    e.linetype = s.linetype;
-    e.lineweight = s.lineweight;
-  }
-  return { layers, entities, units, skipped };
+  const styleEntities = (list: DxfEntity[]): void => {
+    for (const e of list) {
+      const s = styleOf(e.values);
+      e.layer = s.layer;
+      e.color = s.color;
+      e.linetype = s.linetype;
+      e.lineweight = s.lineweight;
+    }
+  };
+  styleEntities(entities);
+  for (const b of blocks.values()) styleEntities(b.entities);
+  return { layers, entities, blocks, units, skipped };
 }
 
 function xy(values: Map<number, string[]>, xCode: number, yCode: number, path: string): Vec2 {
@@ -529,6 +597,123 @@ function textNote(e: DxfEntity, layerId: number, id: number): Note | null {
   };
 }
 
+function applySteps(steps: readonly Transform[], s: Shape): Shape {
+  let g = s;
+  for (const t of steps) g = transformShape(t, g);
+  return canonicalShape(g);
+}
+
+/** Uniform INSERT transform, or null when X/Y scales differ (would need ellipses). */
+function insertSteps(e: DxfEntity, base: Vec2): Transform[] | null {
+  const sx = Number(lastVal(e.values, 41) ?? '1');
+  const sy = Number(lastVal(e.values, 42) ?? '1');
+  if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx === 0 || sy === 0) return null;
+  const mag = Math.max(1, Math.abs(sx), Math.abs(sy));
+  if (Math.abs(Math.abs(sx) - Math.abs(sy)) > tolFor(mag)) return null;
+  const rot = degToRad(Number(lastVal(e.values, 50) ?? '0') || 0);
+  let at: Vec2;
+  try {
+    at = xy(e.values, 10, 20, 'INSERT');
+  } catch {
+    return null;
+  }
+  const steps: Transform[] = [];
+  if (base.x !== 0 || base.y !== 0) steps.push(translate(-base.x, -base.y));
+  if (sx < 0) steps.push(mirror(ORIGIN, { x: 0, y: 1 }));
+  if (sy < 0) steps.push(mirror(ORIGIN, { x: 1, y: 0 }));
+  const k = Math.abs(sx);
+  if (k !== 1) steps.push(scaleAbout(ORIGIN, k));
+  if (rot !== 0) steps.push(rotate(ORIGIN, rot));
+  if (at.x !== 0 || at.y !== 0) steps.push(translate(at.x, at.y));
+  return steps;
+}
+
+type FlatPiece =
+  | {
+      kind: 'shape';
+      geom: Shape;
+      layer: string;
+      color: ColorRef;
+      linetype: LinetypeRef | undefined;
+      lineweight: LineweightRef | undefined;
+    }
+  | {
+      kind: 'text';
+      layer: string;
+      color: ColorRef;
+      lineweight: LineweightRef | undefined;
+      at: Vec2;
+      height: number;
+      angle: number;
+      anchor: 'left' | 'center' | 'right';
+      text: string;
+    };
+
+function explodeList(
+  entities: readonly DxfEntity[],
+  blocks: Map<string, DxfBlock>,
+  visiting: Set<string>,
+): { pieces: FlatPiece[]; skipped: number } {
+  const pieces: FlatPiece[] = [];
+  let skipped = 0;
+  for (const e of entities) {
+    if (e.type === 'INSERT') {
+      const key = (lastVal(e.values, 2) ?? '').trim().toLowerCase();
+      if (key === '' || visiting.has(key)) {
+        skipped += 1;
+        continue;
+      }
+      const block = blocks.get(key);
+      const steps = block ? insertSteps(e, block.base) : null;
+      if (!block || !steps) {
+        skipped += 1;
+        continue;
+      }
+      visiting.add(key);
+      const inner = explodeList(block.entities, blocks, visiting);
+      skipped += inner.skipped;
+      visiting.delete(key);
+      const sx = Math.abs(Number(lastVal(e.values, 41) ?? '1') || 1);
+      const rot = degToRad(Number(lastVal(e.values, 50) ?? '0') || 0);
+      for (const p of inner.pieces) {
+        const layer = isDxfLayerZero(p.layer) ? e.layer : p.layer;
+        if (p.kind === 'shape') {
+          pieces.push({ ...p, layer, geom: applySteps(steps, p.geom) });
+          continue;
+        }
+        let at = p.at;
+        for (const t of steps) at = transformPoint(t, at);
+        pieces.push({ ...p, layer, at: { x: at.x + 0, y: at.y + 0 }, height: p.height * sx, angle: p.angle + rot });
+      }
+      continue;
+    }
+    if (e.type === 'TEXT' || e.type === 'MTEXT') {
+      const note = textNote(e, 0, 0);
+      if (note && note.body.kind === 'text') {
+        pieces.push({
+          kind: 'text',
+          layer: e.layer,
+          color: e.color,
+          lineweight: e.lineweight,
+          at: note.body.at,
+          height: note.body.height,
+          angle: note.body.angle,
+          anchor: note.body.anchor,
+          text: note.body.text,
+        });
+      } else skipped += 1;
+      continue;
+    }
+    const geom = shapeFromEntity(e);
+    if (!geom) {
+      skipped += 1;
+      continue;
+    }
+    pieces.push({ kind: 'shape', geom, layer: e.layer, color: e.color, linetype: e.linetype, lineweight: e.lineweight });
+  }
+  return { pieces, skipped };
+}
+
 /** Reads a text DXF into an ArchiLite document. Unknown objects are skipped, not fatal. */
 export function importDxf(text: string): DxfImport {
   const pairs = pairsOf(text);
@@ -579,29 +764,29 @@ export function importDxf(text: string): DxfImport {
 
   const entities = new Map<number, Entity>();
   const notes = new Map<number, Note>();
-  let skipped = parsed.skipped;
-  for (const e of parsed.entities) {
-    if (e.type === 'TEXT' || e.type === 'MTEXT') {
-      const id = nextId++;
-      const note = textNote(e, layerId(e.layer), id);
-      if (note) notes.set(id, note);
-      else skipped += 1;
-      continue;
-    }
-    const geom = shapeFromEntity(e);
-    if (!geom) {
-      skipped += 1;
-      continue;
-    }
+  const exploded = explodeList(parsed.entities, parsed.blocks, new Set());
+  let skipped = parsed.skipped + exploded.skipped;
+  for (const p of exploded.pieces) {
     const id = nextId++;
+    if (p.kind === 'text') {
+      notes.set(id, {
+        id,
+        layer: layerId(p.layer),
+        z: id,
+        color: p.color,
+        lineweight: p.lineweight ?? BY_LAYER,
+        body: { kind: 'text', at: p.at, height: p.height, angle: p.angle, anchor: p.anchor, text: p.text },
+      });
+      continue;
+    }
     entities.set(id, {
       id,
-      layer: layerId(e.layer),
+      layer: layerId(p.layer),
       z: id,
-      color: e.color,
-      linetype: e.linetype ?? BY_LAYER,
-      lineweight: e.lineweight ?? BY_LAYER,
-      geom,
+      color: p.color,
+      linetype: p.linetype ?? BY_LAYER,
+      lineweight: p.lineweight ?? BY_LAYER,
+      geom: p.geom,
     });
   }
 
