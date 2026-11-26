@@ -31,8 +31,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests
-        run: npm test
+      - name: Unit and property tests, with kernel coverage gate
+        run: npm run test:coverage
 
       - name: Licence gate
         run: npm run license:check

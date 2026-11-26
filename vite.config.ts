@@ -48,5 +48,17 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',
+    coverage: {
+      provider: 'v8',
+      // The kernel must be fully covered (ROADMAP Phase 1 gate).
+      include: ['src/core/**/*.ts'],
+      reporter: ['text', 'html'],
+      thresholds: {
+        lines: 100,
+        statements: 100,
+        functions: 100,
+        branches: 95,
+      },
+    },
   },
 });

@@ -4,7 +4,9 @@ ArchiLite is a lightweight, browser-based 2D CAD application for engineering dra
 entirely in the browser from a static site (GitHub Pages), processes everything locally, and needs
 no dedicated graphics card.
 
-**Stage:** Phase 0 (foundations and compliance)
+**Stage:** see [PROGRESS.md](PROGRESS.md) for where the project stands and
+[TEST-BACKLOG.md](TEST-BACKLOG.md) for the owner's manual tests. Working conventions for Claude are in
+[CLAUDE.md](CLAUDE.md).
 
 ## Decisions (recorded 2026-11-25)
 
@@ -102,7 +104,7 @@ Gate:
 - [x] Licence gate tests prove a GPL dependency is rejected.
 - [x] Browser test: the built page loads in Chromium with the GPU disabled, the canvas draws, and
       there are no console errors.
-- [ ] The GitHub Pages URL loads.
+- [x] The GitHub Pages URL loads (https://leon14026.github.io/2D-CAD/).
 
 ### Phase 1 — Geometry kernel (no UI)
 
@@ -110,10 +112,26 @@ Builds: vectors and points, lines, circles, arcs, polylines with bulges, interse
 and angles, transforms, tolerance model, units.
 
 Gate:
-- [ ] 150+ unit tests with hand-calculated answers, accurate to 1e-9.
-- [ ] Property tests (10,000 random cases each): rotate 360° is identity; mirror twice is identity;
-      move then move back is identity; intersection points lie on both curves.
-- [ ] 100% line coverage of the kernel.
+- [x] 150+ unit tests with hand-calculated answers, accurate to 1e-9 (254).
+- [x] Property tests (10,000 random cases each): rotate 360° is identity; mirror twice is identity;
+      move then move back is identity; intersection points lie on both curves (16 properties).
+- [x] 100% line coverage of the kernel (enforced in CI).
+- [x] Architecture guard: `src/core` imports nothing outside itself and uses no DOM globals.
+
+Implementation notes (for later phases):
+- Shapes are immutable plain objects: `segment`, `circle`, `arc` (start angle in [0, 2π) plus a
+  signed sweep, positive = counter-clockwise, 0 < |sweep| < 2π) and `polyline` (vertices with
+  DXF-style bulges). Constructors validate input and throw `RangeError`.
+- Bulge `b` on edge p1→p2: sweep = 4·atan(b); radius = c(1 + b²) / (4|b|) for chord length c;
+  centre = midpoint + perp(p2 − p1) × (1 − b²) / (4b), where perp is the left normal.
+- `cosSin` snaps to exact values at whole quarter turns (window `QUARTER_TURN_SNAP` = 1e-14
+  relative), so rotating by 90° gives exact coordinates.
+- Circle–circle intersections use Kahan's stable Heron formula (`triangleHeight`), which stays
+  accurate for near-tangent circles.
+- Points are projected onto circles with a scaled normalisation that stays accurate for tiny
+  (subnormal) offsets; property tests found the naive version overflowing and losing precision.
+- Overlapping curves (collinear segments, arcs on the same circle) report the endpoints of either
+  curve that lie on the other.
 
 ### Phase 2 — Document model, native file format, commands
 
