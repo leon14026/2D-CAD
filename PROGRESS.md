@@ -12,7 +12,7 @@ precision drafting (the first drawing tools).
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
-| 3. Viewer | Done, gate passed locally; awaiting CI and merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
+| 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
 | 4. Precision drafting | Not started | — | — |
 | 5. Modify tools | Not started | — | — |
 | 6. Annotation | Not started | — | — |
@@ -79,6 +79,11 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     screenshot. A wrong first guess (the runner's Ubuntu version) was tried and reverted.
   - CI now prints failed screenshots into the job log, since the report artifact can't be
     downloaded from the workspace.
+- **Gate passed in CI** (Ubuntu 26.04 runner): 37 browser tests, all 7 screenshots matching.
+  With 20,000 entities and the GPU off, pan averaged 23.7 ms per frame (42 fps) and zoom
+  25.9 ms (39 fps), against a budget of 33.3 ms; the app was ready in 574 ms. Across the five
+  CI runs, pan ranged from 17.2 to 30.9 ms and zoom from 18.7 to 27.2 ms, so GitHub's
+  machines vary by run.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

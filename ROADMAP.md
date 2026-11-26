@@ -187,13 +187,13 @@ crossing selection, ArchiLite UI shell and design system v0. Added:
 - a 20,000-entity test drawing generated at build time.
 
 Gate:
-- [ ] GPU-disabled Chromium: 20,000-entity drawing pans and zooms at ≥ 30 fps (average frame
+- [x] GPU-disabled Chromium: 20,000-entity drawing pans and zooms at ≥ 30 fps (average frame
       ≤ 33.3 ms, every entity on screen, timed until the pixels are ready).
-- [ ] Selection returns the correct entity IDs for window and crossing boxes (hand cases,
+- [x] Selection returns the correct entity IDs for window and crossing boxes (hand cases,
       10,000-case property tests against brute force, and real mouse drags in the browser).
-- [ ] Screenshot comparison tests pass (7 approved images).
-- [ ] Cold start to interactive ≤ 2 s.
-- [ ] 100% line coverage of `src/core` (now including `spatial`).
+- [x] Screenshot comparison tests pass (7 approved images).
+- [x] Cold start to interactive ≤ 2 s.
+- [x] 100% line coverage of `src/core` (now including `spatial`).
 
 Implementation notes (for later phases):
 - **Spatial index:** `src/core/spatial`.
