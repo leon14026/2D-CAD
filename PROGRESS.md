@@ -14,7 +14,7 @@ Phase 8, scripting (JavaScript and Python via Pyodide).
 | 4. Precision drafting | Done | [#5](https://github.com/leon14026/2D-CAD/pull/5) | 2026-11-26 |
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
-| 7. Import and export | In progress | — | — |
+| 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
 
