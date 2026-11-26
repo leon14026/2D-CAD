@@ -17,7 +17,7 @@ top of that branch. Merge #8 then #9 first.
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
 | 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
-| 9. Blocks, sheets, constraints (stretch) | In progress | — | — |
+| 9. Blocks, sheets, constraints (stretch) | In progress | [#12](https://github.com/leon14026/2D-CAD/pull/12) | — |
 | 10. DWG import (read only) | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
@@ -27,7 +27,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 ### 2026-11-26: Phase 9 (blocks, sheets, constraints) started
 
 - Phase 8's PR #9 is still open, so this branch starts from
-  `cursor/phase-8-scripting-487f`. Merge #8 then #9 first.
+  `cursor/phase-8-scripting-487f`. Merge #8 then #9 first. This phase is PR #12.
 - Built:
   - **Sheets.** Named paper sizes (`Sheet 1` by default). Membership is `obj.sheet ??` the
     first sheet. Status bar button cycles sheets; command palette adds and switches.
