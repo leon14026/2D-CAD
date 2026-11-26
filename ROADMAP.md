@@ -310,9 +310,9 @@ explode. Added:
 - buttons in the selection panel for everything that works on a selection.
 
 Gate:
-- [ ] Offsets lie exactly at the set distance.
-- [ ] Trimmed and extended ends lie on the boundary edge.
-- [ ] Fillets are tangent at both ends; reference drawings match.
+- [x] Offsets lie exactly at the set distance.
+- [x] Trimmed and extended ends lie on the boundary edge.
+- [x] Fillets are tangent at both ends; reference drawings match.
 
 Implementation notes (for later phases):
 - **Geometry** lives in `src/core/geom`:

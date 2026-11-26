@@ -15,7 +15,7 @@ Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1),
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
 | 4. Precision drafting | Done, gate passed in CI; awaiting merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
-| 5. Modify tools | Done, gate passed locally; awaiting CI and merge | [#6](https://github.com/leon14026/2D-CAD/pull/6) | — |
+| 5. Modify tools | Done, gate passed in CI; awaiting merge | [#6](https://github.com/leon14026/2D-CAD/pull/6) | — |
 | 6. Annotation | Not started | — | — |
 | 7. Import and export | Not started | — | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
@@ -49,7 +49,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     tools are on the rail, in the selection panel and in the command palette.
   - Mirror keeps the originals unless K is pressed.
   - Fillet's default radius is 0, which joins two lines in a sharp corner.
-- Gate (passed locally):
+- Gate (passed in CI, Ubuntu 26.04 runner: 53 browser tests; pan 10.9 ms, zoom 15.6 ms per frame):
   - **Offsets:** 10,000-case property tests. Each offset line, circle and arc is at exactly the
     set distance. Each edge of an offset convex polygon, inwards and outwards, is the distance
     from its own edge, and no part of the offset comes closer.
