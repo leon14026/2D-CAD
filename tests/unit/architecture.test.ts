@@ -18,6 +18,14 @@ function files(dir: string): string[] {
 
 const DOM_GLOBALS = /\b(document|window|navigator|HTMLElement|HTMLCanvasElement|CanvasRenderingContext2D|requestAnimationFrame|localStorage)\b/;
 
+/** Source with comments and string literals blanked: they may say "window" (window selection). */
+function codeOnly(text: string): string {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+    .replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''");
+}
+
 describe('core architecture', () => {
   const sources = files(CORE);
 
@@ -35,10 +43,14 @@ describe('core architecture', () => {
     }
   });
 
+  it('the DOM check ignores comments and strings but catches real use', () => {
+    expect(codeOnly("const mode = 'window'; // drag a window box")).not.toMatch(DOM_GLOBALS);
+    expect(codeOnly('const w = window.innerWidth;')).toMatch(DOM_GLOBALS);
+    expect(codeOnly('const t = `${document.title}`; const d = document;')).toMatch(DOM_GLOBALS);
+  });
+
   it.each(sources.map((f) => [relative(process.cwd(), f), f]))('%s uses no DOM globals', (_name, file) => {
-    const code = readFileSync(file, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/\/\/.*$/gm, '');
+    const code = codeOnly(readFileSync(file, 'utf8'));
     expect(code).not.toMatch(DOM_GLOBALS);
   });
 });

@@ -11,8 +11,11 @@ import { gzipSync } from 'node:zlib';
 
 export const BUDGET_BYTES = 300 * 1024;
 
-/** Paths (relative to dist, forward slashes) that load only on demand. */
-export const ON_DEMAND = [/^pyodide\//];
+/**
+ * Paths (relative to dist, forward slashes) that load only on demand: the Python runtime
+ * (Phase 8) and the example drawings, which are fetched only when someone opens them.
+ */
+export const ON_DEMAND = [/^pyodide\//, /^examples\//];
 
 /**
  * @param {string} dir

@@ -1,14 +1,23 @@
 /**
- * ArchiLite drawing-area palette: warm drafting-vellum paper, graphite ink.
- * Original to ArchiLite. Shared by the renderer and the browser tests.
+ * ArchiLite drawing-area palette: matte drafting film, graphite ink, layout-fluid blue for the
+ * selection and brass for the crossing box. Original to ArchiLite. Matches the tokens in
+ * theme.css; shared by the renderer and the browser tests.
  */
 export const palette = {
-  paper: '#f4f1ea',
-  gridMinor: '#e7e2d7',
-  gridMajor: '#d2cab9',
+  paper: '#e9edeb',
+  gridMinor: '#dde2df',
+  gridMajor: '#c8d0cc',
   axisX: '#b5452f',
   axisY: '#2f7d55',
   origin: '#1f2a33',
+  /** Selected entities and the window-selection box. */
+  selection: '#2a3fb0',
+  /** The crossing-selection box. */
+  crossing: '#a8740f',
+  /** Steel rules along the drawing area's edges. */
+  ruler: '#d7dcdf',
+  rulerInk: '#3d4a52',
+  rulerLine: '#c9d0d4',
 } as const;
 
 export type PaletteKey = keyof typeof palette;

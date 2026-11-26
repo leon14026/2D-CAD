@@ -38,8 +38,22 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
   phase's code before that.
 - **Before opening or updating a phase PR**, update `ROADMAP.md`, `PROGRESS.md`, `TEST-BACKLOG.md`,
   the README status line and the phase label in `index.html` (`.al-pill`).
-- Run the whole gate locally before pushing: `npm run ci`. In the cloud workspace, Chrome is at
-  `/usr/bin/google-chrome`, so run `CHROME_PATH=/usr/bin/google-chrome npm run ci`.
+- Run the whole gate locally before pushing: `npm run ci`. The cloud workspace already has
+  Playwright's Chromium at `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`; its CDN is blocked, so
+  don't try `npx playwright install` there.
+- **Playwright is pinned to 1.63.0** (Chromium 153.0.8010.12), the build both the cloud workspace
+  and CI use, so screenshot baselines match exactly. Don't upgrade it unless the workspace's
+  Chromium changes. If you do, regenerate the baselines
+  (`npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`) and look at every
+  image before committing.
+- **Text must render the same everywhere** for screenshots to match, so `playwright.config.ts`
+  launches Chromium with `TEXT_SWITCHES` (`--font-render-hinting=none --disable-lcd-text
+  --force-color-profile=srgb`) and its own font setup (`tests/e2e/fonts.conf`: Liberation as
+  the only system fonts). The workspace's Chromium is a wrapper script that adds those switches
+  by itself; GitHub's runner uses the stock browser, so never drop them from the config. Any
+  text that changes per build (the build label) gets a fixed value before a screenshot.
+- When a browser test fails in CI, the actual and diff screenshots are printed in the job log
+  as base64 PNGs (the report artifact can't be downloaded from the workspace).
 - After pushing, wait for the PR's "Phase gate" check to pass before reporting done.
 
 ### Commit and PR text
@@ -72,9 +86,13 @@ npm run ci                # all of the above, in CI order
 src/core/      pure TypeScript: no DOM, no imports from outside src/core, no packages
   geom/        geometry kernel (Phase 1)
   doc/         document model, commands, undo/redo, file format (Phase 2)
-src/render/    Canvas 2D drawing
-src/ui/        ArchiLite interface, design tokens (theme.css, palette.ts)
-src/app/       wiring; brand.ts holds the product name (the only place it is defined)
+  spatial/     R-tree index, window/crossing/pick selection (Phase 3)
+src/render/    Canvas 2D: scene.ts (entities), view.ts (canvases), rulers, grid, viewport maths
+src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
+               panels, command palette
+src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
+               palette list), interaction.ts (mouse), testing.ts (?test hook);
+               brand.ts holds the product name (the only place it is defined)
 src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
 public/        static files copied to the site as-is (examples/bracket.archilite)
 docs/          file-format.md: the .archilite format, kept in step with src/core/doc/file.ts
@@ -98,6 +116,29 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - A file-format change must bump `FILE_VERSION` if older versions could misread it, and must update
   `docs/file-format.md` and the example (`UPDATE_EXAMPLES=1 npx vitest run tests/unit/core/doc/example.test.ts`).
 - Each new page is listed in `build.rollupOptions.input` in `vite.config.ts` and gets its own browser tests.
+- Every user action goes in `src/app/actions.ts` and, if it changes the drawing, through a
+  document command, so it can be undone. Then give it a key or a command-palette entry in
+  `src/app/shell.ts`.
+
+## Design system (v0, Phase 3)
+
+- Use the tokens in `src/ui/theme.css` and colours in `src/ui/palette.ts`. Don't add one-off
+  colours.
+- B612 is the only typeface shipped. Its digits are all one width, so it serves for numbers too.
+  Code-like text uses the system monospace font.
+- Copy is in sentence case, in plain words that describe what happens ("Load the example", not
+  "Submit"). No ALL-CAPS labels and no "A · B" middle-dot strings.
+- Icons are ArchiLite's own line drawings in `src/ui/dom.ts` (16 × 16, 1.6 stroke).
+- The steel rulers are the one bold element. Keep everything else quiet.
+- Look at screenshots of any visual change before committing it.
+
+## Performance rules
+
+- In software rendering, line width dominates drawing cost: a hairline is about 5 times cheaper
+  than a 2 px line, and rounded ends triple the cost again. Keep square ends, and keep the
+  hairline and level-of-detail rules in `src/render/scene.ts`.
+- `tests/e2e/performance.spec.ts` is the gate: 20,000 entities, average frame ≤ 33.3 ms with the
+  GPU off. Run it after any rendering change and quote its numbers in the PR.
 
 ## Testing conventions
 

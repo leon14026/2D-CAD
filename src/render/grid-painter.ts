@@ -23,15 +23,24 @@ function crisp(cssPx: number, dpr: number): number {
  * Paints paper, grid and axes using plain Canvas 2D calls. Works with or
  * without GPU acceleration: no WebGL, no WebGPU, no shaders.
  */
-export function paintSheet(surface: Surface, vp: Viewport): void {
+export function paintSheet(surface: Surface, vp: Viewport, showGrid = true): void {
   const { ctx, width, height, dpr } = surface;
   const devW = Math.round(width * dpr);
   const devH = Math.round(height * dpr);
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.setLineDash([]);
   ctx.fillStyle = palette.paper;
   ctx.fillRect(0, 0, devW, devH);
 
+  if (showGrid) paintGrid(surface, vp);
+  paintAxes(surface, vp);
+}
+
+function paintGrid(surface: Surface, vp: Viewport): void {
+  const { ctx, width, height, dpr } = surface;
+  const devW = Math.round(width * dpr);
+  const devH = Math.round(height * dpr);
   const spacing = chooseGridSpacing(vp.pxPerUnit, MIN_MINOR_GAP_PX);
   const every = majorEvery(spacing);
   const topLeft = screenToWorld(vp, { x: 0, y: 0 });
@@ -58,7 +67,12 @@ export function paintSheet(surface: Surface, vp: Viewport): void {
     }
     ctx.stroke();
   }
+}
 
+function paintAxes(surface: Surface, vp: Viewport): void {
+  const { ctx, width, height, dpr } = surface;
+  const devW = Math.round(width * dpr);
+  const devH = Math.round(height * dpr);
   const ox = crisp(vp.originX, dpr);
   const oy = crisp(vp.originY, dpr);
 

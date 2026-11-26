@@ -17,11 +17,12 @@ source and licence.
 
 ## Shipped third-party material
 
-None yet. The interface uses system font stacks; no font files are bundled.
-
 | Item | Author | Source | Licence | Notes |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| B612 typeface (regular and bold, Latin subset, WOFF2) | The B612 Project Authors | [polarsys/b612](https://github.com/polarsys/b612), packaged as `@fontsource/b612` 5.3.0 | SIL Open Font License 1.1 | The interface typeface, designed for aircraft cockpit displays. Licence text shipped at `/licenses/B612-OFL-1.1.txt`. Unmodified; not sold on its own. |
+
+No other third-party code, icons or images ship. ArchiLite's icons are original line drawings
+defined in `src/ui/dom.ts`.
 
 ## Licence texts
 
@@ -29,3 +30,4 @@ None yet. The interface uses system font stacks; no font files are bundled.
 |---|---|
 | `LICENSE-APACHE` | Standard text of the Apache License, Version 2.0 (Apache Software Foundation), without the appendix. |
 | `LICENSE-MIT` | Standard text of the MIT License. |
+| `public/licenses/B612-OFL-1.1.txt` | The B612 copyright notice and the SIL Open Font License 1.1, copied unchanged from `@fontsource/b612`. |

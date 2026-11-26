@@ -2,6 +2,7 @@
 
 body.al-inspect {
   display: block;
+  background: var(--al-film);
   overflow: auto;
   min-height: 100%;
 }
@@ -11,7 +12,7 @@ body.al-inspect .al-bar {
 }
 
 .al-link {
-  color: var(--al-accent);
+  color: var(--al-blue);
   font-weight: 600;
   text-decoration: none;
 }
@@ -35,7 +36,7 @@ body.al-inspect .al-bar {
 }
 
 .al-panel {
-  background: var(--al-surface);
+  background: var(--al-chrome);
   border: 1px solid var(--al-rule);
   border-radius: 8px;
   padding: 14px 16px 16px;
@@ -45,16 +46,13 @@ body.al-inspect .al-bar {
 .al-panel h1 {
   margin: 0 0 6px;
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .al-panel h2 {
   margin: 18px 0 6px;
-  font-size: 12px;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--al-ink-muted);
+  font-size: var(--al-text);
+  font-weight: 700;
 }
 
 .al-hint {
@@ -76,7 +74,7 @@ body.al-inspect .al-bar {
   padding: 0 12px;
   border: 1px solid var(--al-rule);
   border-radius: 6px;
-  background: var(--al-bg);
+  background: var(--al-film);
   color: var(--al-ink);
   font: inherit;
   font-weight: 600;
@@ -84,22 +82,23 @@ body.al-inspect .al-bar {
 }
 
 .al-button:hover {
-  border-color: var(--al-accent);
+  border-color: var(--al-blue);
 }
 
 .al-button:focus-visible {
-  outline: 2px solid var(--al-accent);
+  outline: 2px solid var(--al-blue);
   outline-offset: 2px;
 }
 
 .al-primary {
-  background: var(--al-accent);
-  border-color: var(--al-accent);
+  background: var(--al-blue);
+  border-color: var(--al-blue);
   color: #ffffff;
 }
 
 #al-text {
   width: 100%;
+  font-family: var(--al-font-mono);
   min-height: 460px;
   resize: vertical;
   padding: 10px;
@@ -118,8 +117,8 @@ body.al-inspect .al-bar {
 }
 
 .al-verdict-ok {
-  background: var(--al-accent-soft);
-  color: var(--al-accent);
+  background: var(--al-blue-soft);
+  color: var(--al-blue);
 }
 
 .al-verdict-bad {

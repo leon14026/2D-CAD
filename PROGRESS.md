@@ -1,8 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phase 2 (document model) is built and in review as
-[PR #3](https://github.com/leon14026/2D-CAD/pull/3). Merge [PR #2](https://github.com/leon14026/2D-CAD/pull/2)
-(Phase 1) first, then PR #3. Next up: Phase 3, the viewer.
+**Now:** Phase 3 (viewer) is built and in review as [PR #4](https://github.com/leon14026/2D-CAD/pull/4).
+Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1), then
+[PR #3](https://github.com/leon14026/2D-CAD/pull/3) (Phase 2), then PR #4. Next up: Phase 4,
+precision drafting (the first drawing tools).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -11,7 +12,7 @@
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
-| 3. Viewer | Not started | — | — |
+| 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
 | 4. Precision drafting | Not started | — | — |
 | 5. Modify tools | Not started | — | — |
 | 6. Annotation | Not started | — | — |
@@ -22,6 +23,67 @@
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-25: Phase 3 (viewer) complete, PR #4
+
+- Built:
+  - The first usable app: open, view, pan, zoom and select drawings.
+  - Spatial index (`src/core/spatial`) with window, crossing and pick selection.
+  - Canvas 2D renderer with culling, batching and level of detail.
+  - Steel-rule rulers.
+  - Layers panel: show, hide, lock and set current, all undoable.
+  - Selection properties panel.
+  - Command palette (Ctrl+K), keyboard shortcuts, open, save and drag-and-drop.
+  - A 20,000-entity test drawing, generated at build time.
+- Design system v0: drafting film, graphite, layout-fluid blue, brass, and the B612 typeface
+  (OFL-1.1), the first third-party item shipped. Added to `NOTICE` and `ATTRIBUTION.md`, with
+  its licence text.
+- Gate (passed locally):
+  - 20,000 entities with the GPU disabled: pan about 20 ms per frame (45–53 fps), zoom about
+    23 ms (41–43 fps). Budget: 33.3 ms.
+  - Selection correct in hand cases, in 10,000-case property tests against brute force, and
+    with real mouse drags.
+  - 7 approved screenshots.
+  - Cold start under 2 s.
+  - 100% line coverage of `src/core`.
+  - The app downloads as 64 KB.
+- Found and fixed while building:
+  - **Speed:** thick lines with rounded ends made 20,000-entity frames take 55–70 ms in software
+    rendering. Square ends, hairlines under 1.5 px and hairlines for shapes under 16 px on
+    screen brought frames to about 20 ms.
+  - **Selection:** a property test caught the spatial-index pre-filter missing a shape that
+    sat exactly on a box edge (within tolerance).
+  - **Legibility:** B612 Mono puts its decimal point at the left of a wide slot ("5978. 540"), so
+    it was dropped. B612's own digits are all one width.
+  - **Design:** the warm cream paper colour from earlier phases is the most common
+    AI-generated default, so it was replaced with a cool drafting-film colour.
+  - **Architecture guard:** it flagged the word "window" (window selection) inside a string;
+    it now ignores comments and strings, with a test proving it still catches real use.
+  - **Performance test:** it let the drawing drift off screen, so frames looked cheaper than
+    they were. Each timing run now starts fitted and swings back and forth.
+- Playwright is pinned to 1.63.0 so CI uses the same Chromium build (153) as the screenshot
+  baselines.
+- **First CI run:** everything passed except the whole-window screenshot, where 6,385 pixels
+  of text differed. In CI, pan averaged 30.9 ms and zoom 27.2 ms, within the 33.3 ms budget
+  (GitHub's runners are slower than the workspace).
+  - Cause, found by printing CI's screenshot into the job log and comparing: the
+    workspace's Chromium is a wrapper script that silently adds
+    `--font-render-hinting=none --disable-lcd-text --force-color-profile=srgb`, and GitHub's
+    runner runs the stock browser. Every piece of text came out slightly wider in CI; lines
+    and shapes matched exactly. Running the unwrapped browser here reproduced CI's 5,236
+    differing pixels exactly.
+  - Smaller causes: the workspace swaps in its own fonts (Anonymous Pro for Consolas, Inter
+    for sans-serif), and the build label's commit id differs per build.
+  - Fix: `playwright.config.ts` now passes those switches itself and points Chromium at its
+    own font setup (`tests/e2e/fonts.conf`); the build label gets a fixed text in that
+    screenshot. A wrong first guess (the runner's Ubuntu version) was tried and reverted.
+  - CI now prints failed screenshots into the job log, since the report artifact can't be
+    downloaded from the workspace.
+- **Gate passed in CI** (Ubuntu 26.04 runner): 37 browser tests, all 7 screenshots matching.
+  With 20,000 entities and the GPU off, pan averaged 23.7 ms per frame (42 fps) and zoom
+  25.9 ms (39 fps), against a budget of 33.3 ms; the app was ready in 574 ms. Across the five
+  CI runs, pan ranged from 17.2 to 30.9 ms and zoom from 18.7 to 27.2 ms, so GitHub's
+  machines vary by run.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

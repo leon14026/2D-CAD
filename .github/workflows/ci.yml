@@ -52,6 +52,17 @@ jobs:
       - name: Browser tests (GPU disabled)
         run: npm run test:e2e
 
+      # The report artifact can't be downloaded from the cloud workspace, so failed
+      # screenshots are also printed here as base64 PNGs, readable through the logs API.
+      - name: Print failed screenshots to the log
+        if: failure()
+        run: |
+          find test-results -name '*-actual.png' -o -name '*-diff.png' | sort | while read -r f; do
+            echo "::group::screenshot $f"
+            base64 -w 1000 "$f"
+            echo "::endgroup::"
+          done
+
       - name: Upload browser test report
         if: failure()
         uses: actions/upload-artifact@v7

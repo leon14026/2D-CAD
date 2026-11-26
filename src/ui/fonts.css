@@ -1,0 +1,20 @@
+/*
+ * B612 (SIL Open Font License 1.1, The B612 Project Authors; see
+ * ATTRIBUTION.md and /licenses/). Latin subset, WOFF2 only: every browser ArchiLite supports
+ * reads WOFF2, so the older WOFF copies are not shipped.
+ */
+@font-face {
+  font-family: 'B612';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/b612/files/b612-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'B612';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@fontsource/b612/files/b612-latin-700-normal.woff2') format('woff2');
+}

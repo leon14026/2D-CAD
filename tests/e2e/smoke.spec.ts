@@ -39,9 +39,10 @@ async function countPaletteColours(page: Page): Promise<Record<PaletteKey, numbe
 test('loads with its own name and no console errors', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('./');
-  await expect(page).toHaveTitle(APP_NAME);
+  // The window title names the drawing, then the app.
+  await expect(page).toHaveTitle(`Untitled – ${APP_NAME}`);
   await expect(page.locator('#al-name')).toHaveText(APP_NAME);
-  await expect(page.locator('#al-build')).toHaveText(/^v\d+\.\d+\.\d+ · \S+$/);
+  await expect(page.locator('#al-build')).toHaveText(/^v\d+\.\d+\.\d+ \(\S+\)$/);
   expect(errors).toEqual([]);
 });
 
@@ -93,10 +94,10 @@ test('cursor readout reports world coordinates in mm, y up', async ({ page }) =>
   await expect(page.locator('#al-coord-x')).toHaveText('10.000');
   await expect(page.locator('#al-coord-y')).toHaveText('5.000');
 
-  // 25 mm left and 12.5 mm down.
-  await page.mouse.move(box.x + ox - 25 * scale, box.y + oy + 12.5 * scale);
+  // 25 mm left and 12.5 mm up (over the empty-state card's text, which lets the cursor through).
+  await page.mouse.move(box.x + ox - 25 * scale, box.y + oy - 12.5 * scale);
   await expect(page.locator('#al-coord-x')).toHaveText('-25.000');
-  await expect(page.locator('#al-coord-y')).toHaveText('-12.500');
+  await expect(page.locator('#al-coord-y')).toHaveText('12.500');
 });
 
 test('redraws correctly after the window is resized', async ({ page }) => {
