@@ -10,6 +10,8 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Engineering-grade accuracy.** Real units, true arcs, exact snaps, dimensions measured from
   geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
+- **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
+  open one. Until then, export DXF from the other program and open that.
 
 **Status:** Phase 7 (import and export) built: DXF in and out, SVG, 1:1 PDF and PNG, on top of
 Phase 6's annotations. Phase 8 (scripting) next. See

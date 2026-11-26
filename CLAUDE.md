@@ -18,7 +18,8 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
 2. **No dedicated GPU.** Canvas 2D only. Never use WebGL or WebGPU. Browser tests run in Chromium with
    `--disable-gpu --disable-software-rasterizer`.
 3. **Lightweight.** ≤ 300 KB gzipped (enforced by `npm run size:check`). Zero runtime dependencies unless a
-   phase justifies one and it passes the strict licence allowlist. Pyodide (Phase 8) loads only on demand.
+   phase justifies one and it passes the strict licence allowlist. Pyodide (Phase 8) and the DWG decoder
+   (Phase 10, `cadkit-wasm`) load only on demand and are outside that 300 KB.
 4. **Original design.** ArchiLite's own name, palette, icons and layout. Command palette and cursor-side
    coordinate entry, not a ribbon or bottom command line. Do not imitate AutoCAD's look.
 5. **Clean licensing.** MIT OR Apache-2.0. Never add: GPL/AGPL/LGPL code; Autodesk names in the product

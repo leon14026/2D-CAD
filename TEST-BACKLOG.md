@@ -256,3 +256,6 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
 - **Phase 8:** run the example Python scripts on the work laptop. Check that the first Python load
   is acceptable and later loads are fast.
 - **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
+- **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
+  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
+  paper space). Until this phase, use DXF.

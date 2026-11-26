@@ -17,10 +17,22 @@ Phase 8, scripting (JavaScript and Python via Pyodide).
 | 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
+| 10. DWG import (read only) | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 10 (DWG import) planned
+
+- Decision, not code. DWG import is its own phase. It is read only, and it is not next
+  (Phase 8 is next).
+- Method: on-demand `cadkit-wasm` (MIT OR Apache-2.0), pinned when the phase is built.
+  LibreDWG and libdxfrw stay out (GPL). No cloud converter, and no DWG decoder written in
+  this repo. ArchiLite maps model-space lines, circles, arcs, polylines and text the same
+  way DXF import does, and explodes block inserts. The gate and the 3 MB on-demand budget
+  are in `ROADMAP.md`.
+- Until that phase, export DXF from the other program and open that.
 
 ### 2026-11-26: Phase 7 (import and export) started
 
