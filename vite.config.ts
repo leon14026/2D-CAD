@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { APP_NAME } from './src/app/brand.ts';
@@ -44,6 +45,12 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        inspect: fileURLToPath(new URL('./inspect.html', import.meta.url)),
+      },
+    },
   },
   test: {
     include: ['tests/unit/**/*.test.ts'],

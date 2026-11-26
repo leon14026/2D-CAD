@@ -75,6 +75,9 @@ src/core/      pure TypeScript: no DOM, no imports from outside src/core, no pac
 src/render/    Canvas 2D drawing
 src/ui/        ArchiLite interface, design tokens (theme.css, palette.ts)
 src/app/       wiring; brand.ts holds the product name (the only place it is defined)
+src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
+public/        static files copied to the site as-is (examples/bracket.archilite)
+docs/          file-format.md: the .archilite format, kept in step with src/core/doc/file.ts
 tests/unit/    Vitest; tests/unit/core mirrors src/core
 tests/e2e/     Playwright browser tests
 scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc types)
@@ -89,6 +92,12 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Every user action is a named command in the command registry (from Phase 2). The UI, keyboard,
   scripts and tests all go through it.
 - Numbers stored in documents never include `-0`, `NaN` or `±Infinity`.
+- Untrusted input (files, script parameters) is read only through `src/core/doc/validate.ts`
+  readers, which report a path to the bad value. Pages render untrusted text with `textContent`,
+  never `innerHTML`.
+- A file-format change must bump `FILE_VERSION` if older versions could misread it, and must update
+  `docs/file-format.md` and the example (`UPDATE_EXAMPLES=1 npx vitest run tests/unit/core/doc/example.test.ts`).
+- Each new page is listed in `build.rollupOptions.input` in `vite.config.ts` and gets its own browser tests.
 
 ## Testing conventions
 

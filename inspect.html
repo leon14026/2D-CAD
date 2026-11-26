@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="%APP_NAME% file inspector: check a drawing file and see what it contains." />
+    <meta name="color-scheme" content="light" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAyMCAyMCc+PHJlY3QgeD0nMi41JyB5PScyLjUnIHdpZHRoPScxNScgaGVpZ2h0PScxNScgcng9JzInIGZpbGw9JyNmYmZhZjYnIHN0cm9rZT0nIzFmMmEzMycgc3Ryb2tlLXdpZHRoPScxLjYnLz48cGF0aCBkPSdNNSAxNSAxNSA1JyBzdHJva2U9JyMwZTdjN2InIHN0cm9rZS13aWR0aD0nMS42JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48Y2lyY2xlIGN4PScxMCcgY3k9JzEwJyByPScyJyBmaWxsPScjMGU3YzdiJy8+PC9zdmc+"
+    />
+    <title>%APP_NAME% · File inspector</title>
+  </head>
+  <body class="al-inspect">
+    <header class="al-bar">
+      <div class="al-brand">
+        <svg class="al-mark" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2.5" y="2.5" width="15" height="15" rx="2" fill="#fbfaf6" stroke="#1f2a33" stroke-width="1.6" />
+          <path d="M5 15 15 5" stroke="#0e7c7b" stroke-width="1.6" stroke-linecap="round" />
+          <circle cx="10" cy="10" r="2" fill="#0e7c7b" />
+        </svg>
+        <span id="al-name">%APP_NAME%</span>
+      </div>
+      <span class="al-pill">File inspector</span>
+      <span class="al-spacer"></span>
+      <a class="al-link" href="./">Back to the drawing</a>
+    </header>
+    <main class="al-inspect-main">
+      <section class="al-panel" aria-labelledby="al-source-title">
+        <h1 id="al-source-title">Drawing file</h1>
+        <p class="al-hint">
+          Open a <code>.archilite</code> file, load the example, or paste and edit the text, then press Check.
+          Nothing leaves your computer.
+        </p>
+        <div class="al-actions">
+          <label class="al-button">
+            Open file…
+            <input id="al-file" type="file" accept=".archilite,.json,application/json" hidden />
+          </label>
+          <button id="al-example" class="al-button" type="button">Load example</button>
+          <button id="al-check" class="al-button al-primary" type="button">Check</button>
+        </div>
+        <textarea id="al-text" spellcheck="false" aria-label="Drawing file text"></textarea>
+      </section>
+      <section class="al-panel" aria-labelledby="al-result-title">
+        <h1 id="al-result-title">Result</h1>
+        <div id="al-result" aria-live="polite">
+          <p class="al-hint">No file checked yet.</p>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/inspect/main.ts"></script>
+  </body>
+</html>

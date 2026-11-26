@@ -1,0 +1,31 @@
+{
+  "format": "archilite",
+  "version": 1,
+  "title": "Example bracket",
+  "units": "mm",
+  "currentLayer": 2,
+  "nextId": 21,
+  "layers": [
+    {"id":2,"name":"Outline","color":"#1f2a33","linetype":"continuous","lineweight":0.5,"visible":true,"locked":false},
+    {"id":3,"name":"Holes","color":"#0e7c7b","linetype":"continuous","lineweight":0.35,"visible":true,"locked":false},
+    {"id":4,"name":"Centre lines","color":"#b5452f","linetype":"dash-dot","lineweight":0.18,"visible":true,"locked":false}
+  ],
+  "entities": [
+    {"id":5,"layer":2,"z":5,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":5,"y":0,"bulge":0},{"x":95,"y":0,"bulge":0.41421356237309503},{"x":100,"y":5,"bulge":0},{"x":100,"y":55,"bulge":0.41421356237309503},{"x":95,"y":60,"bulge":0},{"x":5,"y":60,"bulge":0.41421356237309503},{"x":0,"y":55,"bulge":0},{"x":0,"y":5,"bulge":0.41421356237309503}],"closed":true}},
+    {"id":6,"layer":3,"z":6,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":10,"y":10},"radius":4}},
+    {"id":7,"layer":3,"z":7,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":90,"y":10},"radius":4}},
+    {"id":8,"layer":3,"z":8,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":90,"y":50},"radius":4}},
+    {"id":9,"layer":3,"z":9,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":10,"y":50},"radius":4}},
+    {"id":10,"layer":3,"z":10,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":40,"y":25,"bulge":0},{"x":60,"y":25,"bulge":1},{"x":60,"y":35,"bulge":0},{"x":40,"y":35,"bulge":1}],"closed":true}},
+    {"id":11,"layer":4,"z":11,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":4,"y":10},"end":{"x":16,"y":10}}},
+    {"id":12,"layer":4,"z":12,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":10,"y":4},"end":{"x":10,"y":16}}},
+    {"id":13,"layer":4,"z":13,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":84,"y":10},"end":{"x":96,"y":10}}},
+    {"id":14,"layer":4,"z":14,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":90,"y":4},"end":{"x":90,"y":16}}},
+    {"id":15,"layer":4,"z":15,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":84,"y":50},"end":{"x":96,"y":50}}},
+    {"id":16,"layer":4,"z":16,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":90,"y":44},"end":{"x":90,"y":56}}},
+    {"id":17,"layer":4,"z":17,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":4,"y":50},"end":{"x":16,"y":50}}},
+    {"id":18,"layer":4,"z":18,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":10,"y":44},"end":{"x":10,"y":56}}},
+    {"id":19,"layer":4,"z":19,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":32,"y":30},"end":{"x":68,"y":30}}},
+    {"id":20,"layer":4,"z":20,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":50,"y":22},"end":{"x":50,"y":38}}}
+  ]
+}

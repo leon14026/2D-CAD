@@ -11,11 +11,13 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 1 (geometry kernel) complete; Phase 2 in progress. See [PROGRESS.md](PROGRESS.md)
+**Status:** Phase 2 (document model and file format) complete; Phase 3 (viewer) next. See [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
 
-**Live site:** https://leon14026.github.io/2D-CAD/
+**Live site:** https://leon14026.github.io/2D-CAD/ · [file inspector](https://leon14026.github.io/2D-CAD/inspect.html)
+
+**File format:** [docs/file-format.md](docs/file-format.md) (`.archilite`, plain JSON)
 
 ## Development
 
@@ -39,7 +41,7 @@ to an installed Chrome.
 | Licence gate | `npm run license:check` | No copyleft or unlicensed dependencies |
 | Brand guard | `npm run brand:check` | No third-party product names in the app |
 | Size budget | `npm run size:check` | Built site ≤ 300 KB gzipped |
-| Browser tests | `npm run test:e2e` | Works in Chromium with no GPU; no console errors; correct coordinates |
+| Browser tests | `npm run test:e2e` | Works in Chromium with no GPU; no console errors; correct coordinates; the file inspector accepts good files, refuses bad ones with clear messages, and never runs file contents as HTML |
 
 ## Licence
 

@@ -1,7 +1,8 @@
 # ArchiLite progress
 
-**Now:** Phase 2 (document model) in progress on branch `phase-2-document-model`.
-Phase 1 is complete and waiting for you to merge [PR #2](https://github.com/leon14026/2D-CAD/pull/2).
+**Now:** Phase 2 (document model) is built and in review as
+[PR #3](https://github.com/leon14026/2D-CAD/pull/3). Merge [PR #2](https://github.com/leon14026/2D-CAD/pull/2)
+(Phase 1) first, then PR #3. Next up: Phase 3, the viewer.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -9,7 +10,7 @@ Phase 1 is complete and waiting for you to merge [PR #2](https://github.com/leon
 |---|---|---|---|
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
-| 2. Document model, file format, commands | In progress | — | — |
+| 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Not started | — | — |
 | 4. Precision drafting | Not started | — | — |
 | 5. Modify tools | Not started | — | — |
@@ -21,6 +22,30 @@ Phase 1 is complete and waiting for you to merge [PR #2](https://github.com/leon
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-25: Phase 2 (document model) complete, PR #3
+
+- Built `src/core/doc`:
+  - Drawings with layers and entities, sharing one id space.
+  - Colours, ArchiLite's own linetypes (ISO 128-20 proportions) and ISO lineweights, each
+    settable per layer or per entity.
+  - 11 validated commands, with undo/redo that stores only the changes (limit 1,000 steps).
+  - The `.archilite` file format: canonical JSON, one layer or entity per line, versioned, strict
+    validation with errors that name the exact field.
+- Also added:
+  - An example bracket drawing, built entirely by commands.
+  - The file-format guide (`docs/file-format.md`).
+  - A file inspector page (`/inspect.html`) for checking files in the browser.
+- Gate (passed in CI):
+  - 10,000 random documents round-trip exactly.
+  - 20 sequences of 1,000 random edits undo and redo exactly, checked at every step.
+  - 35+ named malformed files are refused with clear messages.
+  - 20,000 randomly damaged files either load cleanly or are refused; none crash.
+  - 100% line coverage of `src/core`.
+- Found while building:
+  - The inspector's error box reused the main page's status-bar class name and rendered sideways.
+  - The extents printed "-0.000".
+  - Both fixed; a browser test now guards the second.
 
 ### 2026-11-25: Phase 2 started
 
