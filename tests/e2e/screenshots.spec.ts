@@ -63,6 +63,18 @@ test('20,000 entities, fitted', async ({ page }) => {
   await expect(page).toHaveScreenshot('bracket-grid-20k.png', { clip: await drawingClip(page) });
 });
 
+test('drawing a line: the preview, a snap marker and the box beside the cursor', async ({ page }) => {
+  await openExample(page);
+  await page.keyboard.press('l');
+  await page.keyboard.type('30,64');
+  await page.keyboard.press('Enter');
+  // Near where the upper-right hole meets its horizontal centre line.
+  const p = await toPage(page, 86.3, 49.6);
+  await page.mouse.move(p.x, p.y);
+  await expect(page.locator('.al-entry-readout')).toBeVisible();
+  await expect(page).toHaveScreenshot('drafting-line-snap.png', { clip: await drawingClip(page) });
+});
+
 test('the whole window: panels, rulers and status bar', async ({ page }) => {
   await openExample(page);
   await dragWorld(page, [58, 36], [42, 24]);

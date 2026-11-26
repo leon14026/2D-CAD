@@ -37,6 +37,8 @@
     <main id="al-stage" class="al-stage">
       <canvas id="al-canvas" aria-hidden="true"></canvas>
       <canvas id="al-overlay" aria-label="Drawing area"></canvas>
+      <nav id="al-tools" class="al-rail" aria-label="Tools"></nav>
+      <div id="al-entry" class="al-entry" hidden></div>
       <div id="al-empty" class="al-empty" hidden></div>
     </main>
 
@@ -52,8 +54,11 @@
       <span id="al-count"></span>
       <button id="al-grid-toggle" class="al-status-toggle" type="button" aria-pressed="true">Grid</button>
       <button id="al-weight-toggle" class="al-status-toggle" type="button" aria-pressed="true">Lineweights</button>
+      <button id="al-snap-toggle" class="al-status-toggle" type="button" aria-pressed="true" title="Snap to exact points on the drawing (Shift S)">Snaps</button>
+      <button id="al-ortho-toggle" class="al-status-toggle" type="button" aria-pressed="false" title="Horizontal and vertical only (Shift O, or hold Shift)">Ortho</button>
+      <button id="al-polar-toggle" class="al-status-toggle" type="button" aria-pressed="true" title="Follow lines at set angles from the last point (Shift T)">Tracking</button>
       <span class="al-spacer"></span>
-      <span class="al-pill">Phase 3: viewer</span>
+      <span class="al-pill">Phase 4: precision drafting</span>
       <a class="al-status-link" href="./inspect.html">File inspector</a>
       <span id="al-build"></span>
     </footer>

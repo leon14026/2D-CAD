@@ -62,13 +62,40 @@ interface Style {
   readonly dash: readonly number[];
 }
 
+const drawOrderCache = new WeakMap<Doc, readonly Entity[]>();
+
+/** Every entity in drawing order, sorted once per document. */
+function drawOrder(doc: Doc): readonly Entity[] {
+  let list = drawOrderCache.get(doc);
+  if (!list) {
+    list = [...doc.entities.values()].sort(compareDrawOrder);
+    drawOrderCache.set(doc, list);
+  }
+  return list;
+}
+
 /** Entities to draw this frame, in drawing order, on visible layers. */
 function visibleEntities(doc: Doc, vp: Viewport, width: number, height: number): { list: Entity[]; culled: number } {
   const index = DocIndex.of(doc);
   const view = visibleWorld(vp, width, height);
-  const hits = index.query(view);
   const shownLayers = new Set(doc.layers.filter((l) => l.visible).map((l) => l.id));
-  const list = hits.filter((e) => shownLayers.has(e.layer)).sort(compareDrawOrder);
+  const shown = (e: Entity) => shownLayers.has(e.layer);
+  // Everything on screen (as after "zoom to fit"): no need to search the index.
+  const all = index.bounds;
+  if (all && all.minX >= view.minX && all.maxX <= view.maxX && all.minY >= view.minY && all.maxY <= view.maxY) {
+    return { list: drawOrder(doc).filter(shown), culled: 0 };
+  }
+  const hits = index.query(view);
+  // With most of the drawing on screen, filtering the cached order beats sorting what's visible.
+  const list =
+    hits.length * 2 > doc.entities.size
+      ? hits.length === doc.entities.size
+        ? drawOrder(doc).filter(shown)
+        : (() => {
+            const hit = new Set(hits);
+            return drawOrder(doc).filter((e) => hit.has(e) && shown(e));
+          })()
+      : hits.filter(shown).sort(compareDrawOrder);
   return { list, culled: doc.entities.size - hits.length };
 }
 
@@ -121,16 +148,32 @@ export function drawScene(surface: Surface, vp: Viewport, doc: Doc, options: Sce
   const X = (x: number) => ox + x * s;
   const Y = (y: number) => oy - y * s;
 
+  // Most entities take every style from their layer: those are cached by layer, size and
+  // selection, without building a text key for each entity.
+  const byLayerCache = new Map<number, Style>();
   const styleOf = (e: Entity, small: boolean): Style => {
+    const selected = options.selection.has(e.id);
+    const plain = e.color === 'byLayer' && e.linetype === 'byLayer' && e.lineweight === 'byLayer';
+    const quick = plain ? e.layer * 4 + (small ? 2 : 0) + (selected ? 1 : 0) : -1;
+    if (plain) {
+      const cached = byLayerCache.get(quick);
+      if (cached) return cached;
+    }
+    const style = fullStyle(e, small, selected);
+    if (plain) byLayerCache.set(quick, style);
+    return style;
+  };
+  const fullStyle = (e: Entity, small: boolean, selected: boolean): Style => {
     const layer = layers.get(e.layer) as Layer;
     const color = e.color === 'byLayer' ? layer.color : e.color;
     const linetype = e.linetype === 'byLayer' ? layer.linetype : e.linetype;
     const lineweight = e.lineweight === 'byLayer' ? layer.lineweight : e.lineweight;
-    const selected = options.selection.has(e.id);
     const weightPx = lineweight * PX_PER_MM;
     const base = options.lineweights && !small && weightPx >= HAIRLINE_BELOW_PX ? weightPx : 1;
     const width = (selected ? base + 2 : base) * dpr;
-    const key = `${color}|${linetype}|${lineweight}|${width}|${selected ? 1 : 0}`;
+    // A dash pattern can't be made out on a shape this small, and dashes are slow to draw.
+    const solid = small || LINETYPES[linetype].pattern.length === 0;
+    const key = `${color}|${solid ? 'solid' : linetype}|${lineweight}|${width}|${selected ? 1 : 0}`;
     let style = styleCache.get(key);
     if (!style) {
       const unit = Math.max(1, weightPx) * dpr;
@@ -138,7 +181,7 @@ export function drawScene(surface: Surface, vp: Viewport, doc: Doc, options: Sce
         key,
         color: selected ? palette.selection : color,
         width,
-        dash: LINETYPES[linetype].pattern.map((p) => Math.max(1, p * unit)),
+        dash: solid ? [] : LINETYPES[linetype].pattern.map((p) => Math.max(1, p * unit)),
       };
       styleCache.set(key, style);
     }
@@ -165,7 +208,7 @@ export function drawScene(surface: Surface, vp: Viewport, doc: Doc, options: Sce
     const w = (b.maxX - b.minX) * s;
     const h = (b.maxY - b.minY) * s;
     const style = styleOf(e, w < thinBelow && h < thinBelow);
-    if (style.key !== current?.key) {
+    if (style !== current && style.key !== current?.key) {
       flush();
       current = style;
       ctx.beginPath();

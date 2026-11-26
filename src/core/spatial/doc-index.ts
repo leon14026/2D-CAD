@@ -41,6 +41,11 @@ export class DocIndex {
     return index;
   }
 
+  /** Bounds of every entity, on any layer, or null if there are none. */
+  get bounds(): Bounds | null {
+    return this.tree.bounds;
+  }
+
   /** Largest absolute coordinate of any entity bounds (0 if empty); scales query tolerances. */
   get magnitude(): number {
     const b = this.tree.bounds;

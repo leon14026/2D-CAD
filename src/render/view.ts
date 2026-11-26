@@ -3,7 +3,8 @@
  * (rulers, hover highlight, selection box). Interaction feedback redraws only the overlay;
  * the main canvas is redrawn when the drawing, the view or the selection changes.
  */
-import { DocIndex } from '../core/spatial';
+import type { Shape, Vec2 } from '../core/geom';
+import { DocIndex, SNAP_LABELS, type SnapHit } from '../core/spatial';
 import type { AppState, Store } from '../app/store';
 import { palette } from '../ui/palette';
 import { paintSheet, type Surface } from './grid-painter';
@@ -17,6 +18,16 @@ export interface BoxFeedback {
   readonly mode: 'window' | 'crossing';
 }
 
+/** What a tool shows while the cursor moves: the shape to be made, snaps and tracking. */
+export interface DraftFeedback {
+  readonly preview: readonly Shape[];
+  /** The last point, where a tracking line starts. */
+  readonly base: Vec2 | null;
+  readonly snap: SnapHit | null;
+  /** Tracking direction in radians, or null. */
+  readonly angle: number | null;
+}
+
 export class CanvasView {
   width = 0;
   height = 0;
@@ -24,6 +35,7 @@ export class CanvasView {
   lastStats: SceneStats | null = null;
   private box: BoxFeedback | null = null;
   private cursor: Point | null = null;
+  private draft: DraftFeedback | null = null;
   private mainDirty = true;
   private overlayDirty = true;
   private frame = 0;
@@ -101,6 +113,12 @@ export class CanvasView {
     this.invalidate(false);
   }
 
+  setDraft(draft: DraftFeedback | null): void {
+    if (draft === null && this.draft === null) return;
+    this.draft = draft;
+    this.invalidate(false);
+  }
+
   /** Draws anything out of date, immediately. */
   renderNow(): void {
     if (this.frame) cancelAnimationFrame(this.frame);
@@ -173,7 +191,63 @@ export class CanvasView {
       ctx.setLineDash([]);
     }
 
+    if (this.draft) this.drawDraft(ctx, vp, this.draft);
+
     drawRulers(ctx, vp, this.width, this.height, dpr, s.session.doc.settings.units, this.cursor);
+  }
+
+  private drawDraft(ctx: CanvasRenderingContext2D, vp: Viewport, d: DraftFeedback): void {
+    const { dpr } = this;
+    const k = vp.pxPerUnit * dpr;
+    const X = (x: number) => vp.originX * dpr + x * k;
+    const Y = (y: number) => vp.originY * dpr - y * k;
+    ctx.lineCap = 'butt';
+
+    // Tracking line: from the last point, across the whole drawing area.
+    if (d.base && d.angle !== null) {
+      const far = (this.width + this.height) * 2 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(X(d.base.x), Y(d.base.y));
+      ctx.lineTo(X(d.base.x) + Math.cos(d.angle) * far, Y(d.base.y) - Math.sin(d.angle) * far);
+      ctx.strokeStyle = palette.crossing;
+      ctx.lineWidth = dpr;
+      ctx.setLineDash([2 * dpr, 4 * dpr]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // The object about to be made.
+    if (d.preview.length > 0) {
+      ctx.beginPath();
+      for (const shape of d.preview) traceShape(ctx, shape, X, Y, k);
+      ctx.strokeStyle = palette.selection;
+      ctx.lineWidth = 1.25 * dpr;
+      ctx.stroke();
+    }
+
+    // Snap marker and its name.
+    if (d.snap) {
+      const x = X(d.snap.point.x);
+      const y = Y(d.snap.point.y);
+      const half = 5 * dpr;
+      ctx.strokeStyle = palette.selection;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.strokeRect(Math.round(x - half) + 0.5, Math.round(y - half) + 0.5, half * 2, half * 2);
+      const label = SNAP_LABELS[d.snap.kind];
+      ctx.font = `${10.5 * dpr}px B612, system-ui, sans-serif`;
+      const w = ctx.measureText(label).width + 8 * dpr;
+      const h = 16 * dpr;
+      const lx = Math.round(x + 9 * dpr);
+      const ly = Math.round(y - 9 * dpr - h);
+      ctx.fillStyle = palette.paper;
+      ctx.fillRect(lx, ly, w, h);
+      ctx.strokeStyle = palette.rulerLine;
+      ctx.lineWidth = dpr;
+      ctx.strokeRect(lx + 0.5, ly + 0.5, w - 1, h - 1);
+      ctx.fillStyle = palette.selection;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, lx + 4 * dpr, ly + h / 2);
+    }
   }
 
   /** Extents of everything shown, for "zoom to fit". */

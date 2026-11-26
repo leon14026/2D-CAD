@@ -455,6 +455,138 @@ kbd {
   pointer-events: auto;
 }
 
+/* ---------- tool rail ---------- */
+
+/* A slim column of tools just inside the left ruler. */
+.al-rail {
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--al-rule);
+  border-radius: 6px;
+  background: var(--al-chrome);
+}
+
+.al-rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-rail-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--al-radius);
+  background: none;
+  color: var(--al-ink);
+  cursor: pointer;
+}
+
+.al-rail-button:hover {
+  border-color: var(--al-rule);
+}
+
+.al-rail-button[aria-pressed='true'] {
+  border-color: var(--al-blue);
+  background: var(--al-blue-soft);
+  color: var(--al-blue);
+}
+
+/* ---------- the box beside the cursor ---------- */
+
+/* It follows the cursor and never takes clicks, so it can't get in the way of drawing. */
+.al-entry {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 232px;
+  padding: 7px 8px 6px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: var(--al-chrome);
+  font-size: var(--al-text-small);
+  line-height: 1.35;
+}
+
+.al-entry[hidden] {
+  display: none;
+}
+
+.al-entry-head {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.al-entry-tool {
+  color: var(--al-ink-muted);
+}
+
+.al-entry-prompt {
+  color: var(--al-ink);
+  font-weight: 700;
+}
+
+.al-entry-input {
+  display: block;
+  width: 100%;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--al-rule);
+  border-radius: 3px;
+  background: var(--al-film);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.al-entry-input:focus {
+  outline: none;
+  border-color: var(--al-blue);
+  background: #ffffff;
+}
+
+.al-entry-input::placeholder {
+  color: var(--al-ink-muted);
+  opacity: 0.8;
+}
+
+.al-entry-readout {
+  margin-top: 5px;
+  color: var(--al-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.al-entry-error {
+  margin-top: 5px;
+  color: var(--al-danger);
+}
+
+.al-entry-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  margin-top: 6px;
+  color: var(--al-ink-muted);
+}
+
+.al-entry-key kbd {
+  margin-right: 4px;
+  padding: 0 3px;
+  font-size: 10.5px;
+}
+
 /* ---------- status bar ---------- */
 
 .al-status {

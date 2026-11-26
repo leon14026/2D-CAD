@@ -14,7 +14,7 @@ import {
   saveDocument,
   type Doc,
 } from '../core/doc';
-import { isSelectable } from '../core/spatial';
+import { isSelectable, type SnapKind } from '../core/spatial';
 import { RULER } from '../render/rulers';
 import type { CanvasView } from '../render/view';
 import { fitRect, panBy, zoomAt } from '../render/viewport';
@@ -22,6 +22,8 @@ import { EXAMPLE_FILE, LARGE_EXAMPLE_FILE } from './examples';
 import { doRedo, doUndo, isDirty, type Store } from './store';
 
 const FIT_MARGIN = 28;
+/** Width the tool rail takes from the left of the drawing area, gap included (CSS pixels). */
+export const RAIL_WIDTH = 42;
 
 export class Actions {
   constructor(
@@ -31,13 +33,14 @@ export class Actions {
 
   // ---------- view ----------
 
-  /** Fits everything shown into the drawing area, clear of the rulers. */
+  /** Fits everything shown into the drawing area, clear of the rulers and the tool rail. */
   fit(): void {
     const ext = this.view.extents();
     if (!ext) return;
     const { width, height } = this.view;
-    const vp = fitRect(ext, width - RULER, height - RULER, FIT_MARGIN, this.store.get().viewport);
-    this.store.set({ viewport: { ...vp, originX: vp.originX + RULER, originY: vp.originY + RULER } });
+    const left = RULER + RAIL_WIDTH;
+    const vp = fitRect(ext, width - left, height - RULER, FIT_MARGIN, this.store.get().viewport);
+    this.store.set({ viewport: { ...vp, originX: vp.originX + left, originY: vp.originY + RULER } });
   }
 
   zoom(factor: number): void {
@@ -63,6 +66,33 @@ export class Actions {
 
   toggleSelectionPanel(): void {
     this.store.set((s) => ({ showSelection: !s.showSelection }));
+  }
+
+  // ---------- snaps and tracking ----------
+
+  toggleSnaps(): void {
+    this.store.set((s) => ({ snapOn: !s.snapOn }));
+  }
+
+  toggleSnapKind(kind: SnapKind): void {
+    this.store.set((s) => {
+      const kinds = new Set(s.snapKinds);
+      if (kinds.has(kind)) kinds.delete(kind);
+      else kinds.add(kind);
+      return { snapKinds: kinds, snapOn: true };
+    });
+  }
+
+  toggleOrtho(): void {
+    this.store.set((s) => ({ ortho: !s.ortho }));
+  }
+
+  togglePolar(): void {
+    this.store.set((s) => ({ polarOn: !s.polarOn }));
+  }
+
+  setPolarStep(degrees: number): void {
+    this.store.set({ polarOn: true, polarStep: degrees });
   }
 
   // ---------- selection ----------

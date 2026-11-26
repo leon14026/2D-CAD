@@ -3,7 +3,8 @@
  * object, replaced on every change; views subscribe and redraw what they need.
  */
 import { canRedo, canUndo, createSession, newDocument, redo, undo, type Doc, type Session } from '../core/doc';
-import { isSelectable } from '../core/spatial';
+import { DEFAULT_SNAPS, isSelectable, type SnapKind } from '../core/spatial';
+import { DEFAULT_MEMORY, type ActiveTool, type ToolMemory } from '../core/tools';
 import type { Viewport } from '../render/viewport';
 
 export interface Message {
@@ -25,6 +26,17 @@ export interface AppState {
   readonly showLayers: boolean;
   readonly showSelection: boolean;
   readonly message: Message | null;
+  /** The drawing or editing tool in use, or null when selecting. */
+  readonly tool: ActiveTool | null;
+  readonly toolMemory: ToolMemory;
+  /** Why the tool refused the last input, shown beside the cursor. */
+  readonly toolError: string | null;
+  readonly snapOn: boolean;
+  readonly snapKinds: ReadonlySet<SnapKind>;
+  readonly ortho: boolean;
+  readonly polarOn: boolean;
+  /** Polar tracking step in degrees. */
+  readonly polarStep: number;
 }
 
 export type Listener = (state: AppState, previous: AppState) => void;
@@ -84,6 +96,14 @@ export function initialState(viewport: Viewport): AppState {
     showLayers: true,
     showSelection: true,
     message: null,
+    tool: null,
+    toolMemory: DEFAULT_MEMORY,
+    toolError: null,
+    snapOn: true,
+    snapKinds: DEFAULT_SNAPS,
+    ortho: false,
+    polarOn: true,
+    polarStep: 15,
   };
 }
 
