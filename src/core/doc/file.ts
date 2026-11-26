@@ -7,6 +7,8 @@
  */
 import { LENGTH_UNITS } from '../geom';
 import { MAX_NAME_LENGTH, MAX_TITLE_LENGTH, compareDrawOrder, type Doc, type Entity, type Layer } from './model';
+import { DEFAULT_DIM_STYLE, DEFAULT_DIM_STYLE_NAME, docEnv, resolveNote, type DimStyle, type Note } from './notes';
+import { readDimStyle, readNote } from './note-validate';
 import {
   readColorRef,
   readLinetype,
@@ -30,7 +32,7 @@ import {
 } from './validate';
 
 export const FILE_FORMAT = 'archilite';
-export const FILE_VERSION = 1;
+export const FILE_VERSION = 2;
 export const FILE_EXTENSION = '.archilite';
 
 export class FileFormatError extends Error {
@@ -62,6 +64,10 @@ function entityJson(e: Entity): object {
   return { id: e.id, layer: e.layer, z: e.z, color: e.color, linetype: e.linetype, lineweight: e.lineweight, geom: e.geom };
 }
 
+function noteJson(n: Note): object {
+  return { id: n.id, layer: n.layer, z: n.z, color: n.color, lineweight: n.lineweight, body: n.body };
+}
+
 function list(items: readonly object[]): string {
   if (items.length === 0) return '[]';
   return `[\n${items.map((i) => `    ${JSON.stringify(i)}`).join(',\n')}\n  ]`;
@@ -69,6 +75,7 @@ function list(items: readonly object[]): string {
 
 export function saveDocument(doc: Doc): string {
   const entities = [...doc.entities.values()].sort(compareDrawOrder);
+  const notes = [...doc.notes.values()].sort(compareDrawOrder);
   const s = doc.settings;
   return [
     '{',
@@ -77,9 +84,12 @@ export function saveDocument(doc: Doc): string {
     `  "title": ${JSON.stringify(s.title)},`,
     `  "units": ${JSON.stringify(s.units)},`,
     `  "currentLayer": ${s.currentLayer},`,
+    `  "currentDimStyle": ${JSON.stringify(s.currentDimStyle)},`,
     `  "nextId": ${doc.nextId},`,
+    `  "dimStyles": ${list(s.dimStyles)},`,
     `  "layers": ${list(doc.layers.map(layerJson))},`,
-    `  "entities": ${list(entities.map(entityJson))}`,
+    `  "entities": ${list(entities.map(entityJson))},`,
+    `  "notes": ${list(notes.map(noteJson))}`,
     '}',
     '',
   ].join('\n');
@@ -88,6 +98,8 @@ export function saveDocument(doc: Doc): string {
 // ---------- loading ----------
 
 const TOP_LEVEL = ['format', 'version', 'title', 'units', 'currentLayer', 'nextId', 'layers', 'entities'] as const;
+/** Added in file format 2. A version 1 file has none of them. */
+const V2_FIELDS = ['currentDimStyle', 'dimStyles', 'notes'] as const;
 
 function readLayer(v: unknown, path: string): Layer {
   const o = readObject(v, path, ['id', 'name', 'color', 'linetype', 'lineweight', 'visible', 'locked']);
@@ -150,12 +162,28 @@ function readDocument(data: unknown): Doc {
     );
   }
 
-  const o = readObject(data, '', TOP_LEVEL);
+  const o = version >= 2 ? readObject(data, '', [...TOP_LEVEL, ...V2_FIELDS]) : readObject(data, '', TOP_LEVEL);
   const title = readName(o['title'], 'title', MAX_TITLE_LENGTH);
   const units = readOneOf(o['units'], 'units', LENGTH_UNITS);
   const layers = readArray(o['layers'], 'layers').map((v, i) => readLayer(v, join('layers', i)));
   if (layers.length === 0) throw new ValidationError('layers', 'must contain at least one layer');
   const entityList = readArray(o['entities'], 'entities').map((v, i) => readEntity(v, join('entities', i)));
+
+  const dimStyles: readonly DimStyle[] =
+    version >= 2 ? readArray(o['dimStyles'], 'dimStyles').map((v, i) => readDimStyle(v, join('dimStyles', i))) : [DEFAULT_DIM_STYLE];
+  if (dimStyles.length === 0) throw new ValidationError('dimStyles', 'must contain at least one style');
+  const styleNames = new Set<string>();
+  dimStyles.forEach((st, i) => {
+    const key = st.name.toLowerCase();
+    if (styleNames.has(key)) throw new ValidationError(join(join('dimStyles', i), 'name'), `"${st.name}" is already used by another style`);
+    styleNames.add(key);
+  });
+  const currentDimStyle =
+    version >= 2 ? readName(o['currentDimStyle'], 'currentDimStyle', 32) : DEFAULT_DIM_STYLE_NAME;
+  if (!dimStyles.some((st) => st.name === currentDimStyle)) {
+    throw new ValidationError('currentDimStyle', `there is no dimension style called "${currentDimStyle}"`);
+  }
+  const noteList: Note[] = version >= 2 ? readArray(o['notes'], 'notes').map((v, i) => readNote(v, join('notes', i))) : [];
 
   const ids = new Map<number, string>();
   const claim = (id: number, path: string) => {
@@ -181,13 +209,27 @@ function readDocument(data: unknown): Doc {
     entities.set(e.id, e);
   });
 
+  const notes = new Map<number, Note>();
+  noteList.forEach((n, i) => {
+    const path = join('notes', i);
+    claim(n.id, path);
+    if (!layerIds.has(n.layer)) throw new ValidationError(join(path, 'layer'), `there is no layer with id ${n.layer}`);
+    notes.set(n.id, n);
+  });
+
   const currentLayer = readPositiveInteger(o['currentLayer'], 'currentLayer');
   if (!layerIds.has(currentLayer)) throw new ValidationError('currentLayer', `there is no layer with id ${currentLayer}`);
   const nextId = readPositiveInteger(o['nextId'], 'nextId');
   const maxId = Math.max(...ids.keys());
   if (nextId <= maxId) throw new ValidationError('nextId', `must be greater than every id in the file (${maxId}), not ${nextId}`);
 
-  return { settings: { title, units, currentLayer }, nextId, layers, entities };
+  const doc: Doc = { settings: { title, units, currentLayer, dimStyles, currentDimStyle }, nextId, layers, entities, notes };
+  const env = docEnv(doc);
+  noteList.forEach((n, i) => {
+    const r = resolveNote(env, n);
+    if (!r.ok) throw new ValidationError(join('notes', i), r.why);
+  });
+  return doc;
 }
 
 /** Reads a drawing from file text. Throws FileFormatError with a plain-language message. */

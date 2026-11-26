@@ -4,6 +4,7 @@
  * the main canvas is redrawn when the drawing, the view or the selection changes.
  */
 import type { Shape, Vec2 } from '../core/geom';
+import { pickShapes, resolveNotes } from '../core/doc';
 import { DocIndex, SNAP_LABELS, type SnapHit } from '../core/spatial';
 import type { AppState, Store } from '../app/store';
 import { palette } from '../ui/palette';
@@ -170,6 +171,19 @@ export class CanvasView {
         ctx.lineCap = 'round';
         ctx.stroke();
         ctx.globalAlpha = 1;
+      } else {
+        const r = resolveNotes(s.session.doc).get(s.hover);
+        if (r?.ok) {
+          const k = vp.pxPerUnit * dpr;
+          ctx.beginPath();
+          for (const shape of pickShapes(r.r.prims)) traceShape(ctx, shape, (x) => vp.originX * dpr + x * k, (y) => vp.originY * dpr - y * k, k);
+          ctx.strokeStyle = palette.selection;
+          ctx.globalAlpha = 0.45;
+          ctx.lineWidth = 4 * dpr;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
       }
     }
 

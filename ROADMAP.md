@@ -368,6 +368,72 @@ Gate:
 - [ ] Dimensions follow their geometry after modify operations.
 - [ ] Hatch areas match `shapely`.
 
+Implementation notes (for later phases):
+- **Notes are a second kind of object.** `Doc.notes` (a map, like `entities`) holds every
+  annotation: dimensions, text, leaders, centre marks, hatches and title blocks. Notes share the
+  id space, layers and draw order with entities but are never geometry: snaps, trim, offset and
+  the other modify commands ignore them.
+  - `src/core/doc/notes.ts`: the model, the dimension styles, and `resolveNote` (a note and the
+    drawing in, drawing primitives out).
+  - `note-validate.ts`: the readers for untrusted input. `note-commands.ts`: `note.add`,
+    `note.edit`, `dimstyle.set` and `dimstyle.use`, all undoable.
+  - `src/core/geom/hatch.ts`: loops, even-odd areas and hatch lines.
+  - `src/core/tools/annotate.ts`: the tools. `src/render/notes.ts`: drawing them.
+- **Dimensions store where to measure, never the number.** A dimension holds point references
+  (`free`, `end`, `vertex`, `mid`, `center`) and is measured from the geometry every time it is
+  resolved, so it can't disagree with the drawing. `refAt` ties a point that lies exactly on an
+  entity's end, vertex, midpoint or centre to that feature, which is how clicking a snap makes a
+  dimension associative.
+- **Resolved notes are cached per document** (`resolveNotes`); a change to the document makes a new
+  cache. A note that no longer resolves is never drawn.
+- **After a command, notes that point at something gone are removed in the same undo step.** Undo
+  brings both back. `execute` reports how many notes it removed in `pruned`.
+- **Transforming notes.** A transformed free note (text, leader, title block) moves with the
+  selection. A dimension, centre mark or hatch is associative and is moved by its geometry, so
+  it is not copied on its own. Moving geometry alone leaves a dimension's `at` (where the line
+  is placed) where it was; moving the dimension together with the geometry moves `at` too.
+- **Hatch.**
+  - A hatch is an outer boundary minus islands. A boundary is a circle, a closed polyline, or
+    several pieces that join end to end. Area is the outer area minus the islands.
+  - Lines are found by even-odd scanlines across all the boundaries at once, with a tiny nudge
+    where a line would pass exactly through a vertex. A hatch makes at most 20,000 lines
+    (`MAX_HATCH_LINES`); more is refused in words (widen the spacing).
+  - **Picking.** A hatch lies under geometry, so when a click is as near to a boundary as to
+    the hatch, the boundary wins (`doc-index.ts`, a bias of radius × 1e-6). A first version
+    clamped every hatch distance, which made a click in an island pick the hatch; the bias only
+    applies below the pick radius.
+  - **Known limitation:** hatch lines run under dimension text instead of stopping short of it,
+    so text over a hatch is legible but not ISO-clean. A text mask is a later improvement, and
+    Phase 7's exports should draw the same thing the screen does.
+- **Dimension styles.** The default is `ISO` (text 3.5, arrow 3, extension gap 1 and overrun 2,
+  text gap 1, 2 decimal places for lengths, 1 for angles, centre mark 2.5, centre overrun 2).
+  Sizes are paper sizes at 1:1. Editing a style changes every dimension that uses it.
+- **File format 2** adds `dimStyles`, `currentDimStyle` and `notes`. Version 1 files still open.
+  See `docs/file-format.md`.
+- **Tools** (keys D, X, H; the rest on the rail, the palette and the selection panel): linear,
+  aligned, radius, diameter, angle, text, leader, hatch, centre mark, title block.
+  - Text prompts take any character as the start of typing (`accepts: 'text'`); `\n` types a new
+    line.
+  - Remembered values: hatch pattern, angle and spacing; sheet size.
+- **Selection panel.** Selecting one note shows what it measures and its fields; edits go
+  through `note.edit`. With nothing selected the panel shows the dimension style in use, which
+  can be edited and saved under its own or a new name.
+- **Reference drawing:** `tests/fixtures/annotate-reference.ts` uses every annotation tool.
+  - Drawn through the engine and again through the real app, it must equal the approved file
+    `tests/fixtures/annotate-reference.archilite` exactly, and every number it shows must equal
+    its hand-worked value (60.00, 28.28, 45.0°, Ø8.00, R5.00, hatch area 2400 − 41π).
+  - Refresh it with `UPDATE_REFERENCES=1 npx vitest run tests/unit/core/tools/annotate-reference.test.ts`.
+  - Clicks on objects must land at least 2 mm from every other object **and from every
+    annotation text box**: a click inside a dimension's text picks the dimension.
+- **Hatch oracle.** `tests/fixtures/hatch-cases.json` holds 60 seeded cases (made by
+  `tests/fixtures/hatch-cases.ts`) with the area ArchiLite reports.
+  `tests/oracle/check_hatch_areas.py` recomputes each area with `shapely` from very fine
+  polygons and fails if any differs by more than 2e-8 of itself. CI runs it in its own step
+  with a pinned `shapely` in a throwaway virtual environment; `shapely` is not part of the app.
+- **The tool rail now wraps into a second column** when the drawing area is short, instead of
+  scrolling, so no tool is hidden. Fit measures the rail's real width (`railWidth()` in
+  `actions.ts`) to keep the drawing clear of it.
+
 ### Phase 7 — Import and export
 
 Builds: DXF import and export, SVG, PDF at true scale, PNG.

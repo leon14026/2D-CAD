@@ -6,13 +6,17 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 import { bigDrawingText } from '../fixtures/big-drawing';
-import { dragWorld, drawModifyReference, openExample, openText, toPage } from './helpers';
+import { dragWorld, drawAnnotateReference, drawModifyReference, openExample, openText, toPage } from './helpers';
 
-/** The drawing area without the rulers, which carry text. */
+/**
+ * The drawing area without the rulers, which carry text. It starts 2 px inside the ruler band:
+ * the ruler's tick marks overshoot it by a fraction of a pixel, and whether that pixel row was
+ * dark changed from run to run (a flake seen in 1 of 6 runs).
+ */
 async function drawingClip(page: Page) {
   const b = await page.locator('#al-stage').boundingBox();
   if (!b) throw new Error('no stage');
-  return { x: b.x + 22, y: b.y + 22, width: b.width - 22, height: b.height - 22 };
+  return { x: b.x + 24, y: b.y + 24, width: b.width - 24, height: b.height - 24 };
 }
 
 async function parkMouse(page: Page) {
@@ -81,6 +85,14 @@ test('the Phase 5 reference drawing, made with every modify tool', async ({ page
   await drawModifyReference(page);
   await parkMouse(page);
   await expect(page).toHaveScreenshot('modify-reference.png', { clip: await drawingClip(page) });
+});
+
+test('the Phase 6 reference drawing, with one of every annotation', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto('./?test');
+  await drawAnnotateReference(page);
+  await parkMouse(page);
+  await expect(page).toHaveScreenshot('annotate-reference.png', { clip: await drawingClip(page) });
 });
 
 test('the whole window: panels, rulers and status bar', async ({ page }) => {

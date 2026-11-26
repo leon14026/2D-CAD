@@ -106,6 +106,7 @@ function placeholder(prompt: Prompt): string {
   if (prompt.accepts === 'number') return 'A number';
   if (prompt.accepts === 'pointOrNumber') return `A number, or ${INPUT_EXAMPLES.split('   ')[0]}`;
   if (prompt.accepts === 'point') return INPUT_EXAMPLES;
+  if (prompt.accepts === 'text') return 'Type the text';
   return '';
 }
 

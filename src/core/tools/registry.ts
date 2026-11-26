@@ -1,3 +1,4 @@
+import { centreMarkTool, dimAlignedTool, dimAngleTool, dimDiameterTool, dimLinearTool, dimRadiusTool, hatchTool, leaderTool, textTool, titleBlockTool } from './annotate';
 import { arcCenterTool, arcTool, circleTool, lineTool, polygonTool, polylineTool, rectangleTool } from './draw';
 import {
   arrayTool,
@@ -40,6 +41,16 @@ export const TOOLS = {
   polarArray: polarArrayTool,
   roundCorners: roundCornersTool,
   cutCorners: cutCornersTool,
+  dimLinear: dimLinearTool,
+  dimAligned: dimAlignedTool,
+  dimRadius: dimRadiusTool,
+  dimDiameter: dimDiameterTool,
+  dimAngle: dimAngleTool,
+  text: textTool,
+  leader: leaderTool,
+  centreMark: centreMarkTool,
+  hatch: hatchTool,
+  titleBlock: titleBlockTool,
 } as const satisfies Record<string, ToolDef>;
 
 export type ToolId = keyof typeof TOOLS;

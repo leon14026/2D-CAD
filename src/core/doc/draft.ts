@@ -1,5 +1,6 @@
 import type { Change } from './changes';
 import type { Doc, DocSettings, Entity, Layer } from './model';
+import type { DimStyle, Note, NoteEnv } from './notes';
 
 /** Thrown when a command cannot run. The document and history are left unchanged. */
 export class CommandError extends Error {
@@ -15,6 +16,7 @@ export class CommandError extends Error {
  */
 export class Draft {
   private readonly touched = new Map<number, Entity | null>();
+  private readonly touchedNotes = new Map<number, Note | null>();
   private layersNow: readonly Layer[];
   private settingsNow: DocSettings;
   private nextIdNow: number;
@@ -44,6 +46,40 @@ export class Draft {
       if (!this.touched.has(id)) yield e;
     }
     for (const e of this.touched.values()) if (e) yield e;
+  }
+
+  note(id: number): Note | undefined {
+    if (this.touchedNotes.has(id)) return this.touchedNotes.get(id) ?? undefined;
+    return this.base.notes.get(id);
+  }
+
+  /** All notes as they stand in the draft. */
+  *notes(): IterableIterator<Note> {
+    for (const [id, n] of this.base.notes) {
+      if (!this.touchedNotes.has(id)) yield n;
+    }
+    for (const n of this.touchedNotes.values()) if (n) yield n;
+  }
+
+  putNote(n: Note): void {
+    this.touchedNotes.set(n.id, n);
+  }
+
+  deleteNote(id: number): void {
+    this.touchedNotes.set(id, null);
+  }
+
+  /** Ids of entities this command has added, changed or deleted so far. */
+  touchedEntityIds(): number[] {
+    return [...this.touched.keys()];
+  }
+
+  /** Lets notes be measured against the draft's geometry and styles. */
+  env(): NoteEnv {
+    return {
+      entity: (id) => this.entity(id),
+      dimStyle: (name: string): DimStyle | undefined => this.settingsNow.dimStyles.find((s) => s.name === name),
+    };
   }
 
   layer(id: number): Layer | undefined {
@@ -77,6 +113,10 @@ export class Draft {
     for (const [id, after] of this.touched) {
       const before = this.base.entities.get(id) ?? null;
       if (before !== after) out.push({ kind: 'entity', id, before, after });
+    }
+    for (const [id, after] of this.touchedNotes) {
+      const before = this.base.notes.get(id) ?? null;
+      if (before !== after) out.push({ kind: 'note', id, before, after });
     }
     if (this.layersNow !== this.base.layers) {
       out.push({ kind: 'layers', before: this.base.layers, after: this.layersNow });

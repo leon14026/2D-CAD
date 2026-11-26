@@ -59,7 +59,7 @@ export function attachInteraction(
   /** True while the active tool wants a point placed, so clicks don't select. */
   const placing = () => {
     const accepts = drafting.prompt()?.accepts;
-    return accepts === 'point' || accepts === 'number' || accepts === 'pointOrNumber';
+    return accepts === 'point' || accepts === 'number' || accepts === 'pointOrNumber' || accepts === 'text';
   };
 
   const updateHover = () => {

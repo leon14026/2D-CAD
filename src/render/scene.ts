@@ -18,14 +18,15 @@ import { compareDrawOrder, LINETYPES, type Doc, type Entity, type Layer } from '
 import { explodePolyline, type Curve, type Shape } from '../core/geom';
 import { DocIndex, entityBounds } from '../core/spatial';
 import { palette } from '../ui/palette';
+import { paintNotes } from './notes';
 import { visibleWorld, type Viewport } from './viewport';
 import type { Surface } from './grid-painter';
 
 /** CSS pixels per millimetre of line width at 96 dpi. */
 const PX_PER_MM = 96 / 25.4;
 
-/** Lines thinner than this (CSS pixels) are drawn as hairlines. */
-export const HAIRLINE_BELOW_PX = 1.5;
+export { HAIRLINE_BELOW_PX } from './scene-constants';
+import { HAIRLINE_BELOW_PX } from './scene-constants';
 
 /** Shapes smaller than this on screen (CSS pixels) are drawn as hairlines. */
 export const THIN_BELOW_PX = 16;
@@ -202,6 +203,9 @@ export function drawScene(surface: Surface, vp: Viewport, doc: Doc, options: Sce
     strokes += 1;
   };
 
+  const noteArgs = [ctx, doc, vp, width, height, dpr, options.selection, options.lineweights] as const;
+  let notesDrawn = paintNotes(...noteArgs, true);
+  ctx.lineCap = 'butt';
   const thinBelow = THIN_BELOW_PX * dpr;
   for (const e of list) {
     const b = entityBounds(e);
@@ -225,5 +229,6 @@ export function drawScene(surface: Surface, vp: Viewport, doc: Doc, options: Sce
   }
   flush();
   ctx.setLineDash([]);
-  return { drawn: list.length, culled, strokes, ms: performance.now() - t0 };
+  notesDrawn += paintNotes(...noteArgs, false);
+  return { drawn: list.length + notesDrawn, culled, strokes, ms: performance.now() - t0 };
 }

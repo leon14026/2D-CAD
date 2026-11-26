@@ -7,5 +7,7 @@ export * from './edit-commands';
 export * from './file';
 export * from './history';
 export * from './model';
+export * from './note-validate';
+export * from './notes';
 export * from './styles';
 export * from './validate';

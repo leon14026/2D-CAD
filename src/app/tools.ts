@@ -36,6 +36,18 @@ export const MODIFY_BUTTONS: readonly ToolButton[] = [
   { id: 'fillet', label: 'Fillet', palette: 'Fillet: round the corner between two lines', icon: 'fillet' },
 ];
 
+/** Annotation tools on the rail. */
+export const ANNOTATE_BUTTONS: readonly ToolButton[] = [
+  { id: 'dimLinear', label: 'Linear dimension', palette: 'Dimension a horizontal or vertical distance (linear)', key: 'd', icon: 'dimLinear' },
+  { id: 'dimAligned', label: 'Aligned dimension', palette: 'Dimension the distance between two points (aligned)', icon: 'dimAligned' },
+  { id: 'dimRadius', label: 'Radius dimension', palette: 'Dimension the radius of a circle or arc', icon: 'dimRadius' },
+  { id: 'dimDiameter', label: 'Diameter dimension', palette: 'Dimension the diameter of a circle or arc', icon: 'dimDiameter' },
+  { id: 'dimAngle', label: 'Angle dimension', palette: 'Dimension an angle', icon: 'dimAngle' },
+  { id: 'text', label: 'Text', palette: 'Add text', key: 'x', icon: 'text' },
+  { id: 'leader', label: 'Leader', palette: 'Add a leader: an arrow with a note', icon: 'leader' },
+  { id: 'hatch', label: 'Hatch', palette: 'Hatch a closed shape', key: 'h', icon: 'hatch' },
+];
+
 /** Tools reached from the command palette and the selection panel. */
 export const MORE_BUTTONS: readonly ToolButton[] = [
   { id: 'scale', label: 'Scale', palette: 'Scale the selection', icon: 'scale' },
@@ -44,9 +56,11 @@ export const MORE_BUTTONS: readonly ToolButton[] = [
   { id: 'polarArray', label: 'Polar array', palette: 'Copy the selection round a centre (polar array)', icon: 'polarArray' },
   { id: 'roundCorners', label: 'Round every corner', palette: 'Round every corner of the selected polylines', icon: 'corners' },
   { id: 'cutCorners', label: 'Cut every corner', palette: 'Cut every corner of the selected polylines', icon: 'chamfer' },
+  { id: 'centreMark', label: 'Centre mark', palette: 'Add a centre mark to a circle or arc', icon: 'centreMark' },
+  { id: 'titleBlock', label: 'Title block', palette: 'Add a title block and sheet border', icon: 'titleBlock' },
 ];
 
-export const TOOL_BUTTONS: readonly ToolButton[] = [...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...MORE_BUTTONS];
+export const TOOL_BUTTONS: readonly ToolButton[] = [...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS, ...MORE_BUTTONS];
 
 /** Snap kinds as they read in a sentence: "Snap to endpoints". */
 export const SNAP_NAMES: Readonly<Record<SnapKind, string>> = {

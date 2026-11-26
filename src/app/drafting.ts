@@ -208,6 +208,7 @@ export class DraftingController {
     if (e.ctrlKey || e.metaKey || e.altKey) return false;
     if (e.key === 'Escape') this.stop();
     else if (e.key === 'Enter') this.enter();
+    else if (this.prompt()?.accepts === 'text' && e.key.length === 1) this.entry.begin(e.key);
     else if (TYPING_START.test(e.key)) this.entry.begin(e.key);
     else {
       const option = this.prompt()?.options.find((o) => o.key === e.key.toLowerCase());

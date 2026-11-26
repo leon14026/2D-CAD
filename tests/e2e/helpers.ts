@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import type { ModifyStep } from '../fixtures/modify-reference';
 
 export interface ViewState {
   entities: number;
@@ -86,14 +87,13 @@ export const EX = {
 } as const;
 
 /**
- * Draws the Phase 5 reference drawing (tests/fixtures/modify-reference.ts) through the app's
- * own controls: rail buttons (or the command palette for tools not on the rail), typed values,
- * clicks on objects, and the selection panel's Join and Explode buttons.
+ * Draws a reference drawing (a step list from tests/fixtures) through the app's own controls:
+ * rail buttons (or the command palette for tools not on the rail), typed values, clicks on
+ * objects, and the selection panel's Join and Explode buttons.
  */
-export async function drawModifyReference(page: Page): Promise<void> {
-  const { MODIFY_STEPS } = await import('../fixtures/modify-reference');
-  const { DRAW_BUTTONS, MODIFY_BUTTONS, TOOL_BUTTONS } = await import('../../src/app/tools');
-  const onRail = new Set([...DRAW_BUTTONS, ...MODIFY_BUTTONS].map((b) => b.id));
+export async function drawReference(page: Page, steps: readonly ModifyStep[]): Promise<void> {
+  const { ANNOTATE_BUTTONS, DRAW_BUTTONS, MODIFY_BUTTONS, TOOL_BUTTONS } = await import('../../src/app/tools');
+  const onRail = new Set([...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS].map((b) => b.id));
   const click = async (x: number, y: number, shift = false) => {
     const p = await toPage(page, x, y);
     await page.mouse.move(p.x, p.y);
@@ -101,7 +101,7 @@ export async function drawModifyReference(page: Page): Promise<void> {
     await page.mouse.click(p.x, p.y);
     if (shift) await page.keyboard.up('Shift');
   };
-  for (const step of MODIFY_STEPS) {
+  for (const step of steps) {
     if ('tool' in step) {
       const button = TOOL_BUTTONS.find((b) => b.id === step.tool) as { label: string; palette: string };
       if (onRail.has(step.tool)) {
@@ -132,4 +132,16 @@ export async function drawModifyReference(page: Page): Promise<void> {
   }
   await page.keyboard.press('Escape');
   await page.keyboard.press('f');
+}
+
+/** The Phase 5 reference drawing: a plate made with every modify tool. */
+export async function drawModifyReference(page: Page): Promise<void> {
+  const { MODIFY_STEPS } = await import('../fixtures/modify-reference');
+  await drawReference(page, MODIFY_STEPS);
+}
+
+/** The Phase 6 reference drawing: a plate with one of every annotation. */
+export async function drawAnnotateReference(page: Page): Promise<void> {
+  const { ANNOTATE_STEPS } = await import('../fixtures/annotate-reference');
+  await drawReference(page, ANNOTATE_STEPS);
 }

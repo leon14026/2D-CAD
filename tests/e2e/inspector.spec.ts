@@ -48,10 +48,10 @@ test('the example loads and shows its layers, counts, sizes and areas', async ({
 
 test('a file from a newer version is refused with a clear message', async ({ page }) => {
   await page.goto('./inspect.html');
-  await check(page, EXAMPLE.replace('"version": 1', '"version": 2'));
+  await check(page, EXAMPLE.replace('"version": 2', '"version": 3'));
   const result = page.locator('#al-result');
   await expect(result).toContainText('This file cannot be opened');
-  await expect(result).toContainText('saved by a newer version of ArchiLite (file format 2)');
+  await expect(result).toContainText('saved by a newer version of ArchiLite (file format 3)');
   await expect(result).toContainText('Location: version');
 });
 

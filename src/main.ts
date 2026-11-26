@@ -25,6 +25,9 @@ mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store, {
   join: () => actions.joinSelection(),
   explode: () => actions.explodeSelection(),
   remove: () => actions.deleteSelection(),
+  editNote: (id, patch) => actions.editNote(id, patch),
+  useDimStyle: (name) => actions.useDimStyle(name),
+  saveDimStyle: (style) => actions.saveDimStyle(style),
 });
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);
 attachInteraction(store, view, drafting, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });

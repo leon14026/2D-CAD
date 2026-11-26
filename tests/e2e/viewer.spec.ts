@@ -37,9 +37,11 @@ test('click picks the nearest line; Shift adds and removes; Esc clears', async (
   expect((await state(page)).selection).toEqual([EX.outline]);
   await expect(page.locator('#al-selection-panel')).toContainText('Polyline');
   await expect(page.locator('#al-selection-panel')).toContainText('5978.540');
-  await clickWorld(page, 14, 10, ['Shift']);
+  // The hole's rim at 45°, clear of its centre lines, which cross the rim at 0°, 90°, 180° and 270°.
+  const rim = 10 + 4 * Math.SQRT1_2;
+  await clickWorld(page, rim, rim, ['Shift']);
   expect((await state(page)).selection).toEqual([EX.outline, EX.holes[0]]);
-  await clickWorld(page, 14, 10, ['Shift']);
+  await clickWorld(page, rim, rim, ['Shift']);
   expect((await state(page)).selection).toEqual([EX.outline]);
   await page.keyboard.press('Escape');
   expect((await state(page)).selection).toEqual([]);
@@ -143,7 +145,7 @@ test('command palette: Ctrl+K, type, Enter', async ({ page }) => {
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
   await page.keyboard.type('grid');
-  await expect(page.getByRole('option')).toHaveCount(1);
+  await expect(page.getByRole('dialog', { name: 'Command palette' }).getByRole('option')).toHaveCount(1);
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('#al-grid-toggle')).toHaveText('Grid off');
@@ -180,7 +182,7 @@ test('opening a damaged file explains why and keeps the current drawing', async 
   await page.locator('#al-file').setInputFiles({
     name: 'broken.archilite',
     mimeType: 'application/json',
-    buffer: Buffer.from(EXAMPLE.replace('"version": 1', '"version": 2')),
+    buffer: Buffer.from(EXAMPLE.replace('"version": 2', '"version": 3')),
   });
   const toast = page.locator('#al-toast');
   await expect(toast).toContainText('broken.archilite could not be opened.');

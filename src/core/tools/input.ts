@@ -52,7 +52,7 @@ export function parseTyped(text: string): Typed {
 }
 
 /** What the current step of a tool takes. */
-export type Accepts = 'point' | 'number' | 'pointOrNumber' | 'select' | 'pick';
+export type Accepts = 'point' | 'number' | 'pointOrNumber' | 'select' | 'pick' | 'text';
 
 export interface TypedContext {
   readonly accepts: Accepts;
@@ -62,10 +62,15 @@ export interface TypedContext {
   readonly direction: number | null;
 }
 
-export type TypedValue = { readonly kind: 'point'; readonly point: Vec2 } | { readonly kind: 'number'; readonly value: number };
+export type TypedValue =
+  | { readonly kind: 'point'; readonly point: Vec2 }
+  | { readonly kind: 'number'; readonly value: number }
+  | { readonly kind: 'text'; readonly text: string };
 
 /** Turns typed text into a point or a number for the step that is waiting for it. */
 export function interpretTyped(text: string, ctx: TypedContext): TypedValue {
+  // Text for a note: taken as typed. A typed \n means a new line.
+  if (ctx.accepts === 'text') return { kind: 'text', text: text.trim().replaceAll('\\n', '\n') };
   const typed = parseTyped(text);
   const { accepts, base } = ctx;
   if (accepts === 'select' || accepts === 'pick') {

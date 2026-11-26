@@ -4,7 +4,7 @@
  * what to show while the cursor moves. Tools never touch the document directly: the commands
  * they return go through the command registry like everything else, so they can be undone.
  */
-import type { Doc } from '../doc';
+import type { Doc, HatchPattern, SheetSize } from '../doc';
 import type { Shape, Vec2 } from '../geom';
 import type { Accepts } from './input';
 
@@ -39,6 +39,7 @@ export type ToolInput =
   | { readonly kind: 'point'; readonly point: Vec2 }
   | { readonly kind: 'number'; readonly value: number }
   | { readonly kind: 'option'; readonly key: string }
+  | { readonly kind: 'text'; readonly text: string }
   | ({ readonly kind: 'pick' } & PickInput)
   /** Enter with nothing typed, or a right-click. */
   | { readonly kind: 'enter' };
@@ -65,9 +66,25 @@ export interface ToolMemory {
   readonly offset: number | null;
   readonly fillet: number;
   readonly chamfer: number | null;
+  readonly hatchPattern: HatchPattern;
+  /** Hatch line spacing in drawing units. */
+  readonly hatchSpacing: number;
+  /** Hatch angle in degrees. */
+  readonly hatchAngle: number;
+  readonly sheet: SheetSize;
 }
 
-export const DEFAULT_MEMORY: ToolMemory = Object.freeze({ radius: null, sides: 6, offset: null, fillet: 0, chamfer: null });
+export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
+  radius: null,
+  sides: 6,
+  offset: null,
+  fillet: 0,
+  chamfer: null,
+  hatchPattern: 'lines',
+  hatchSpacing: 3,
+  hatchAngle: 45,
+  sheet: 'A4',
+});
 
 export interface ToolContext {
   readonly doc: Doc;

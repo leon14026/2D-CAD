@@ -174,12 +174,59 @@ rail; select something to see more in the selection panel.
       Copy, rotate, mirror and fillet are on the rail; scale, chamfer and the arrays are in the
       selection panel and the palette. Tell Claude what you'd want on keys or on the rail.
 
+### Phase 6: annotation
+
+On the live site once PR #7 is merged. The Annotate group is the last group on the tool rail (and
+a second column on a short screen). With nothing selected, the right-hand panel shows the
+dimension style; select a dimension, text or hatch to see and edit its fields.
+
+- [ ] **M6.1 Dimension a part and check every number.** Press R, type `0,0` Enter and `@120,80`
+      Enter, then Esc. Press D (linear dimension), type `0,0` Enter, `120,0` Enter, `60,-12` Enter,
+      then Esc: it should read **120.00**. Do the same up the left side (`0,0`, `0,80`, `-12,40`):
+      **80.00**. Now try a part of your own from a course or co-op drawing, dimension every
+      feature, and compare each number with your own calculation or the drawing.
+- [ ] **M6.2 Round and angled dimensions.** Press C, type `30,30` Enter and `12` Enter, then Esc.
+      Use the Diameter dimension button, click the circle, click where the line should go:
+      **Ø24.00**. Radius dimension: **R12.00**. Draw two lines from `0,0`: one to `@50,0`, one to
+      `@50<30`. Angle dimension: click the corner, then near the far end of each line (the end
+      snaps), then where the arc goes: **30.0°**.
+- [ ] **M6.3 Dimensions follow the geometry.** With the 120 × 80 plate dimensioned, select the
+      rectangle only, then Scale in the selection panel (base `0,0`, factor `2`). The width
+      should read **240.00** with no other action. Undo: back to **120.00**. Try Rotate and
+      Mirror in the panel, and trimming a dimensioned line (T). Does anything ever show a number
+      that disagrees with the drawing?
+- [ ] **M6.4 Dimension style (decision).** With nothing selected, open "Dimension style" in the
+      right-hand panel. The defaults are ISO-style: text height 3.5, arrows 3, 2 decimal places
+      for lengths, 1 for angles. Do they match what your courses or co-op use? Change a value,
+      Save style, and add a new dimension: it should use the new style, and older dimensions
+      using that style change too. Tell Claude which defaults you'd want.
+- [ ] **M6.5 Text and leaders.** Press X, click a point, type `6 mm steel plate` Enter. Click
+      the text and change it in the panel; Ctrl+Z puts it back. Use the Leader tool: click the
+      arrow point, click a second point, Enter, type a note, Enter. Does typing text feel
+      natural? Does `\n` start a new line?
+- [ ] **M6.6 Hatch and its area.** Draw R `0,0` `@60,40`, then C `15,20` radius `4` and C
+      `45,20` radius `5`. Press H, click the rectangle's edge, click each circle's edge (the
+      islands), then Enter twice. The plate hatches with both holes clear. Click the hatch: Area
+      should read **2271.195** (60 × 40 − 16π − 25π). Try the pattern option (P), the angle (A)
+      and the spacing (S), and a solid hatch.
+- [ ] **M6.7 Title block.** Ctrl+K, type "title block", click or type `0,0`. An A4 sheet border and
+      title block appear. Click the sheet's border, fill in the fields in the panel. Does the
+      layout work for what you hand in (course or co-op)? Tell Claude what is missing (logo
+      space, revision table, projection symbol, sheet number).
+- [ ] **M6.8 Legibility on your screen.** At 100% browser zoom, are dimension text, arrows and
+      the title block text readable without zooming in? Check on the work laptop and a second
+      screen if you have one. Dimension text is drawn at its paper size at 1:1.
+- [ ] **M6.9 Hatch under text (decision).** Dimension a hole inside a hatched area. Hatch lines
+      run through the dimension text (legible, but not ISO-clean). Is that acceptable for now, or
+      should text keep the hatch back before Phase 7?
+- [ ] **M6.10 Tool rail on a small screen.** On the work laptop, are all the tools on the rail
+      visible (second column if the window is short)? Does anything sit under the rail when you
+      press F to fit?
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 6:** dimension a part and compare every dimension with your own calculation; check that
-  the dimension style matches what your courses or co-op use.
 - **Phase 7:** open exported DXF files in LibreCAD and in Onshape or SolidWorks and measure 5
   features (target: 0.001 mm agreement). Print a 1:1 PDF and measure a 100 mm line with a ruler.
 - **Phase 8:** run the example Python scripts on the work laptop. Check that the first Python load

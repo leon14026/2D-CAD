@@ -68,12 +68,12 @@ export class Store {
   }
 }
 
-/** After the document changes, drop selected or hovered entities that are gone or no longer selectable. */
+/** After the document changes, drop selected or hovered entities and annotations that are gone or no longer selectable. */
 function pruneSelection(s: AppState): Partial<AppState> {
   const doc = s.session.doc;
   const keep = (id: number) => {
-    const e = doc.entities.get(id);
-    return e !== undefined && isSelectable(doc, e);
+    const item = doc.entities.get(id) ?? doc.notes.get(id);
+    return item !== undefined && isSelectable(doc, item);
   };
   const selection = [...s.selection].filter(keep);
   return {

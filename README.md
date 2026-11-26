@@ -8,12 +8,13 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   Chromium with the GPU switched off.
 - **Lightweight.** The whole app is a few kilobytes today; CI enforces a 300 KB (gzipped) budget.
 - **Engineering-grade accuracy.** Real units, true arcs, exact snaps, dimensions measured from
-  geometry, checked against an independent Python oracle (from Phase 7).
+  geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 
-**Status:** Phase 5 (modify tools) complete: move, copy, rotate, scale, mirror, offset, trim,
-extend, fillet, chamfer, arrays, join and explode, on top of Phase 4's precision drafting.
-Phase 6 (annotation) next. See [PROGRESS.md](PROGRESS.md)
+**Status:** Phase 6 (annotation) built: associative dimensions (linear, aligned, radius, diameter,
+angle) with dimension styles, text, leaders, centre marks, hatching and title blocks, on top of
+Phase 5's modify tools and Phase 4's precision drafting. Phase 7 (import and export) next. See
+[PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
 
@@ -37,6 +38,7 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Finish or stop a tool | Enter or right-click finishes; Esc stops |
 | Snaps, ortho, tracking | Status bar, or Shift+S, Shift+O, Shift+T; hold Shift for horizontal or vertical |
 | Modify | Lower half of the tool rail, or M move, O offset, T trim, E extend; select something for more in the selection panel |
+| Annotate | Last group on the tool rail, or D linear dimension, X text, H hatch; select a dimension, text or hatch to edit it in the selection panel |
 | Delete | Delete key or the selection panel; Ctrl+Z brings it back |
 | Panels, grid, lineweights | `[`, `]`, G, W |
 
@@ -51,8 +53,11 @@ GitHub Actions runs every check on each pull request, so local setup is optional
 npm ci
 npm run dev          # local dev server
 npm run ci           # the full Phase gate: typecheck, unit tests, licence gate,
-                     # brand guard, build, size budget, browser tests (GPU disabled)
+                     # brand guard, hatch-area oracle, build, size budget, browser tests (GPU disabled)
 ```
+
+The hatch-area check needs Python 3 with `shapely` (`pip install shapely`). Browser tests serve
+the built site, so run `npm run build` after changing any source before running them by hand.
 
 Browser tests use Playwright's Chromium (`npx playwright install chromium`). Playwright is pinned to
 1.63.0 so everyone renders with the same Chromium build as the approved screenshots.

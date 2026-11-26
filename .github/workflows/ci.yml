@@ -37,6 +37,14 @@ jobs:
       - name: Licence gate
         run: npm run license:check
 
+      # Phase 6 gate: hatch areas agree with an independent computation. shapely is used only
+      # here, to check the numbers; it is not part of the app.
+      - name: Hatch areas against shapely
+        run: |
+          python3 -m venv "$RUNNER_TEMP/oracle"
+          "$RUNNER_TEMP/oracle/bin/pip" install --quiet shapely==2.2.0
+          "$RUNNER_TEMP/oracle/bin/python" tests/oracle/check_hatch_areas.py
+
       - name: Brand guard
         run: npm run brand:check
 
