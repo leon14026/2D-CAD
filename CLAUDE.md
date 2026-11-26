@@ -146,7 +146,11 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   than a 2 px line, and rounded ends triple the cost again. Keep square ends, and keep the
   hairline and level-of-detail rules in `src/render/scene.ts`.
 - `tests/e2e/performance.spec.ts` is the gate: 20,000 entities, average frame ≤ 33.3 ms with the
-  GPU off. Run it after any rendering change and quote its numbers in the PR.
+  GPU off. Run it after any rendering change and quote its numbers in the PR. GitHub's runners
+  can be half as fast as the workspace, so keep local frames under about 20 ms.
+- In the frame loop, per-entity work must be lookups only: no sorting, no string building, no
+  new objects. Draw order and per-layer styles are cached (`scene.ts`). The test hook's
+  `sceneStats()` gives the JavaScript share of a frame.
 
 ## Testing conventions
 

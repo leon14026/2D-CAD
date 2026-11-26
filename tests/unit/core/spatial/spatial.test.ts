@@ -172,4 +172,13 @@ describe('DocIndex', () => {
     expect(DocIndex.of(doc).visibleExtents()).toEqual(box(0, -6, 60, 60));
     expect(DocIndex.of(newDocument()).visibleExtents()).toBeNull();
   });
+
+  it('bounds cover every entity, hidden ones included', () => {
+    const { doc } = sample();
+    const all = DocIndex.of(doc).bounds;
+    const visible = DocIndex.of(doc).visibleExtents();
+    expect(all).not.toBeNull();
+    expect(all!.minX <= visible!.minX && all!.minY <= visible!.minY && all!.maxX >= visible!.maxX && all!.maxY >= visible!.maxY).toBe(true);
+    expect(DocIndex.of(newDocument()).bounds).toBeNull();
+  });
 });

@@ -5,6 +5,7 @@
  */
 import { saveDocument } from '../core/doc';
 import { selectInBox, type BoxMode } from '../core/spatial';
+import type { SceneStats } from '../render/scene';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Viewport } from '../render/viewport';
 import type { Actions } from './actions';
@@ -23,6 +24,8 @@ export interface TestHook {
    */
   timeFrames(frames: number, kind: 'pan' | 'zoom'): number[];
   lastDrawn(): number;
+  /** The last frame's scene statistics: entities drawn, strokes, and milliseconds spent in JavaScript. */
+  sceneStats(): SceneStats | null;
 }
 
 export function installTestHook(store: Store, view: CanvasView, actions: Actions): void {
@@ -70,6 +73,7 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
       return times;
     },
     lastDrawn: () => view.lastStats?.drawn ?? 0,
+    sceneStats: () => view.lastStats,
   };
   (window as unknown as { __archilite: TestHook }).__archilite = hook;
 }

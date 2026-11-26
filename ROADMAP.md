@@ -292,6 +292,14 @@ Implementation notes (for later phases):
   - The panel toggles moved from L and P to `[` and `]`.
 - **Layout:** the tool rail sits inside the drawing area's left edge. "Zoom to fit" leaves room
   for it (`RAIL_WIDTH` in `actions.ts`).
+- **Rendering speed:** after a slow CI runner failed the 30 fps gate, timing showed two thirds of
+  each frame was JavaScript.
+  - `scene.ts` now caches the draw order per drawing, and styles per layer for entities that
+    use their layer's style.
+  - It skips the index search when everything is on screen.
+  - It draws shapes under 16 px without their dash pattern.
+  - Result: frames 45% faster (pan about 11 ms, zoom about 17 ms locally). Keep per-entity
+    work in the frame loop to lookups, never string building or sorting.
 
 ### Phase 5 — Modify tools
 

@@ -52,12 +52,21 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     specification to 1e-9: in the engine, and again typed into the real app.
   - The snap matrix: every snap kind on all 5 entity types, with each of the 5 types crossing
     it, plus intersections for all 15 pairs of types at hand-calculated points.
-  - 100% line coverage of `src/core`, now including `tools`. 794 unit and property tests.
+  - 100% line coverage of `src/core`, now including `tools`. 795 unit and property tests.
   - 47 browser tests and 8 approved screenshots. The new screenshot shows a line being drawn,
     with a snap marker.
-  - Performance with 20,000 entities: pan about 21 ms per frame, zoom about 23–28 ms; the budget
+  - Performance with 20,000 entities: pan about 11 ms per frame, zoom about 17 ms; the budget
     is 33.3 ms.
 - Found and fixed while building:
+  - **Speed:** the first CI run failed the performance gate: zoom averaged 34.6 ms per frame on a
+    slow runner, against 33.3 ms. Timing showed two thirds of each frame was JavaScript, not
+    drawing. Three changes cut frames by about 45% (pan 21 → 11 ms, zoom 24 → 17 ms locally),
+    with all 8 screenshots unchanged:
+    - Draw order is sorted once per drawing, not every frame.
+    - Entities that take their style from their layer skip building a text key per entity.
+    - When the whole drawing is on screen, the spatial index isn't searched.
+    - Also, shapes smaller than 16 px on screen are drawn without their dash pattern, which
+      can't be seen at that size.
   - **Tracking:** a vertical line through (1.1, 2.2) came out at y = -30.000000000000004 rather
     than -30, from projecting through the base point. On horizontal and vertical lines the
     tracker now keeps the cursor's own coordinate, so axis-aligned points are exact.
