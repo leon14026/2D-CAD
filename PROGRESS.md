@@ -13,7 +13,7 @@ Phase 5 (modify tools) is being built on top of it. Merge in order:
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
 | 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
-| 4. Precision drafting | Done, gate passed locally; awaiting CI and merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
+| 4. Precision drafting | Done, gate passed in CI; awaiting merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
 | 5. Modify tools | Not started | — | — |
 | 6. Annotation | Not started | — | — |
 | 7. Import and export | Not started | — | — |
@@ -46,7 +46,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   - The panel toggles moved from L and P to `[` and `]`. Shift+S, Shift+O and Shift+T toggle
     snaps, ortho and tracking; holding Shift forces ortho.
   - Tracking is on at 15° by default. Snaps are on by default, all except nearest.
-- Gate (passed locally):
+- Gate (passed in CI, Ubuntu 26.04 runner: pan 18.1 ms, zoom 27.3 ms per frame):
   - The reference part (`tests/fixtures/reference-part.ts`), a plate with holes, a slot, a
     hexagon, a triangle and an arc, drawn by typed input alone, matches its hand-worked
     specification to 1e-9: in the engine, and again typed into the real app.

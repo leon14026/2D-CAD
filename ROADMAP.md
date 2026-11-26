@@ -250,8 +250,8 @@ typed absolute, relative (`@dx,dy`) and polar (`@d<a`) input. Added:
 - a tool rail and a box beside the cursor for typed input, prompts and errors.
 
 Gate:
-- [ ] A reference part drawn by typed input alone matches its specification to 1e-9.
-- [ ] Every snap type is tested against every pair of entity types.
+- [x] A reference part drawn by typed input alone matches its specification to 1e-9.
+- [x] Every snap type is tested against every pair of entity types.
 
 Implementation notes (for later phases):
 - **Tools are pure state machines** in `src/core/tools` (no DOM).
