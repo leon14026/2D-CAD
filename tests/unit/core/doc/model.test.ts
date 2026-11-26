@@ -31,7 +31,14 @@ const withEntities = (doc: Doc, ...es: Entity[]): Doc => ({ ...doc, entities: ne
 describe('new document', () => {
   it('has one default layer and sensible settings', () => {
     const d = newDocument();
-    expect(d.settings).toEqual({ title: 'Untitled', units: 'mm', currentLayer: 1, dimStyles: [DEFAULT_DIM_STYLE], currentDimStyle: 'ISO' });
+    expect(d.settings).toEqual({
+      title: 'Untitled',
+      units: 'mm',
+      currentLayer: 1,
+      dimStyles: [DEFAULT_DIM_STYLE],
+      currentDimStyle: 'ISO',
+      currentSheet: 'Sheet 1',
+    });
     expect(d.nextId).toBe(2);
     expect(d.layers).toEqual([
       { id: 1, name: 'Default', color: '#1f2a33', linetype: 'continuous', lineweight: 0.25, visible: true, locked: false },
@@ -46,6 +53,7 @@ describe('new document', () => {
       currentLayer: 1,
       dimStyles: [DEFAULT_DIM_STYLE],
       currentDimStyle: 'ISO',
+      currentSheet: 'Sheet 1',
     });
   });
 });

@@ -1,10 +1,11 @@
 {
   "format": "archilite",
-  "version": 2,
+  "version": 3,
   "title": "Annotation reference",
   "units": "mm",
   "currentLayer": 1,
   "currentDimStyle": "ISO",
+  "currentSheet": "Sheet 1",
   "nextId": 17,
   "dimStyles": [
     {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
@@ -12,6 +13,10 @@
   "layers": [
     {"id":1,"name":"Default","color":"#1f2a33","linetype":"continuous","lineweight":0.25,"visible":true,"locked":false}
   ],
+  "sheets": [
+    {"name":"Sheet 1","size":"A4"}
+  ],
+  "blocks": [],
   "entities": [
     {"id":2,"layer":1,"z":2,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":0,"y":0,"bulge":0},{"x":60,"y":0,"bulge":0},{"x":60,"y":40,"bulge":0},{"x":0,"y":40,"bulge":0}],"closed":true}},
     {"id":3,"layer":1,"z":3,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":15,"y":20},"radius":4}},
@@ -30,5 +35,7 @@
     {"id":14,"layer":1,"z":14,"color":"byLayer","lineweight":"byLayer","body":{"kind":"leader","points":[{"x":45,"y":40},{"x":52,"y":48}],"text":"Break sharp edges","style":"ISO"}},
     {"id":15,"layer":1,"z":15,"color":"byLayer","lineweight":"byLayer","body":{"kind":"hatch","loops":[[2],[3],[4]],"pattern":"lines","spacing":4,"angle":0.7853981633974483}},
     {"id":16,"layer":1,"z":16,"color":"byLayer","lineweight":"byLayer","body":{"kind":"titleBlock","at":{"x":-120,"y":-70},"size":"A4","fields":{"title":"","number":"","scale":"","revision":"","material":"","drawnBy":"","date":"","company":""}}}
-  ]
+  ],
+  "inserts": [],
+  "constraints": []
 }

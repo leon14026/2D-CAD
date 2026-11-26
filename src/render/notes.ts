@@ -2,7 +2,7 @@
  * Draws notes (dimensions, text, hatches, title blocks) from their drawing instructions.
  * Hatches go under the geometry; everything else goes on top.
  */
-import { arrowCorners, resolveNoteStyle, resolveNotes, notesInDrawOrder, type Doc, type Note, type Prim } from '../core/doc';
+import { arrowCorners, onCurrentSheet, resolveNoteStyle, resolveNotes, notesInDrawOrder, type Doc, type Note, type Prim } from '../core/doc';
 import { loopCurves, type Loop } from '../core/geom';
 import { palette } from '../ui/palette';
 import type { Viewport } from './viewport';
@@ -107,7 +107,7 @@ export function paintNotes(ctx: CanvasRenderingContext2D, doc: Doc, vp: Viewport
   const bottom = (vp.originY - height) / vp.pxPerUnit;
   let drawn = 0;
   for (const n of notesInDrawOrder(doc)) {
-    if ((n.body.kind === 'hatch') !== under || !shown.has(n.layer)) continue;
+    if ((n.body.kind === 'hatch') !== under || !shown.has(n.layer) || !onCurrentSheet(doc, n)) continue;
     const r = resolved.get(n.id);
     if (!r?.ok) continue;
     const b = r.r.bounds;

@@ -105,6 +105,23 @@ describe('script host', () => {
     if (open?.kind === 'polyline') expect(open.closed).toBe(false);
   });
 
+  it('cad.block, insert, sheet and useSheet go through the registry', () => {
+    const { session } = applyJavaScript(
+      createSession(),
+      `
+        const a = cad.line(0, 0, 10, 0);
+        cad.block('bar', [a], 0, 0);
+        cad.insert('bar', 20, 0, 90, 2);
+        cad.sheet('Layout', 'A3');
+        cad.useSheet('Sheet 1');
+      `,
+    );
+    expect(session.doc.blocks.map((b) => b.name)).toEqual(['bar']);
+    expect(session.doc.inserts.size).toBe(2);
+    expect(session.doc.sheets.map((s) => s.name)).toEqual(['Sheet 1', 'Layout']);
+    expect(session.doc.settings.currentSheet).toBe('Sheet 1');
+  });
+
   it('cad.run calls a named command', () => {
     const { session } = applyJavaScript(createSession(), `cad.run('doc.setTitle', { title: 'Named' })`);
     expect(session.doc.settings.title).toBe('Named');

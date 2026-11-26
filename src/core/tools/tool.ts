@@ -72,6 +72,8 @@ export interface ToolMemory {
   /** Hatch angle in degrees. */
   readonly hatchAngle: number;
   readonly sheet: SheetSize;
+  /** Last block name typed in the block or insert tool. */
+  readonly blockName: string | null;
 }
 
 export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
@@ -84,6 +86,7 @@ export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
   hatchSpacing: 3,
   hatchAngle: 45,
   sheet: 'A4',
+  blockName: null,
 });
 
 export interface ToolContext {

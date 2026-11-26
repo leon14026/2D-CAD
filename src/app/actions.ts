@@ -11,6 +11,7 @@ import {
   findLayer,
   loadDocument,
   newDocument,
+  onCurrentSheet,
   saveDocument,
   type DimStyle,
   type Doc,
@@ -149,8 +150,32 @@ export class Actions {
 
   selectAll(): void {
     const doc = this.store.get().session.doc;
-    const everything = [...doc.entities.values(), ...doc.notes.values()];
-    this.store.set({ selection: new Set(everything.filter((e) => isSelectable(doc, e)).map((e) => e.id)) });
+    const everything = [...doc.entities.values(), ...doc.notes.values(), ...doc.inserts.values()];
+    this.store.set({
+      selection: new Set(everything.filter((e) => isSelectable(doc, e) && onCurrentSheet(doc, e)).map((e) => e.id)),
+    });
+  }
+
+  addSheet(name: string, size?: 'A4' | 'A3' | 'A2' | 'A1' | 'A0'): void {
+    if (this.run('sheet.add', { name, ...(size ? { size } : {}) })) this.fit();
+  }
+
+  useSheet(name: string): void {
+    if (this.run('sheet.setCurrent', { name })) {
+      this.store.set({ selection: new Set() });
+      this.fit();
+    }
+  }
+
+  cycleSheet(): void {
+    const doc = this.store.get().session.doc;
+    if (doc.sheets.length < 2) {
+      this.store.set({ message: { kind: 'info', text: 'This drawing has one sheet. Search commands for “Add a sheet”.' } });
+      return;
+    }
+    const i = doc.sheets.findIndex((s) => s.name === doc.settings.currentSheet);
+    const next = doc.sheets[(i + 1) % doc.sheets.length]!;
+    this.useSheet(next.name);
   }
 
   clearSelection(): void {

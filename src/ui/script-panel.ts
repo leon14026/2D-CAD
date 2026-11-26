@@ -18,7 +18,7 @@ const TRUST_NOTE =
   'Scripts run with full access to this page. Only run code you wrote or trust.';
 
 const HINT =
-  'cad.line, cad.circle, cad.arc, cad.rect, cad.polyline, cad.layer, cad.polar, cad.title, cad.run, cad.print. Angles in degrees. One undo step.';
+  'cad.line, cad.circle, cad.arc, cad.rect, cad.polyline, cad.layer, cad.polar, cad.title, cad.block, cad.insert, cad.sheet, cad.useSheet, cad.run, cad.print. Angles in degrees. One undo step.';
 
 export function mountScriptPanel(root: HTMLElement, _store: Store, actions: Actions): void {
   let language: ScriptLanguage = 'javascript';

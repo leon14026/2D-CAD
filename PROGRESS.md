@@ -1,7 +1,8 @@
 # ArchiLite progress
 
 **Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
-Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (stretch).
+Phase 8 (scripting) is in review (#9). Phase 9 (blocks, sheets, constraints) is in review on
+top of that branch. Merge #8 then #9 first.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -16,12 +17,43 @@ Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (s
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
 | 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
-| 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
+| 9. Blocks, sheets, constraints (stretch) | In progress | — | — |
 | 10. DWG import (read only) | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 9 (blocks, sheets, constraints) started
+
+- Phase 8's PR #9 is still open, so this branch starts from
+  `cursor/phase-8-scripting-487f`. Merge #8 then #9 first.
+- Built:
+  - **Sheets.** Named paper sizes (`Sheet 1` by default). Membership is `obj.sheet ??` the
+    first sheet. Status bar button cycles sheets; command palette adds and switches.
+  - **Blocks.** Named definitions in local coordinates; inserts share the entity id space.
+    Create consumes the selection and leaves an insert. Explode reuses the insert id for the
+    first piece. No nested blocks.
+  - **Constraints.** Coincident, horizontal, vertical, distance, fix, midpoint, parallel,
+    perpendicular, equal, concentric, tangent, radius, length, angle. Re-solved in
+    `commitDraft` after every edit, in id order, until the residual stops shrinking.
+  - **File format 3.** Version 1 and 2 files still open.
+- Decisions:
+  - Sheets and blocks are named, not ids. Optional `sheet` is omitted on the first sheet.
+  - No extra runtime package. The solver is projection / Gauss-Seidel, deterministic, no
+    randomness. Bound point references only.
+  - Layout tools sit on the rail (block, insert, coincident, horizontal, vertical, distance);
+    the rest are in the command palette.
+- Gate (passed locally, Ubuntu workspace: 73 browser tests; pan 8.4 ms, zoom 12.4 ms per
+  frame):
+  - Constraints re-solve to the same `saveDocument` after `constraint.solve`.
+  - A constrained plate (80 × 50, four hole inserts, a Layout sheet) is built start to finish
+    through the command registry and opened in the app.
+  - 1,182 unit tests; 73 browser tests; `app-window` refreshed for the Layout rail, sheet
+    button and Phase 9 pill (`--repeat-each=5`). 100% line coverage of `src/core` (branches
+    98.12%). Size 120.9 KB of 300 KB.
+  - Performance with 20,000 entities, GPU off: pan 8.4 ms, zoom 12.4 ms per frame on the
+    workspace.
 
 ### 2026-11-26: Phase 8 (scripting) started
 

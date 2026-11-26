@@ -27,6 +27,14 @@ export interface CadApi {
   title(text: string): void;
   /** A point `radius` from `(x, y)` at `angleDeg`. Quarter turns are exact. */
   polar(x: number, y: number, radius: number, angleDeg: number): { x: number; y: number };
+  /** Turns the listed entity ids into a named block at `(x, y)` and leaves an insert there. */
+  block(name: string, ids: unknown, x: number, y: number): number;
+  /** Places a named block at `(x, y)`. Rotation in degrees. */
+  insert(name: string, x: number, y: number, rotationDeg?: number, scale?: number): number;
+  /** Adds a sheet and makes it current. Size is A4–A0. */
+  sheet(name: string, size?: string): void;
+  /** Switches the current sheet. */
+  useSheet(name: string): void;
   print(...args: unknown[]): void;
 }
 
@@ -95,6 +103,30 @@ export function createCad(draft: Draft, log: string[]): CadApi {
       const r = num(radius, 'radius');
       const cs = cosSin(degToRad(num(angleDeg, 'angle')));
       return { x: cx + r * cs.x, y: cy + r * cs.y };
+    },
+    block(name, ids, x, y) {
+      const list = Array.isArray(ids) ? ids : [];
+      const { insert } = runCommandOnDraft(draft, 'block.create', {
+        name: String(name),
+        ids: list,
+        at: vec(num(x, 'x'), num(y, 'y')),
+      }) as { insert: number };
+      return insert;
+    },
+    insert(name, x, y, rotationDeg, scale) {
+      const { id } = runCommandOnDraft(draft, 'block.insert', {
+        name: String(name),
+        at: vec(num(x, 'x'), num(y, 'y')),
+        ...(rotationDeg !== undefined ? { rotation: degToRad(num(rotationDeg, 'rotation')) } : {}),
+        ...(scale !== undefined ? { scale: num(scale, 'scale') } : {}),
+      }) as { id: number };
+      return id;
+    },
+    sheet(name, size) {
+      runCommandOnDraft(draft, 'sheet.add', { name: String(name), ...(size !== undefined ? { size: String(size) } : {}) });
+    },
+    useSheet(name) {
+      runCommandOnDraft(draft, 'sheet.setCurrent', { name: String(name) });
     },
     print(...args) {
       log.push(args.map(formatPrint).join(' '));

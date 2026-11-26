@@ -8,6 +8,9 @@ export interface ViewState {
   hover: number | null;
   undo: number;
   tool: string | null;
+  sheet: string;
+  inserts: number;
+  constraints: number;
 }
 
 type Hook = {
@@ -92,8 +95,8 @@ export const EX = {
  * objects, and the selection panel's Join and Explode buttons.
  */
 export async function drawReference(page: Page, steps: readonly ModifyStep[]): Promise<void> {
-  const { ANNOTATE_BUTTONS, DRAW_BUTTONS, MODIFY_BUTTONS, TOOL_BUTTONS } = await import('../../src/app/tools');
-  const onRail = new Set([...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS].map((b) => b.id));
+  const { ANNOTATE_BUTTONS, DRAW_BUTTONS, LAYOUT_BUTTONS, MODIFY_BUTTONS, TOOL_BUTTONS } = await import('../../src/app/tools');
+  const onRail = new Set([...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS, ...LAYOUT_BUTTONS].map((b) => b.id));
   const click = async (x: number, y: number, shift = false) => {
     const p = await toPage(page, x, y);
     await page.mouse.move(p.x, p.y);

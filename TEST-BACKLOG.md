@@ -267,11 +267,28 @@ as well as `.archilite`.
       in scripts, and an empty drawing. Then run the Python bolt circle, press Ctrl+Z, and use
       "Load the example". Expect: the example loads (the page's own fetch still works).
 
+### Phase 9: blocks, sheets, constraints
+
+- [ ] **M9.1 A real part, start to finish.** On the work laptop, draw a plate with a rectangular
+      outline, hold the sides horizontal and vertical and the width and height with constraints,
+      turn one hole into a block, and insert the other holes. Add a second sheet and put another
+      insert of the hole on it. Expect: dragging a corner keeps the rectangle a rectangle of the
+      same size; switching sheets in the status bar hides the other sheet; exploding one insert
+      does not change the others. Save, reopen, and check the numbers still match.
+- [ ] **M9.2 Constraints after an edit.** Draw a line that is not quite horizontal. Horizontal
+      constraint, then move one end with Move. Expect: the line lies flat again. Undo once:
+      the move comes back, then the line flattens again. If it stays skewed, tell Claude.
+- [ ] **M9.3 Block inserts in another program.** Export the plate from M9.1 as DXF. Open it in
+      LibreCAD. Expect: the current sheet's lines and the exploded look of each insert (DXF has
+      no ArchiLite blocks). Switch sheet, export again, and check the other sheet.
+- [ ] **M9.4 Scripted block.** In the script panel, run a few lines that `cad.circle` a hole,
+      `cad.block` it, `cad.insert` two copies, then `cad.sheet` and insert one more. Expect: one
+      undo step removes all of it.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
   features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
   paper space). Until this phase, use DXF.

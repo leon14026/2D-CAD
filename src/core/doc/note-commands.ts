@@ -59,7 +59,7 @@ const addNote = define<AddNoteParams, { id: number }>({
     const layer = p.layer ?? draft.settings.currentLayer;
     requireUnlocked(draft, layer);
     const id = draft.allocateId();
-    const note: Note = { id, layer, z: id, color: p.color ?? BY_LAYER, lineweight: p.lineweight ?? BY_LAYER, body: p.body };
+    const note: Note = { id, layer, z: id, color: p.color ?? BY_LAYER, lineweight: p.lineweight ?? BY_LAYER, body: p.body, ...draft.sheetField() };
     requireDrawable(draft, note);
     draft.putNote(note);
     return { id };

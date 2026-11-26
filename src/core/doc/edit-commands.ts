@@ -33,6 +33,7 @@ import {
 } from '../geom';
 import { applyTransform, define, optional, readIds, requireEditable } from './command-kit';
 import { CommandError, type Draft } from './draft';
+import { LAYOUT_COMMANDS } from './layout-commands';
 import type { Entity } from './model';
 import { canonicalShape, join, readArray, readBoolean, readNumber, readObject, readOneOf, readPoint, readPositiveInteger, ValidationError } from './validate';
 
@@ -433,10 +434,20 @@ const explode = define<IdListParams, { ids: number[] }>({
   label: 'Explode',
   parse: readIdList,
   run(draft, p) {
-    const polylines = p.ids.map((id) => requireEditable(draft, id)).filter((e) => e.geom.kind === 'polyline');
-    if (polylines.length === 0) throw new CommandError('There are no polylines to explode in the selection.');
     const ids: number[] = [];
+    const insertIds = p.ids.filter((id) => draft.insert(id) !== undefined);
+    const polylines = p.ids
+      .filter((id) => draft.insert(id) === undefined)
+      .map((id) => requireEditable(draft, id))
+      .filter((e) => e.geom.kind === 'polyline');
+    if (polylines.length === 0 && insertIds.length === 0) {
+      throw new CommandError('There are no polylines or block inserts to explode in the selection.');
+    }
     for (const e of polylines) ids.push(...replaceWith(draft, e, explodePolyline(e.geom as Polyline)));
+    if (insertIds.length > 0) {
+      const extra = LAYOUT_COMMANDS['insert.explode'].run(draft, { ids: insertIds });
+      ids.push(...extra.ids);
+    }
     return { ids };
   },
 });
