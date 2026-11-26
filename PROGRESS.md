@@ -15,7 +15,7 @@ Phase 8 (scripting) is in progress on top of that branch. Next up: Phase 9 (stre
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
 | 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
-| 8. Scripting (JavaScript, Python via Pyodide) | In progress | — | — |
+| 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
 | 10. DWG import (read only) | Not started | — | — |
 
@@ -26,7 +26,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 ### 2026-11-26: Phase 8 (scripting) started
 
 - Phase 7's PR #8 is still open, so this branch starts from
-  `cursor/phase-7-import-export-487f`. Merge #8 first.
+  `cursor/phase-7-import-export-487f`. Merge #8 first. This phase is PR #9.
 - Built:
   - **`cad` API** over the command registry: line, circle, arc (degrees), rect, polyline
     (DXF bulges), layer, polar, title, run, print. A script is one undo step.
