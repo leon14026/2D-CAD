@@ -224,6 +224,73 @@ describe('DXF import of a minimal file', () => {
     if (plate?.kind !== 'text') return;
     expect(plate.text).toBe('Plate\nnote');
   });
+
+  it('decodes DXF %% codes in TEXT and MTEXT', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'TEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '40',
+      '5',
+      '1',
+      '%%uGREAT ROOM',
+      '0',
+      'TEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '10',
+      '40',
+      '5',
+      '1',
+      '%%c10%%d',
+      '0',
+      'MTEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '20',
+      '40',
+      '5',
+      '1',
+      '{\\fArial;%%p0.1%%%}',
+      '0',
+      'TEXT',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '30',
+      '40',
+      '5',
+      '1',
+      '%%065%%z%%',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const texts = [...importDxf(dxf).doc.notes.values()]
+      .map((n) => n.body)
+      .filter((b) => b.kind === 'text')
+      .map((b) => (b.kind === 'text' ? b.text : ''));
+    expect(texts).toEqual(['GREAT ROOM', 'Ø10°', '±0.1%', 'A%%z%%']);
+  });
 });
 
 describe('shipped drawings export', () => {

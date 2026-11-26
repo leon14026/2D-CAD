@@ -56,6 +56,43 @@ test('export as PDF and SVG from the command palette', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('a DXF with %%u room names opens without the underline codes', async ({ page }) => {
+  await page.goto('./?test');
+  await page.locator('#al-file').setInputFiles({
+    name: 'rooms.dxf',
+    mimeType: 'application/dxf',
+    buffer: Buffer.from(
+      [
+        '0',
+        'SECTION',
+        '2',
+        'ENTITIES',
+        '0',
+        'TEXT',
+        '8',
+        '0',
+        '10',
+        '0',
+        '20',
+        '0',
+        '40',
+        '5',
+        '1',
+        '%%uGREAT ROOM',
+        '0',
+        'ENDSEC',
+        '0',
+        'EOF',
+        '',
+      ].join('\n'),
+    ),
+  });
+  await expect(page.locator('#al-toast')).toContainText('Opened');
+  const save = await page.evaluate(() => (window as unknown as { __archilite: { saveText(): string } }).__archilite.saveText());
+  expect(save).toContain('GREAT ROOM');
+  expect(save).not.toContain('%%u');
+});
+
 test('a bad DXF is refused with a plain message', async ({ page }) => {
   await page.goto('./?test');
   await page.locator('#al-file').setInputFiles({

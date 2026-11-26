@@ -3,7 +3,8 @@
  *
  * Export writes a text DXF that other CAD programs can open: lines, circles, arcs,
  * polylines (with bulges), layers, and annotations as the same line work the screen
- * draws. Import reads those entity types back; anything else is skipped and counted.
+ * draws. Import reads those entity types back; TEXT/MTEXT drop %% underline
+ * toggles and turn %%c / %%d / %%p into Ø / ° / ±. Anything else is skipped and counted.
  *
  * The writer targets the R2000 (AC1015) text form. Binary DXF is refused.
  */
@@ -443,20 +444,75 @@ function shapeFromEntity(e: DxfEntity): Shape | null {
   return null;
 }
 
+/**
+ * DXF %% codes in TEXT/MTEXT. Underline and overline toggles are dropped
+ * (ArchiLite text has no underline); diameter, degree and plus-minus become the
+ * characters; %%% is a percent sign; %%nnn is Latin-1 character nnn.
+ */
+function decodeDxfCodes(text: string): string {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    if (text.charCodeAt(i) === 37 && text.charCodeAt(i + 1) === 37) {
+      const a = text[i + 2];
+      if (a === undefined) {
+        out += text[i];
+        i += 1;
+        continue;
+      }
+      if (a >= '0' && a <= '9') {
+        const n = text.slice(i + 2, i + 5);
+        if (/^\d{3}$/.test(n)) {
+          out += String.fromCharCode(Number(n));
+          i += 5;
+          continue;
+        }
+      }
+      const c = a.toLowerCase();
+      if (c === 'u' || c === 'o') {
+        i += 3;
+        continue;
+      }
+      if (c === 'c') {
+        out += 'Ø';
+        i += 3;
+        continue;
+      }
+      if (c === 'd') {
+        out += '°';
+        i += 3;
+        continue;
+      }
+      if (c === 'p') {
+        out += '±';
+        i += 3;
+        continue;
+      }
+      if (c === '%') {
+        out += '%';
+        i += 3;
+        continue;
+      }
+      out += '%%';
+      i += 2;
+      continue;
+    }
+    out += text[i];
+    i += 1;
+  }
+  return out;
+}
+
 function mtextContent(e: DxfEntity): string {
   const chunks = [...allVal(e.values, 3), ...(allVal(e.values, 1) as string[])];
-  return chunks
-    .join('')
-    .replace(/\\P/g, '\n')
-    .replace(/\{\\[^;]*;/g, '')
-    .replace(/[{}]/g, '')
-    .replace(/%%[cC]/g, 'Ø')
-    .replace(/%%[dD]/g, '°')
-    .slice(0, 2000);
+  return decodeDxfCodes(
+    chunks.join('').replace(/\\P/g, '\n').replace(/\{\\[^;]*;/g, '').replace(/[{}]/g, ''),
+  ).slice(0, 2000);
 }
 
 function textNote(e: DxfEntity, layerId: number, id: number): Note | null {
-  const text = e.type === 'MTEXT' ? mtextContent(e) : (lastVal(e.values, 1) ?? '').slice(0, 2000);
+  const raw = e.type === 'MTEXT' ? mtextContent(e) : decodeDxfCodes(lastVal(e.values, 1) ?? '').slice(0, 2000);
+  const text = raw;
   if (text.trim() === '') return null;
   const at = xy(e.values, 10, 20, 'TEXT');
   const height = Math.max(1e-3, Number(lastVal(e.values, 40) ?? '3.5') || 3.5);

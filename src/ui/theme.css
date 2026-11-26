@@ -822,6 +822,12 @@ body.al-show-script .al-script {
   text-align: right;
 }
 
+.al-coords .al-status-toggle {
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: inherit;
+}
+
 .al-status-toggle {
   border: 0;
   background: none;

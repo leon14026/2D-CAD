@@ -2,7 +2,8 @@
 
 **Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
 Phase 8 (scripting) is in review (#9). Phase 9 (blocks, sheets, constraints) is in review on
-top of that branch. Merge #8 then #9 first.
+top of that branch. A follow-up on Phase 9 polishes DXF text codes, the units control, and
+layer-name tooltips. Merge #8 then #9 then #12 first.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -23,6 +24,15 @@ top of that branch. Merge #8 then #9 first.
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: DXF text codes, units control, layer-name tooltips
+
+- Follow-up on Phase 9 after opening a floorplan DXF: room names were showing `%%u`, the file
+  was tagged millimetres while drawn in inches with no UI to relabel, and xref layer names
+  ellipsed without a tooltip of the full name.
+- TEXT/MTEXT drop `%%u`/`%%o` and map `%%c`/`%%d`/`%%p` to Ø/°/±. Status bar unit cycles the
+  label without scaling; palette has treat-as and scale-to for each unit. Layer buttons title
+  the full name.
 
 ### 2026-11-26: Review of #12 (Phase 9)
 
