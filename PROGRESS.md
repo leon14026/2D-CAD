@@ -20,7 +20,7 @@ not depend on each other.
 | 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
 | 10. DWG import (read only) | Not started | — | — |
-| 11. Phone browser | Not started | — | — |
+| 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
@@ -28,7 +28,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ### 2026-11-26: Phase 11 (phone browser) planned
 
-- Decision, not code. The phone is the same site at 700px or narrower: drawing full screen,
+- Decision, not code. Recorded in PR #11. The phone is the same site at 700px or narrower: drawing full screen,
   tool strip along the bottom, layers and selection as sheets, two-finger pan and pinch.
   One finger pans when no tool is active, and places a point when a tool wants one.
 - It does not use Phase 9 or Phase 10. DWG can be skipped and done later, or done first.
