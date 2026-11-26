@@ -1,58 +1,28 @@
 import './ui/theme.css';
-import { APP_NAME } from './app/brand';
+import { Actions } from './app/actions';
 import { buildInfo } from './app/build-info';
-import { paintSheet } from './render/grid-painter';
-import { screenToWorld, type Viewport } from './render/viewport';
-import { formatCoordinate } from './ui/format';
+import { attachInteraction } from './app/interaction';
+import { mountShell } from './app/shell';
+import { initialState, Store } from './app/store';
+import { installTestHook } from './app/testing';
+import { CanvasView } from './render/view';
+import { requireElement } from './ui/dom';
+import { mountLayersPanel, mountSelectionPanel } from './ui/panels';
 
-/** Phase 0 uses a fixed scale; zoom and pan arrive in Phase 3. */
-const PX_PER_MM = 4;
+const stage = requireElement('#al-stage', HTMLElement);
+const rect = stage.getBoundingClientRect();
+// An empty drawing opens with the origin in the middle at 4 pixels per millimetre.
+const store = new Store(initialState({ originX: Math.round(rect.width / 2), originY: Math.round(rect.height / 2), pxPerUnit: 4 }));
+const view = new CanvasView(stage, requireElement('#al-canvas', HTMLCanvasElement), requireElement('#al-overlay', HTMLCanvasElement), store);
+const actions = new Actions(store, view);
 
-function requireElement<T extends Element>(selector: string, type: new () => T): T {
-  const el = document.querySelector(selector);
-  if (!(el instanceof type)) throw new Error(`${APP_NAME}: missing element ${selector}`);
-  return el;
-}
+mountLayersPanel(requireElement('#al-layers-panel', HTMLElement), store, actions);
+mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store);
+mountShell(store, actions, `v${buildInfo.version} (${buildInfo.sha})`);
+attachInteraction(store, view, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });
+installTestHook(store, view, actions);
 
-const canvas = requireElement('#al-canvas', HTMLCanvasElement);
-const coordX = requireElement('#al-coord-x', HTMLElement);
-const coordY = requireElement('#al-coord-y', HTMLElement);
-const build = requireElement('#al-build', HTMLElement);
-
-const context = canvas.getContext('2d', { alpha: false });
-if (!context) throw new Error(`${APP_NAME}: Canvas 2D is not available in this browser`);
-const ctx: CanvasRenderingContext2D = context;
-
-let viewport: Viewport = { originX: 0, originY: 0, pxPerUnit: PX_PER_MM };
-
-function render(): void {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const width = Math.max(1, Math.round(rect.width));
-  const height = Math.max(1, Math.round(rect.height));
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
-  viewport = {
-    originX: Math.round(width / 2),
-    originY: Math.round(height / 2),
-    pxPerUnit: PX_PER_MM,
-  };
-  paintSheet({ ctx, width, height, dpr }, viewport);
-  canvas.dataset['originX'] = String(viewport.originX);
-  canvas.dataset['originY'] = String(viewport.originY);
-  canvas.dataset['pxPerUnit'] = String(viewport.pxPerUnit);
-}
-
-canvas.addEventListener('pointermove', (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const world = screenToWorld(viewport, {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  });
-  coordX.textContent = formatCoordinate(world.x);
-  coordY.textContent = formatCoordinate(world.y);
-});
-
-new ResizeObserver(render).observe(canvas);
-build.textContent = `v${buildInfo.version} · ${buildInfo.sha}`;
-render();
+view.renderNow();
+performance.mark('archilite-ready');
+// Ruler labels use B612; redraw them once the font has arrived.
+void document.fonts.ready.then(() => view.invalidate(false));

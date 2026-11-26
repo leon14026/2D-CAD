@@ -21,7 +21,7 @@ async function check(page: Page, text: string) {
 test('the main page links to the inspector', async ({ page }) => {
   await page.goto('./');
   await page.getByRole('link', { name: 'File inspector' }).click();
-  await expect(page).toHaveTitle(`${APP_NAME} · File inspector`);
+  await expect(page).toHaveTitle(`File inspector – ${APP_NAME}`);
 });
 
 test('the example loads and shows its layers, counts, sizes and areas', async ({ page }) => {

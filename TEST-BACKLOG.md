@@ -78,12 +78,45 @@ merged) or the "File inspector" link at the bottom right of the main page.
       co-op drawings use. Tell Claude if you need others (for example 0.6 mm, or a "phantom"
       name).
 
+### Phase 3: viewer
+
+On the live site once PRs #2, #3 and #4 are merged. Press Ctrl+K and type to find any command.
+
+- [ ] **M3.1 Smoothness on the work laptop (no dedicated GPU).** Ctrl+K → "Load the large test
+      drawing (20,000 entities)". Pan (middle-drag, or hold Space and drag) and zoom (mouse
+      wheel or pinch) around the whole grid. Expect: it follows your hand without visible
+      stutter. Note the laptop, browser and graphics chip, and anything that feels slow.
+- [ ] **M3.2 Touchpad (decision).** On the laptop's touchpad: two-finger scroll zooms (the usual
+      CAD convention), pinch zooms, and Space + drag pans. Is that comfortable, or should
+      two-finger scroll pan instead? Tell Claude which.
+- [ ] **M3.3 Selection.** Load the example. Check each of these:
+      1. Click the outline. Expect the selection panel to show area **5978.540**.
+      2. Shift+click a hole. Expect it to be added; Shift+click it again to remove it.
+      3. Drag left to right around the lower-left hole and its centre lines. Expect exactly those
+         3 to be selected.
+      4. Drag right to left across the slot. Expect the slot and its 2 centre lines.
+      5. Press Esc. Expect the selection to clear.
+- [ ] **M3.4 Numbers in the selection panel.** Check against your own working:
+      - A hole: Ø 8.000, circumference **25.133**, area **50.265**.
+      - The slot: area **278.540**, length **71.416**.
+      - A centre line: length 12.000, angle 0° or 90°.
+- [ ] **M3.5 Layers.** Hide Holes with the eye, lock Outline with the padlock, then press Ctrl+Z
+      twice. Expect both undone. Click a layer name: it becomes current (blue bar). Ctrl+A
+      skips hidden and locked layers.
+- [ ] **M3.6 Save and reopen.** Hide a layer, press Ctrl+S, then open the downloaded file (Open,
+      or drag it onto the drawing). Expect the layer still hidden. The orange dot by the title
+      shows unsaved changes.
+- [ ] **M3.7 Look and feel (decision).** The design uses B612 (a typeface made for aircraft cockpit
+      displays), cool drafting-film paper, layout-fluid blue for selection, brass for the
+      crossing box, and steel rulers. Tell Claude what to keep or change, including anything
+      hard to read on your screens.
+- [ ] **M3.8 High-DPI and scaling.** On a laptop with Windows display scaling at 125% or 150%,
+      check that lines, grid and ruler labels stay sharp and that clicks land where you point.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 3:** pan and zoom a large drawing on the work laptop and judge smoothness; select by
-  window and crossing.
 - **Phase 4:** draw a part from one of your own sketches using typed coordinates and snaps; check
   the dimensions against your sketch.
 - **Phase 5:** offset, trim, fillet and chamfer on a real part outline; check by measuring.

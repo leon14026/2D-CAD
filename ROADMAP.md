@@ -83,8 +83,9 @@ command with typed parameters, so the UI, keyboard, scripts and tests all go thr
   example, is GPL-3.0 and would force ArchiLite to be GPL).
 - **Adapted code:** any algorithm adapted from CADCraft (MIT OR Apache-2.0) keeps a header naming
   the source file and copyright holder, and is listed in `NOTICE`.
-- **Fonts:** the UI uses system font stacks; no font files ship. Any future font must be OFL-1.1 or
-  more permissive and listed in `ATTRIBUTION.md`.
+- **Fonts:** the UI uses B612 (OFL-1.1), shipped as WOFF2 with its licence text, listed in
+  `ATTRIBUTION.md` and `NOTICE`. Any other font must be OFL-1.1 or more permissive and listed the
+  same way. Code-like text (file contents, key names) uses the system's monospace font.
 - **Interoperability:** ArchiLite reads and writes DXF, a publicly documented format. DWG is out of
   scope.
 - **Name:** before any public launch beyond GitHub, run a trademark search for "ArchiLite" in
@@ -176,12 +177,63 @@ Implementation notes (for later phases):
 ### Phase 3 — Viewer (first usable app)
 
 Builds: Canvas 2D renderer, world↔screen transform, grid, spatial index, pan/zoom, window and
-crossing selection, ArchiLite UI shell and design system v0.
+crossing selection, ArchiLite UI shell and design system v0. Added:
+- steel-rule rulers;
+- layers panel (show, lock, set current: all undoable);
+- selection properties panel;
+- command palette (Ctrl+K);
+- open, save, drag-and-drop and the examples;
+- keyboard shortcuts;
+- a 20,000-entity test drawing generated at build time.
 
 Gate:
-- [ ] GPU-disabled Chromium: 20,000-entity drawing pans and zooms at ≥ 30 fps.
-- [ ] Selection returns the correct entity IDs for window and crossing boxes.
-- [ ] Screenshot comparison tests pass.
+- [ ] GPU-disabled Chromium: 20,000-entity drawing pans and zooms at ≥ 30 fps (average frame
+      ≤ 33.3 ms, every entity on screen, timed until the pixels are ready).
+- [ ] Selection returns the correct entity IDs for window and crossing boxes (hand cases,
+      10,000-case property tests against brute force, and real mouse drags in the browser).
+- [ ] Screenshot comparison tests pass (7 approved images).
+- [ ] Cold start to interactive ≤ 2 s.
+- [ ] 100% line coverage of `src/core` (now including `spatial`).
+
+Implementation notes (for later phases):
+- **Spatial index:** `src/core/spatial`.
+  - `PackedRTree` is a static, STR-packed R-tree.
+  - `DocIndex.of(doc)` builds one index per document object, rebuilt after each edit (about
+    44 ms for 20,000 entities).
+  - Entity bounds are cached per geometry object, so unchanged shapes are not measured again.
+  - If editing large drawings feels slow, make the index incremental.
+- **Selection rules:** `select.ts`.
+  - Window: entirely inside the box. Crossing: inside or touching.
+  - Pick: the nearest entity within 6 px; ties go to the entity drawn on top.
+  - Hidden and locked layers are never selected.
+  - The index pre-filter is widened by the drawing's tolerance; a property test caught it missing
+    a shape exactly on a box edge.
+- **Rendering:** `src/render/scene.ts`.
+  - Coordinates are converted to device pixels in JavaScript (doubles).
+  - Consecutive entities with the same style share one path and one stroke.
+  - Entities are culled by the index.
+  - Square line ends; lines under 1.5 px and shapes under 16 px on screen are drawn as hairlines;
+    anything under 1 px is drawn as a dot.
+  - Why: in software rendering, a 1.9 px line with rounded ends costs about 14 times as much as
+    a hairline. Before this rule, 20,000 entities took 55–70 ms a frame; after it, about 20 ms.
+- **Views:** a main canvas (paper, grid, entities) and an overlay canvas (rulers, hover, selection
+  box). Hover and drag feedback redraw only the overlay.
+- **App state:** `src/app/store.ts`, a single immutable state object with subscribers.
+  - All user actions live in `src/app/actions.ts`; buttons, keys and the palette all call it.
+  - Layer show, hide and lock are document commands, so they can be undone.
+- **Test hook:** `src/app/testing.ts` (`window.__archilite`) is installed only when the URL has
+  `?test`. Browser tests use it to load large drawings and time frames.
+- **Design system v0:** `src/ui/theme.css`.
+  - Colours: drafting film `#e9edeb`, graphite ink `#1d2a33`, layout-fluid blue `#2a3fb0` for
+    selection and focus, brass `#a8740f` for the crossing box.
+  - Steel rules along the drawing area's edges.
+  - Typeface: B612, whose digits are all one width, so numbers never jitter.
+  - Copy is in sentence case: no ALL-CAPS labels and no "A · B" meta strings.
+- **Screenshots:** Playwright is pinned to 1.63.0 (Chromium 153.0.8010.12), the same build in
+  the cloud workspace and in CI, so approved images match exactly.
+  - Upgrading Playwright means regenerating them:
+    `npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`.
+  - Then look at every image before committing.
 
 ### Phase 4 — Precision drafting
 

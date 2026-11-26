@@ -1,8 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phase 2 (document model) is built and in review as
-[PR #3](https://github.com/leon14026/2D-CAD/pull/3). Merge [PR #2](https://github.com/leon14026/2D-CAD/pull/2)
-(Phase 1) first, then PR #3. Next up: Phase 3, the viewer.
+**Now:** Phase 3 (viewer) is built and in review as [PR #4](https://github.com/leon14026/2D-CAD/pull/4).
+Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1), then
+[PR #3](https://github.com/leon14026/2D-CAD/pull/3) (Phase 2), then PR #4. Next up: Phase 4,
+precision drafting (the first drawing tools).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -11,7 +12,7 @@
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
 | 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
 | 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
-| 3. Viewer | Not started | — | — |
+| 3. Viewer | Done, gate passed locally; awaiting CI and merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
 | 4. Precision drafting | Not started | — | — |
 | 5. Modify tools | Not started | — | — |
 | 6. Annotation | Not started | — | — |
@@ -22,6 +23,46 @@
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-25: Phase 3 (viewer) complete, PR #4
+
+- Built:
+  - The first usable app: open, view, pan, zoom and select drawings.
+  - Spatial index (`src/core/spatial`) with window, crossing and pick selection.
+  - Canvas 2D renderer with culling, batching and level of detail.
+  - Steel-rule rulers.
+  - Layers panel: show, hide, lock and set current, all undoable.
+  - Selection properties panel.
+  - Command palette (Ctrl+K), keyboard shortcuts, open, save and drag-and-drop.
+  - A 20,000-entity test drawing, generated at build time.
+- Design system v0: drafting film, graphite, layout-fluid blue, brass, and the B612 typeface
+  (OFL-1.1), the first third-party item shipped. Added to `NOTICE` and `ATTRIBUTION.md`, with
+  its licence text.
+- Gate (passed locally):
+  - 20,000 entities with the GPU disabled: pan about 20 ms per frame (45–53 fps), zoom about
+    23 ms (41–43 fps). Budget: 33.3 ms.
+  - Selection correct in hand cases, in 10,000-case property tests against brute force, and
+    with real mouse drags.
+  - 7 approved screenshots.
+  - Cold start under 2 s.
+  - 100% line coverage of `src/core`.
+  - The app downloads as 64 KB.
+- Found and fixed while building:
+  - **Speed:** thick lines with rounded ends made 20,000-entity frames take 55–70 ms in software
+    rendering. Square ends, hairlines under 1.5 px and hairlines for shapes under 16 px on
+    screen brought frames to about 20 ms.
+  - **Selection:** a property test caught the spatial-index pre-filter missing a shape that
+    sat exactly on a box edge (within tolerance).
+  - **Legibility:** B612 Mono puts its decimal point at the left of a wide slot ("5978. 540"), so
+    it was dropped. B612's own digits are all one width.
+  - **Design:** the warm cream paper colour from earlier phases is the most common
+    AI-generated default, so it was replaced with a cool drafting-film colour.
+  - **Architecture guard:** it flagged the word "window" (window selection) inside a string;
+    it now ignores comments and strings, with a test proving it still catches real use.
+  - **Performance test:** it let the drawing drift off screen, so frames looked cheaper than
+    they were. Each timing run now starts fitted and swings back and forth.
+- Playwright is pinned to 1.63.0 so CI uses the same Chromium build (153) as the screenshot
+  baselines.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

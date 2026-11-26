@@ -1,18 +1,41 @@
-/* ArchiLite design tokens and app shell. Original to ArchiLite.
-   Fonts are system stacks: nothing is downloaded or bundled. */
+/*
+ * ArchiLite design system v0.
+ *
+ * Drawn from the machinist's and draughtsman's bench: matte drafting film for the drawing
+ * area, graphite ink, layout-fluid blue for what you have picked, brass for the crossing box,
+ * and steel rules along the edges. B612, a typeface made for aircraft cockpit displays, carries
+ * the interface; its digits are all one width, so columns of numbers never jitter. A system
+ * monospace face is used only for file text and key names.
+ */
+@import './fonts.css';
 
 :root {
-  --al-bg: #f4f1ea;
-  --al-surface: #fbfaf6;
-  --al-ink: #1f2a33;
-  --al-ink-muted: #5d6871;
-  --al-rule: #ddd6c8;
-  --al-accent: #0e7c7b;
-  --al-accent-soft: #d8ecea;
-  --al-font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --al-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  /* Colour */
+  --al-film: #e9edeb; /* drawing area */
+  --al-chrome: #f5f6f6; /* bars and panels */
+  --al-steel: #d7dcdf; /* rulers, wells */
+  --al-rule: #c9d0d4; /* hairlines between areas */
+  --al-ink: #1d2a33; /* text and default drawing ink */
+  --al-ink-muted: #5e6b73;
+  --al-blue: #2a3fb0; /* layout fluid: selection, focus, primary action */
+  --al-blue-soft: #dfe3f6;
+  --al-brass: #a8740f; /* crossing selection */
+  --al-danger: #b3261e;
+  --al-danger-soft: #f6e0dd;
+
+  /* Type */
+  --al-font-ui: 'B612', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --al-font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+  --al-text: 13px;
+  --al-text-small: 11.5px;
+  --al-text-title: 15px;
+
+  /* Layout */
   --al-bar-h: 44px;
-  --al-status-h: 26px;
+  --al-status-h: 28px;
+  --al-left-w: 232px;
+  --al-right-w: 272px;
+  --al-radius: 4px;
   color-scheme: light;
 }
 
@@ -28,29 +51,89 @@ body {
 
 body {
   display: grid;
-  grid-template-rows: var(--al-bar-h) 1fr var(--al-status-h);
-  background: var(--al-bg);
+  grid-template-rows: var(--al-bar-h) minmax(0, 1fr) var(--al-status-h);
+  grid-template-columns: var(--al-left-w) minmax(0, 1fr) var(--al-right-w);
+  grid-template-areas:
+    'bar bar bar'
+    'left stage right'
+    'status status status';
+  background: var(--al-chrome);
   color: var(--al-ink);
-  font: 13px/1.4 var(--al-font-ui);
+  font: var(--al-text) / 1.45 var(--al-font-ui);
   overflow: hidden;
 }
 
+body.al-hide-left {
+  --al-left-w: 0px;
+}
+
+body.al-hide-right {
+  --al-right-w: 0px;
+}
+
+body.al-hide-left .al-side-left,
+body.al-hide-right .al-side-right {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  body {
+    --al-left-w: 0px;
+    --al-right-w: 0px;
+  }
+
+  .al-side,
+  .al-search kbd,
+  .al-doc-file {
+    display: none;
+  }
+
+  .al-search {
+    min-width: 0;
+  }
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--al-blue);
+  outline-offset: 2px;
+}
+
+kbd {
+  font: var(--al-text-small) / 1 var(--al-font-mono);
+  padding: 2px 4px;
+  border: 1px solid var(--al-rule);
+  border-radius: 3px;
+  background: var(--al-chrome);
+  color: var(--al-ink-muted);
+}
+
+/* ---------- top bar ---------- */
+
 .al-bar {
+  grid-area: bar;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 14px;
-  background: var(--al-surface);
+  padding: 0 12px 0 14px;
   border-bottom: 1px solid var(--al-rule);
+  background: var(--al-chrome);
+  min-width: 0;
 }
 
 .al-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  font-size: 15px;
+  font-size: var(--al-text-title);
+  font-weight: 700;
 }
 
 .al-mark {
@@ -59,81 +142,475 @@ body {
   flex: none;
 }
 
-.al-pill {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--al-accent-soft);
-  color: var(--al-accent);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.al-doc {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--al-rule);
+}
+
+.al-doc-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.al-doc-file {
+  color: var(--al-ink-muted);
+  font-size: var(--al-text-small);
+  white-space: nowrap;
+}
+
+.al-dirty {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--al-brass);
+  align-self: center;
+  flex: none;
 }
 
 .al-spacer {
   flex: 1;
 }
 
-.al-coords {
+.al-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: var(--al-chrome);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.al-button:hover {
+  border-color: var(--al-ink-muted);
+}
+
+.al-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-color: var(--al-rule);
+}
+
+.al-button-primary {
+  background: var(--al-blue);
+  border-color: var(--al-blue);
+  color: #ffffff;
+}
+
+.al-button-primary:hover {
+  border-color: var(--al-ink);
+}
+
+.al-icon-button {
+  width: 30px;
+  padding: 0;
+  justify-content: center;
+}
+
+.al-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.al-search {
+  min-width: 220px;
+  justify-content: space-between;
+  color: var(--al-ink-muted);
+}
+
+.al-group {
   display: flex;
-  gap: 14px;
-  font: 12px/1 var(--al-font-mono);
+  gap: 4px;
+}
+
+/* ---------- side panels ---------- */
+
+.al-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  background: var(--al-chrome);
+}
+
+.al-side-left {
+  grid-area: left;
+  border-right: 1px solid var(--al-rule);
+}
+
+.al-side-right {
+  grid-area: right;
+  border-left: 1px solid var(--al-rule);
+}
+
+.al-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+}
+
+.al-panel-head h2 {
+  margin: 0;
+  font-size: var(--al-text);
+  font-weight: 700;
+}
+
+.al-panel-head span {
+  color: var(--al-ink-muted);
+  font-size: var(--al-text-small);
+}
+
+.al-panel-body {
+  padding: 0 14px 14px;
+}
+
+.al-hint {
+  margin: 0;
+  color: var(--al-ink-muted);
+  max-width: 36ch;
+}
+
+.al-hint + .al-hint {
+  margin-top: 8px;
+}
+
+/* layer list */
+
+.al-layers {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 12px;
+}
+
+.al-layer {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto 26px 26px;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 4px 0 10px;
+  border-radius: var(--al-radius);
+}
+
+.al-layer:hover {
+  background: var(--al-steel);
+}
+
+.al-layer.is-current {
+  box-shadow: inset 3px 0 0 var(--al-blue);
+}
+
+.al-layer.is-hidden .al-layer-name {
+  color: var(--al-ink-muted);
+  text-decoration: line-through;
+}
+
+.al-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgb(0 0 0 / 0.2);
+}
+
+.al-layer-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.al-layer-count {
+  color: var(--al-ink-muted);
+  font-size: var(--al-text-small);
   font-variant-numeric: tabular-nums;
+}
+
+.al-toggle {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--al-radius);
+  background: none;
+  color: var(--al-ink-muted);
+  cursor: pointer;
+}
+
+.al-toggle:hover {
+  background: var(--al-chrome);
   color: var(--al-ink);
 }
 
-.al-coords b {
-  color: var(--al-ink-muted);
-  font-weight: 500;
-  margin-right: 4px;
+.al-toggle.is-off {
+  color: var(--al-brass);
 }
 
-.al-coords output {
-  display: inline-block;
-  min-width: 8ch;
-  text-align: right;
+/* properties */
+
+.al-props {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 3px 14px;
+  margin: 0;
 }
 
-.al-unit {
+.al-props dt {
   color: var(--al-ink-muted);
 }
 
-.al-renderer {
-  color: var(--al-ink-muted);
-  font-size: 12px;
+.al-props dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
+
+.al-props + .al-props {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- drawing area ---------- */
 
 .al-stage {
+  grid-area: stage;
   position: relative;
+  min-width: 0;
   min-height: 0;
+  background: var(--al-film);
+  overflow: hidden;
 }
 
-#al-canvas {
-  display: block;
+#al-canvas,
+#al-overlay {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
+}
+
+#al-overlay {
   cursor: crosshair;
   touch-action: none;
 }
 
+.al-stage.is-panning #al-overlay {
+  cursor: grabbing;
+}
+
+.al-empty {
+  /* Lets the cursor readout and hover work through the card; only its buttons take clicks. */
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100% - 64px));
+  padding: 18px 20px;
+  border: 1px solid var(--al-rule);
+  border-radius: 6px;
+  background: var(--al-chrome);
+}
+
+.al-empty h2 {
+  margin: 0 0 6px;
+  font-size: var(--al-text-title);
+}
+
+.al-empty p {
+  margin: 0 0 14px;
+  color: var(--al-ink-muted);
+}
+
+.al-empty .al-group {
+  gap: 8px;
+}
+
+.al-empty button {
+  pointer-events: auto;
+}
+
+/* ---------- status bar ---------- */
+
 .al-status {
+  grid-area: status;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   padding: 0 14px;
-  background: var(--al-surface);
   border-top: 1px solid var(--al-rule);
+  background: var(--al-chrome);
   color: var(--al-ink-muted);
-  font-size: 11.5px;
+  font-size: var(--al-text-small);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.al-coords {
+  display: flex;
+  gap: 12px;
+  color: var(--al-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.al-coords output {
+  display: inline-block;
+  min-width: 9ch;
+  text-align: right;
+}
+
+.al-status-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--al-ink-muted);
+  cursor: pointer;
+}
+
+.al-status-toggle[aria-pressed='true'] {
+  color: var(--al-ink);
+}
+
+.al-pill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--al-blue-soft);
+  color: var(--al-blue);
+  font-weight: 700;
 }
 
 .al-status-link {
-  margin-left: auto;
-  color: var(--al-accent);
-  font-weight: 600;
+  color: var(--al-blue);
+  font-weight: 700;
   text-decoration: none;
 }
 
 .al-status-link:hover {
   text-decoration: underline;
+}
+
+/* ---------- command palette ---------- */
+
+.al-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  background: rgb(29 42 51 / 0.18);
+  z-index: 10;
+}
+
+.al-palette {
+  width: min(560px, calc(100vw - 32px));
+  border: 1px solid var(--al-rule);
+  border-radius: 6px;
+  background: var(--al-chrome);
+  box-shadow: 0 18px 40px rgb(29 42 51 / 0.22);
+  overflow: hidden;
+}
+
+.al-palette input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--al-rule);
+  background: none;
+  font-size: var(--al-text-title);
+  outline: none;
+}
+
+.al-palette ul {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.al-palette li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--al-radius);
+  cursor: pointer;
+}
+
+.al-palette li[aria-selected='true'] {
+  background: var(--al-blue-soft);
+}
+
+.al-palette-empty {
+  padding: 14px 16px;
+  color: var(--al-ink-muted);
+}
+
+/* ---------- messages ---------- */
+
+.al-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--al-status-h) + 16px);
+  transform: translateX(-50%);
+  max-width: min(640px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--al-ink);
+  color: #ffffff;
+  z-index: 20;
+}
+
+.al-toast.is-error {
+  background: var(--al-danger-soft);
+  color: var(--al-danger);
+  border: 1px solid var(--al-danger);
+}
+
+.al-toast small {
+  display: block;
+  margin-top: 2px;
+  color: var(--al-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .al-toast {
+    animation: al-rise 160ms ease-out;
+  }
+
+  @keyframes al-rise {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 6px);
+    }
+  }
 }
