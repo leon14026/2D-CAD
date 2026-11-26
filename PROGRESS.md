@@ -66,16 +66,19 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 - **First CI run:** everything passed except the whole-window screenshot, where 6,385 pixels
   of text differed. In CI, pan averaged 30.9 ms and zoom 27.2 ms, within the 33.3 ms budget
   (GitHub's runners are slower than the workspace).
-  - Cause: Chromium takes system fonts and text smoothing from each machine's fontconfig.
-    The workspace has no hinting and swaps in other fonts (Anonymous Pro for Consolas, Inter
-    for sans-serif); GitHub's Ubuntu runner uses slight hinting. The build label's commit id
-    also differs per build and shifted the status bar.
-  - Fix: the browser tests now use their own font setup (`tests/e2e/fonts.conf`), and the
-    build label gets a fixed text in that screenshot.
-  - That brought it to 5,236 pixels. The rest came from the runner itself: `ubuntu-latest`
-    is now Ubuntu 26.04, whose newer FreeType draws glyphs slightly differently from the
-    workspace's Ubuntu 24.04 (lines and shapes matched exactly). The CI job is now pinned to
-    `ubuntu-24.04`.
+  - Cause, found by printing CI's screenshot into the job log and comparing: the
+    workspace's Chromium is a wrapper script that silently adds
+    `--font-render-hinting=none --disable-lcd-text --force-color-profile=srgb`, and GitHub's
+    runner runs the stock browser. Every piece of text came out slightly wider in CI; lines
+    and shapes matched exactly. Running the unwrapped browser here reproduced CI's 5,236
+    differing pixels exactly.
+  - Smaller causes: the workspace swaps in its own fonts (Anonymous Pro for Consolas, Inter
+    for sans-serif), and the build label's commit id differs per build.
+  - Fix: `playwright.config.ts` now passes those switches itself and points Chromium at its
+    own font setup (`tests/e2e/fonts.conf`); the build label gets a fixed text in that
+    screenshot. A wrong first guess (the runner's Ubuntu version) was tried and reverted.
+  - CI now prints failed screenshots into the job log, since the report artifact can't be
+    downloaded from the workspace.
 
 ### 2026-11-25: Phase 2 (document model) complete, PR #3
 

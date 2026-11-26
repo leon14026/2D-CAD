@@ -234,14 +234,12 @@ Implementation notes (for later phases):
   - Upgrading Playwright means regenerating them:
     `npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`.
   - Then look at every image before committing.
-  - Chromium on Linux takes system fonts and text smoothing from fontconfig, which differs
-    between machines (the workspace and GitHub's runners disagree on hinting and font
-    substitutes). The browser tests point Chromium at `tests/e2e/fonts.conf`, so text renders
-    the same everywhere. Text that changes per build (the build label) gets a fixed value
-    before a screenshot.
-  - Glyphs themselves are drawn by the system's FreeType, so the CI job runs on
-    `ubuntu-24.04`, the workspace's release. `ubuntu-latest` is 26.04, whose newer FreeType
-    smooths text slightly differently; lines and shapes are unaffected.
+  - Text rendering must match too. The workspace's Chromium is a wrapper script that adds
+    `--font-render-hinting=none --disable-lcd-text --force-color-profile=srgb`; GitHub's
+    runner uses the stock browser. `playwright.config.ts` passes those switches itself
+    (`TEXT_SWITCHES`) and points Chromium at `tests/e2e/fonts.conf`, so system fonts and
+    smoothing are the same everywhere. Text that changes per build (the build label) gets a
+    fixed value before a screenshot. Lines and shapes were never affected.
 
 ### Phase 4 — Precision drafting
 

@@ -46,13 +46,14 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
   Chromium changes. If you do, regenerate the baselines
   (`npx playwright test tests/e2e/screenshots.spec.ts --update-snapshots`) and look at every
   image before committing.
-- **Browser tests use their own font setup** (`tests/e2e/fonts.conf`, wired in
-  `playwright.config.ts`): fixed text smoothing and Liberation as the only system fonts, so
-  text renders the same on every machine. Any text that changes per build or per machine
-  (the build label) gets a fixed value before a screenshot.
-- **CI runs on `ubuntu-24.04`**, the workspace's release, because text in screenshots is drawn
-  by the system's FreeType; `ubuntu-latest` (26.04) draws it slightly differently. Change the
-  runner only together with the workspace and the baselines.
+- **Text must render the same everywhere** for screenshots to match, so `playwright.config.ts`
+  launches Chromium with `TEXT_SWITCHES` (`--font-render-hinting=none --disable-lcd-text
+  --force-color-profile=srgb`) and its own font setup (`tests/e2e/fonts.conf`: Liberation as
+  the only system fonts). The workspace's Chromium is a wrapper script that adds those switches
+  by itself; GitHub's runner uses the stock browser, so never drop them from the config. Any
+  text that changes per build (the build label) gets a fixed value before a screenshot.
+- When a browser test fails in CI, the actual and diff screenshots are printed in the job log
+  as base64 PNGs (the report artifact can't be downloaded from the workspace).
 - After pushing, wait for the PR's "Phase gate" check to pass before reporting done.
 
 ### Commit and PR text
