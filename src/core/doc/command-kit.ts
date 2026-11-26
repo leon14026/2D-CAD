@@ -5,6 +5,7 @@
 import { transformShape, type Shape, type Transform } from '../geom';
 import { CommandError, type Draft } from './draft';
 import type { Entity, Layer } from './model';
+import type { Note } from './notes';
 import { readColorRef, readLinetypeRef, readLineweightRef, type ColorRef, type LinetypeRef, type LineweightRef } from './styles';
 import { canonicalShape, join, readArray, readPositiveInteger, ValidationError, type Obj } from './validate';
 
@@ -66,9 +67,19 @@ export function requireUnlocked(draft: Draft, layerId: number): Layer {
 
 export function requireEditable(draft: Draft, id: number): Entity {
   const e = draft.entity(id);
-  if (!e) throw new CommandError(`There is no entity with id ${id}.`);
+  if (!e) {
+    if (draft.note(id)) throw new CommandError('That is an annotation, and this command works on drawn shapes only.');
+    throw new CommandError(`There is no entity with id ${id}.`);
+  }
   requireUnlocked(draft, e.layer);
   return e;
+}
+
+export function requireNoteEditable(draft: Draft, id: number): Note {
+  const n = draft.note(id);
+  if (!n) throw new CommandError(`There is no annotation with id ${id}.`);
+  requireUnlocked(draft, n.layer);
+  return n;
 }
 
 export function requireUniqueName(draft: Draft, name: string, exceptId?: number): void {

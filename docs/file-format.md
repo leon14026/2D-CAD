@@ -1,4 +1,4 @@
-# ArchiLite drawing file format (version 1)
+# ArchiLite drawing file format (version 2)
 
 ArchiLite saves drawings as UTF-8 JSON text with the extension `.archilite`. The format is plain and
 documented so you can read, diff, generate and repair drawings with any text editor or script.
@@ -12,21 +12,28 @@ contains.
 ```json
 {
   "format": "archilite",
-  "version": 1,
+  "version": 2,
   "title": "Example bracket",
   "units": "mm",
   "currentLayer": 2,
+  "currentDimStyle": "ISO",
   "nextId": 21,
+  "dimStyles": [
+    {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
+  ],
   "layers": [
     {"id":2,"name":"Outline","color":"#1f2a33","linetype":"continuous","lineweight":0.5,"visible":true,"locked":false}
   ],
   "entities": [
     {"id":6,"layer":3,"z":6,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":10,"y":10},"radius":4}}
+  ],
+  "notes": [
+    {"id":22,"layer":2,"z":22,"color":"byLayer","lineweight":"byLayer","body":{"kind":"diameter","target":6,"at":{"x":10,"y":25},"style":"ISO"}}
   ]
 }
 ```
 
-ArchiLite always writes one layer or entity per line, entities in drawing order, so the same drawing
+ArchiLite always writes one layer, entity, note or dimension style per line, in drawing order, so the same drawing
 always produces the same text and changes show up as clean line diffs in git.
 
 ## Top-level fields
@@ -36,16 +43,22 @@ All fields are required. Any field not listed here is rejected.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | `"archilite"` | Identifies the file. |
-| `version` | whole number | File format version. This document describes version **1**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. |
+| `version` | whole number | File format version. This document describes version **2**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. Version 1 files (which have no annotations) still open. |
 | `title` | text, 1–200 characters | Drawing title. Leading and trailing spaces are removed. |
 | `units` | `"mm"`, `"cm"`, `"m"`, `"in"` or `"ft"` | What one drawing unit means. All coordinates and radii are in these units. |
 | `currentLayer` | layer id | The layer new entities go on. |
+| `currentDimStyle` | style name | The dimension style new dimensions and leaders use. Must name one of `dimStyles`. *(version 2)* |
 | `nextId` | whole number | The next id ArchiLite will hand out. Must be greater than every id in the file. |
+| `dimStyles` | list of dimension styles | At least one, at most 50, names unique ignoring upper/lower case. *(version 2)* |
 | `layers` | list of layers | At least one. The order is the order shown in the layer list. |
 | `entities` | list of entities | May be empty. |
+| `notes` | list of notes | Dimensions, text, leaders, centre marks, hatches and title blocks. May be empty. *(version 2)* |
 
-Layers and entities share **one id space**: an id can't belong to a layer and an entity at once.
+Layers, entities and notes share **one id space**: an id can't belong to two of them at once.
 Ids are whole numbers from 1 up.
+
+A version 1 file has none of the three fields marked *(version 2)*. It opens with the default
+`ISO` style and no notes, and is saved as version 2 the next time.
 
 ## Layer
 
@@ -91,6 +104,78 @@ format's lightweight polylines:
 - positive bulges arc anticlockwise, negative bulges clockwise;
 - `1` is a half circle, and `tan(π/8) ≈ 0.4142` is a quarter circle (a 90° corner fillet).
 
+## Notes
+
+Notes are the annotations: everything that explains the geometry rather than being part of it.
+A note has the same `layer`, `z`, `color` and `lineweight` fields as an entity (no `linetype`),
+and a `body` that says what it is.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | whole number | Unique id. |
+| `layer` | layer id | Must be an existing layer. |
+| `z` | number | Drawing order among notes, lower first. Hatches are always drawn under the entities; every other note is drawn over them. |
+| `color` | `"byLayer"` or `"#rrggbb"` | |
+| `lineweight` | `"byLayer"` or a lineweight | |
+| `body` | note body (below) | |
+
+### Dimension styles
+
+How dimensions look. The ISO default is called `ISO`. All sizes are in drawing units and are
+lengths *on paper* at 1:1, so a text height of 3.5 is 3.5 mm in a drawing made in millimetres.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | text, 1–32 characters | Unique, ignoring upper/lower case. |
+| `textHeight` | number, more than 0 | Height of the dimension text. |
+| `arrowSize` | number, more than 0 | Length of the arrowheads. |
+| `extGap` | number, 0 or more | Gap between the feature and the start of an extension line. |
+| `extOver` | number, 0 or more | How far an extension line runs past the dimension line. |
+| `textGap` | number, 0 or more | Gap between the dimension line and its text. |
+| `precision` | whole number, 0–8 | Decimal places for lengths. |
+| `anglePrecision` | whole number, 0–8 | Decimal places for angles, which are shown in degrees. |
+| `centreMark` | number, more than 0 | Half-length of a centre mark's cross. |
+| `centreOver` | number, 0 or more | How far the lines of an extended centre mark run past the circle. |
+
+### Point references
+
+Associative dimensions don't store the numbers they show. They store *where to measure*, and the
+number is worked out from the geometry every time the drawing is read. A point is one of:
+
+| `kind` | Other fields | Meaning |
+|---|---|---|
+| `"free"` | `p`: `{"x":…, "y":…}` | A fixed point that follows nothing. |
+| `"end"` | `id`, `end`: `"start"` or `"end"` | An end of a segment or arc. |
+| `"vertex"` | `id`, `index` | A vertex of a polyline (counting from 0). |
+| `"mid"` | `id` | The midpoint of a segment. |
+| `"center"` | `id` | The centre of a circle or arc. |
+
+`id` must be an entity of the right kind. A point that is typed or clicked exactly on one of these
+features is saved as a reference to it, so the dimension follows the feature when it moves. If
+the entity a note refers to is deleted, the note is deleted with it; undo brings both back.
+
+### Note bodies
+
+`at` is the point the dimension line (or text) is placed through. It is a fixed position, so
+moving only the geometry leaves the dimension line where it was.
+
+| `kind` | Other fields | Meaning |
+|---|---|---|
+| `"linear"` | `orient` (`"horizontal"` or `"vertical"`), `a`, `b` (point references), `at`, `style` | The horizontal or vertical distance between `a` and `b`. |
+| `"aligned"` | `a`, `b`, `at`, `style` | The distance from `a` to `b`, measured along the line between them. |
+| `"radius"` | `target` (circle or arc id), `at`, `style` | Shows `R` and the radius. `at` says which way the dimension line points. |
+| `"diameter"` | `target`, `at`, `style` | Shows `Ø` and the diameter. |
+| `"angle"` | `vertex`, `a`, `b` (point references), `at`, `style` | The angle between the side from `vertex` through `a` and the side from `vertex` through `b`, in degrees. `at` sets the radius of the arc and which of the two angles is measured: the one `at` lies inside (so it can be more than 180°). |
+| `"text"` | `at`, `height` (more than 0), `angle` (radians), `anchor` (`"left"`, `"center"` or `"right"`), `text` | Text. `text` is 1–2000 characters; `\n` starts a new line. |
+| `"leader"` | `points` (2–50 points, no two in a row the same), `text` (0–2000 characters), `style` | An arrow at the first point, the line through the others, and the note at the last. |
+| `"centre"` | `target` (circle or arc id), `extended` (`true` for centre lines, `false` for a cross), `style` | A centre mark. |
+| `"hatch"` | `loops`, `pattern`, `spacing` (more than 0), `angle` (radians) | Fills a region. `loops` is a list of boundaries; each boundary is a list of 1–1000 entity ids that make a closed outline: one circle or closed polyline, or several lines, arcs and polylines that join end to end. The first boundary is the outside, and every other one is an island that stays clear. No entity may be used twice. `pattern` is `"solid"`, `"lines"`, `"cross"`, `"double"` or `"dots"`. |
+| `"titleBlock"` | `at`, `size`, `fields` | A sheet border and title block with its lower left corner at `at`. `size` is `"A4"`, `"A3"`, `"A2"`, `"A1"` or `"A0"` (landscape, ISO 216). `fields` has `title`, `number`, `scale`, `revision`, `material`, `drawnBy`, `date` and `company`, each 0–200 characters of text. |
+
+A note whose references can't be resolved (a missing entity, the wrong kind of entity, two
+points that coincide, a hatch boundary that isn't closed) is refused when the file is opened, with
+the location of the problem.
+
 ## Styles
 
 **Linetypes** are ArchiLite's own, using the element proportions of ISO 128-20 (lengths in multiples
@@ -124,7 +209,7 @@ Problem in the drawing file at entities[1].geom.radius: radius must be a positiv
 ```
 
 The location reads like a path: `entities[1]` is the second entity (counting from 0), `.geom.radius`
-its radius.
+its radius. Notes read the same way, for example `notes[0].body.target`.
 
 ## Versioning
 

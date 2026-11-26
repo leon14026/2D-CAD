@@ -427,6 +427,57 @@ kbd {
   border-color: var(--al-rule);
 }
 
+/* Forms in the selection panel. */
+.al-form {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-form label {
+  color: var(--al-ink-muted);
+}
+
+.al-field {
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: #fff;
+}
+
+.al-field-area {
+  height: auto;
+  padding: 4px 6px;
+  resize: vertical;
+}
+
+.al-field:hover {
+  border-color: var(--al-ink-muted);
+}
+
+.al-style {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-style summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.al-style .al-action {
+  margin-top: 10px;
+  padding: 0 12px;
+}
+
 /* ---------- drawing area ---------- */
 
 .al-stage {
@@ -496,15 +547,15 @@ kbd {
   left: 28px;
   top: 28px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-flow: column wrap;
+  align-content: flex-start;
+  gap: 2px 6px;
   padding: 3px;
   border: 1px solid var(--al-rule);
   border-radius: 6px;
   background: var(--al-chrome);
-  /* On short windows the rail scrolls rather than running off the drawing area. */
+  /* On short windows the groups continue in a second column, so no tool is ever hidden. */
   max-height: calc(100% - 56px);
-  overflow-y: auto;
 }
 
 .al-rail-group {

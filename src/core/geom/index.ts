@@ -6,6 +6,7 @@ export * from './construct';
 export * from './corner';
 export * from './curves';
 export * from './cut';
+export * from './hatch';
 export * from './intersect';
 export * from './offset';
 export * from './polyline';

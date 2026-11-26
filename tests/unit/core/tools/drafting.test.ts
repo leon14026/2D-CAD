@@ -77,7 +77,7 @@ describe('drafting driver', () => {
 
   it('knows its tools by id', () => {
     expect(isToolId('line')).toBe(true);
-    expect(isToolId('hatch')).toBe(false);
+    expect(isToolId('sculpt')).toBe(false);
     expect(isToolId('toString')).toBe(false);
     for (const [id, def] of Object.entries(TOOLS)) expect(def.id).toBe(id);
   });

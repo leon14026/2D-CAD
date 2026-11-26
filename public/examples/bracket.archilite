@@ -1,10 +1,14 @@
 {
   "format": "archilite",
-  "version": 1,
+  "version": 2,
   "title": "Example bracket",
   "units": "mm",
   "currentLayer": 2,
+  "currentDimStyle": "ISO",
   "nextId": 21,
+  "dimStyles": [
+    {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
+  ],
   "layers": [
     {"id":2,"name":"Outline","color":"#1f2a33","linetype":"continuous","lineweight":0.5,"visible":true,"locked":false},
     {"id":3,"name":"Holes","color":"#0e7c7b","linetype":"continuous","lineweight":0.35,"visible":true,"locked":false},
@@ -27,5 +31,6 @@
     {"id":18,"layer":4,"z":18,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":10,"y":44},"end":{"x":10,"y":56}}},
     {"id":19,"layer":4,"z":19,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":32,"y":30},"end":{"x":68,"y":30}}},
     {"id":20,"layer":4,"z":20,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":50,"y":22},"end":{"x":50,"y":38}}}
-  ]
+  ],
+  "notes": []
 }

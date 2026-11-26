@@ -1,10 +1,14 @@
 {
   "format": "archilite",
-  "version": 1,
+  "version": 2,
   "title": "Modify reference",
   "units": "mm",
   "currentLayer": 1,
+  "currentDimStyle": "ISO",
   "nextId": 32,
+  "dimStyles": [
+    {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
+  ],
   "layers": [
     {"id":1,"name":"Default","color":"#1f2a33","linetype":"continuous","lineweight":0.25,"visible":true,"locked":false}
   ],
@@ -38,5 +42,6 @@
     {"id":30,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":9.803847577293368,"y":35},"end":{"x":18,"y":32.80384757729337}}},
     {"id":31,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":18,"y":32.80384757729337},"end":{"x":20.196152422706632,"y":41}}},
     {"id":27,"layer":1,"z":27,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":130,"y":0,"bulge":0},{"x":140,"y":0,"bulge":0},{"x":140,"y":10,"bulge":0}],"closed":false}}
-  ]
+  ],
+  "notes": []
 }

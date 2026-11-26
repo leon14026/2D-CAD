@@ -74,9 +74,11 @@ npm run test:coverage     # unit + property tests; fails if src/core coverage < 
 npm test                  # same tests without coverage
 npm run license:check     # licence gate (scripts/license-gate.mjs)
 npm run brand:check       # brand guard (scripts/brand-guard.mjs)
+npm run oracle:check      # hatch areas against shapely (python3 with shapely; Phase 6)
 npm run build             # production build to dist/
 npm run size:check        # 300 KB gzipped budget
-npm run test:e2e          # Playwright, Chromium with GPU disabled
+npm run test:e2e          # Playwright, Chromium with GPU disabled; serves dist/, so run
+                          # `npm run build` first after any source change
 npm run ci                # all of the above, in CI order
 ```
 
@@ -84,13 +86,16 @@ npm run ci                # all of the above, in CI order
 
 ```text
 src/core/      pure TypeScript: no DOM, no imports from outside src/core, no packages
-  geom/        geometry kernel (Phase 1)
+  geom/        geometry kernel (Phase 1); hatch.ts: loops, areas, hatch lines (Phase 6)
   doc/         document model, commands, undo/redo, file format (Phase 2); modify commands
-               in edit-commands.ts, shared command helpers in command-kit.ts (Phase 5)
+               in edit-commands.ts, shared command helpers in command-kit.ts (Phase 5);
+               annotations ("notes") in notes.ts (model and resolve), note-validate.ts,
+               note-commands.ts (Phase 6)
   spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4)
   tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4);
-               modify tools in modify.ts (Phase 5)
-src/render/    Canvas 2D: scene.ts (entities), view.ts (canvases), rulers, grid, viewport maths
+               modify tools in modify.ts (Phase 5), annotation tools in annotate.ts (Phase 6)
+src/render/    Canvas 2D: scene.ts (entities), notes.ts (annotations), view.ts (canvases), rulers,
+               grid, viewport maths
 src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
                panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor)
 src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
@@ -102,6 +107,7 @@ public/        static files copied to the site as-is (examples/bracket.archilite
 docs/          file-format.md: the .archilite format, kept in step with src/core/doc/file.ts
 tests/unit/    Vitest; tests/unit/core mirrors src/core
 tests/e2e/     Playwright browser tests
+tests/oracle/  independent checks in Python (hatch areas against shapely), run in CI
 scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc types)
 ```
 
@@ -131,8 +137,16 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   commands throw `CommandError`.
 - Commands that split or rebuild an entity keep its layer, style and draw order, and the first
   piece keeps its id (`replaceWith` in `edit-commands.ts`).
+- Annotations are notes (`Doc.notes`), not entities: they share ids, layers and draw order but are
+  never geometry, so snaps and the modify commands ignore them. A dimension stores *where to
+  measure* (point references), never the number: the number is measured from the geometry every
+  time it is resolved. A note whose geometry is gone is removed in the same undo step.
+- Dimension, text and hatch sizes are paper sizes at 1:1, set by the dimension style.
 - Reference drawings are approved files compared exactly: `tests/fixtures/*.archilite`,
   refreshed only with `UPDATE_REFERENCES=1` and a look at the diff.
+  - The step lists (`modify-reference.ts`, `annotate-reference.ts`) are replayed through the engine
+    and through the real app. Every click in them must land at least 2 mm from any other object
+    **and from any annotation's text**: a click inside a dimension's text picks the dimension.
 
 ## Design system (v0, Phase 3)
 
@@ -166,6 +180,12 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   (10,000 runs, fixed seed) and `PROPERTY_TIMEOUT`. Build random data by construction, not with
   `.filter`, because filtering made one suite ten times slower.
 - Coverage thresholds live in `vite.config.ts`. Do not lower them; add tests instead.
+- Independent oracles are Python scripts in `tests/oracle/` that read committed fixtures and check
+  the numbers with a different implementation (`shapely`). Their packages are test tools only and
+  never ship. Fixtures are refreshed only with a look at the diff.
+- Screenshot clips start 2 px inside the ruler band (`drawingClip`): the rulers' tick marks
+  overshoot it by a fraction of a pixel and caused a flake. Run a new screenshot test with
+  `--repeat-each=5` before committing its baseline.
 - Browser tests must also pass with no console errors and no requests to other origins.
 - When a property test finds a bug, fix the code (not the test). Record the bug in `PROGRESS.md`,
   and in `ROADMAP.md` implementation notes if later phases should know about it.

@@ -1,22 +1,20 @@
 # ArchiLite progress
 
-**Now:** Phases 4 (precision drafting) and 5 (modify tools) are built and in review as
-[PR #5](https://github.com/leon14026/2D-CAD/pull/5) and [PR #6](https://github.com/leon14026/2D-CAD/pull/6).
-Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1),
-[PR #3](https://github.com/leon14026/2D-CAD/pull/3) (Phase 2), [PR #4](https://github.com/leon14026/2D-CAD/pull/4)
-(Phase 3), PR #5, then PR #6. Next up: Phase 6, annotation (dimensions and text).
+**Now:** Phases 1 to 5 are merged and live (all five pull requests merged on 2026-11-26). Phase 6
+(annotation) is built and in review as [PR #7](https://github.com/leon14026/2D-CAD/pull/7). Next up:
+Phase 7, import and export (DXF, SVG, PDF, PNG).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
 | Phase | Status | Pull request | Merged |
 |---|---|---|---|
 | 0. Foundations and compliance | Done | [#1](https://github.com/leon14026/2D-CAD/pull/1) | 2026-11-25 |
-| 1. Geometry kernel | Done, gate passed in CI; awaiting merge | [#2](https://github.com/leon14026/2D-CAD/pull/2) | — |
-| 2. Document model, file format, commands | Done, gate passed in CI; awaiting merge | [#3](https://github.com/leon14026/2D-CAD/pull/3) | — |
-| 3. Viewer | Done, gate passed in CI; awaiting merge | [#4](https://github.com/leon14026/2D-CAD/pull/4) | — |
-| 4. Precision drafting | Done, gate passed in CI; awaiting merge | [#5](https://github.com/leon14026/2D-CAD/pull/5) | — |
-| 5. Modify tools | Done, gate passed in CI; awaiting merge | [#6](https://github.com/leon14026/2D-CAD/pull/6) | — |
-| 6. Annotation | Not started | — | — |
+| 1. Geometry kernel | Done | [#2](https://github.com/leon14026/2D-CAD/pull/2) | 2026-11-26 |
+| 2. Document model, file format, commands | Done | [#3](https://github.com/leon14026/2D-CAD/pull/3) | 2026-11-26 |
+| 3. Viewer | Done | [#4](https://github.com/leon14026/2D-CAD/pull/4) | 2026-11-26 |
+| 4. Precision drafting | Done | [#5](https://github.com/leon14026/2D-CAD/pull/5) | 2026-11-26 |
+| 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
+| 6. Annotation | Done, gate passed in CI; awaiting merge | [#7](https://github.com/leon14026/2D-CAD/pull/7) | — |
 | 7. Import and export | Not started | — | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
@@ -24,6 +22,71 @@ Merge in order: [PR #2](https://github.com/leon14026/2D-CAD/pull/2) (Phase 1),
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 6 (annotation) complete, PR #7
+
+- Started after PRs #2 to #6 were merged to `main` at your request, so the branch starts from
+  `main`.
+- Built:
+  - **Notes**, a second kind of object in the drawing (`Doc.notes`) for everything that explains
+    the geometry: linear, aligned, radius, diameter and angle dimensions, text, leaders, centre
+    marks, hatches and title blocks. They share ids, layers and draw order with entities.
+  - **Dimensions are associative.** A dimension stores where to measure (an end, a vertex, a
+    midpoint, a centre, or a free point), never the number. The number is measured from the
+    geometry every time, so it can't disagree with the drawing, and it follows the geometry
+    when it is moved, scaled, trimmed or edited. Delete the geometry and the dimension goes
+    with it; undo brings both back.
+  - **Dimension styles** with ISO-style defaults (text 3.5, arrows 3, 2 decimal places), editable
+    in the selection panel and saved under their own or a new name.
+  - **Hatch** with ArchiLite's own patterns (solid, lines, cross lines, paired lines, dots),
+    with islands left clear; its area is exact (outer area less the islands').
+  - **Title blocks** on A4 to A0 sheets (own layout, eight fields filled in from the panel).
+  - **File format 2** (`docs/file-format.md`). Version 1 files still open.
+  - **In the app:** an Annotate group on the tool rail; D, X and H for linear dimension, text and
+    hatch; palette entries for every tool; a selection panel that shows what a note measures and
+    lets you edit its fields.
+- Decisions:
+  - A dimension's line position (`at`) stays where it was when only the geometry moves; it moves
+    with the geometry when both are selected.
+  - Copying a selection copies text, leaders and title blocks but not dimensions, centre marks
+    or hatches (they belong to their geometry; the copy of the geometry needs its own).
+  - Where a hatch and a boundary are equally near a click, the boundary is picked.
+  - The tool rail continues in a second column on short windows instead of scrolling, so no
+    tool is hidden; fit leaves room for it.
+- Gate (passed in CI, Ubuntu 26.04 runner: 61 browser tests; pan 12.2 ms, zoom 17.1 ms per frame):
+  - **500 random cases:** every dimension (linear, aligned, radius, diameter, angle) shows
+    exactly the value measured from its geometry.
+  - **500 random cases each:** dimensions follow their geometry after move, rotate, scale and
+    mirror, and undo restores the drawing exactly. Trim, extend, explode, delete and copy are
+    checked with hand-calculated cases (trimming a line from 100 to 40 makes its dimension read
+    40.00, and so on).
+  - **Hatch areas** match `shapely` in 60 seeded cases (rectangles, regular polygons, circles,
+    rounded rectangles and slots, each with circular islands); worst relative difference
+    4.12e-11. CI runs the check in its own step.
+  - **Reference drawing** (`tests/fixtures/annotate-reference.ts`), one of every annotation:
+    through the engine it equals the approved file exactly and every number it shows equals its
+    hand-worked value (60.00, 28.28, 45.0°, Ø8.00, R5.00, hatch area 2400 − 41π); typed and
+    clicked into the real app it equals the same file exactly.
+  - 100% line coverage of `src/core` (branches 99.41%). 1,110 unit and property tests; 61
+    browser tests; 10 approved screenshots (new: the annotation reference drawing).
+  - Performance with 20,000 entities, GPU off: pan 10.5 ms, zoom 17.7 ms per frame on the
+    workspace. 95.1 KB of the 300 KB budget.
+- Found and fixed while building:
+  - **Clicking a hatch's edge picked the hatch** instead of the line under it. A hatch lies
+    under geometry, so a boundary now wins a tie. (My first fix clamped every hatch distance,
+    which made a click inside an island pick the hatch; the bias now applies only inside the
+    pick radius.)
+  - **The text tool crashed** drawing its preview when the cursor sat on the text's first point.
+  - **The tool rail ran off the bottom** of a 720 px window once the Annotate group was added,
+    hiding five tools behind a scroll. It now wraps into a second column, and fit measures the
+    rail so the drawing doesn't start underneath it.
+  - **A screenshot flaked** (about 1 run in 6) because the clip's first pixel row caught the
+    ruler's tick marks. The clip now starts 2 px inside the ruler band.
+  - Two browser tests were too loose for the new panel (`getByRole('option')` also matched the
+    dimension-style list; a click at a hole's rim also hit its centre line) and the "newer
+    version" tests used file version 2, which is now the current version; they use 3.
+- Known limitation: hatch lines run under dimension text rather than stopping short of it (see
+  ROADMAP.md). Text stays legible but isn't ISO-clean.
 
 ### 2026-11-25: Phase 5 (modify tools) complete, PR #6
 

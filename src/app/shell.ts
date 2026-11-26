@@ -15,7 +15,7 @@ import type { Actions } from './actions';
 import type { DraftingController } from './drafting';
 import { isTyping } from './interaction';
 import { isDirty, type AppState, type Store } from './store';
-import { DRAW_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
+import { ANNOTATE_BUTTONS, DRAW_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
 
 export function paletteEntries(actions: Actions, store: Store, drafting: DraftingController): PaletteEntry[] {
   const s = () => store.get();
@@ -66,6 +66,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     [
       { label: 'Draw', buttons: DRAW_BUTTONS },
       { label: 'Modify', buttons: MODIFY_BUTTONS },
+      { label: 'Annotate', buttons: ANNOTATE_BUTTONS },
     ],
     (id) =>
       id === null ? drafting.stop() : drafting.start(id),
@@ -144,10 +145,12 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     redoButton.title = canRedo(s.session) ? `Redo ${redoLabel(s.session)} (Ctrl Y)` : 'Nothing to redo';
     undoButton.setAttribute('aria-label', undoButton.title);
     redoButton.setAttribute('aria-label', redoButton.title);
-    empty.hidden = doc.entities.size > 0;
+    empty.hidden = doc.entities.size + doc.notes.size > 0;
     scale.textContent = `Scale ${screenScaleLabel(s.viewport, convertLength(1, doc.settings.units, 'mm'))}`;
     units.textContent = doc.settings.units;
-    count.textContent = s.selection.size > 0 ? `${s.selection.size} of ${doc.entities.size} selected` : `${doc.entities.size} entities`;
+    const things = doc.entities.size + doc.notes.size;
+    const notes = doc.notes.size > 0 ? `, ${doc.notes.size} ${doc.notes.size === 1 ? 'annotation' : 'annotations'}` : '';
+    count.textContent = s.selection.size > 0 ? `${s.selection.size} of ${things} selected` : `${doc.entities.size} entities${notes}`;
     grid.setAttribute('aria-pressed', String(s.showGrid));
     grid.textContent = s.showGrid ? 'Grid on' : 'Grid off';
     weights.setAttribute('aria-pressed', String(s.lineweights));

@@ -2,6 +2,7 @@ import { applyChanges, type Change } from './changes';
 import { COMMANDS, isCommandId, type CommandDef, type CommandId, type ParamsOf, type ResultOf } from './commands';
 import { CommandError, Draft } from './draft';
 import { newDocument, type Doc } from './model';
+import { noteEntityIds, noteProblem } from './notes';
 
 export interface Transaction {
   readonly command: CommandId;
@@ -28,6 +29,28 @@ export function createSession(doc: Doc = newDocument(), limit: number = DEFAULT_
 export interface Executed<R> {
   readonly session: Session;
   readonly result: R;
+  /** Notes removed because the geometry they measured is gone (they come back with undo). */
+  readonly pruned: number;
+}
+
+/**
+ * Removes notes whose geometry a command has just deleted or reshaped beyond use: a dimension
+ * of a line that no longer exists, a hatch whose boundary was cut open. Only notes that refer
+ * to an entity the command touched are looked at.
+ */
+function pruneBrokenNotes(draft: Draft): number {
+  const touched = new Set(draft.touchedEntityIds());
+  if (touched.size === 0) return 0;
+  const env = draft.env();
+  let count = 0;
+  for (const note of [...draft.notes()]) {
+    if (!noteEntityIds(note).some((id) => touched.has(id))) continue;
+    if (noteProblem(env, note) !== null) {
+      draft.deleteNote(note.id);
+      count += 1;
+    }
+  }
+  return count;
 }
 
 /**
@@ -58,8 +81,9 @@ export function executeUnchecked(session: Session, id: string, params: unknown):
     if (err instanceof RangeError) throw new CommandError(`${def.label} failed: ${err.message}`);
     throw err;
   }
+  const pruned = pruneBrokenNotes(draft);
   const changes = draft.changes();
-  if (changes.length === 0) return { session, result };
+  if (changes.length === 0) return { session, result, pruned: 0 };
   const undoStack = [...session.undoStack, { command: id, label: def.label, changes }];
   return {
     session: {
@@ -69,6 +93,7 @@ export function executeUnchecked(session: Session, id: string, params: unknown):
       redoStack: [],
     },
     result,
+    pruned,
   };
 }
 

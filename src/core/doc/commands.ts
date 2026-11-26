@@ -22,6 +22,7 @@ import {
   readStyleProps,
   requireEditable,
   requireLayer,
+  requireNoteEditable,
   requireUnlocked,
   requireUniqueName,
   type CommandDef,
@@ -29,6 +30,8 @@ import {
 } from './command-kit';
 import { CommandError } from './draft';
 import { EDIT_COMMANDS } from './edit-commands';
+import { NOTE_COMMANDS } from './note-commands';
+import { isFreeNote, transformNote, type Note } from './notes';
 import { MAX_NAME_LENGTH, MAX_TITLE_LENGTH, type Entity, type Layer } from './model';
 import {
   BY_LAYER,
@@ -105,8 +108,15 @@ const deleteEntities = define<IdsParams, { deleted: number }>({
     return { ids: readIds(o['ids'], 'ids') };
   },
   run(draft, p) {
-    for (const id of p.ids) requireEditable(draft, id);
-    for (const id of p.ids) draft.deleteEntity(id);
+    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
+    for (const id of p.ids) {
+      if (isNote(id)) requireNoteEditable(draft, id);
+      else requireEditable(draft, id);
+    }
+    for (const id of p.ids) {
+      if (isNote(id)) draft.deleteNote(id);
+      else draft.deleteEntity(id);
+    }
     return { deleted: p.ids.length };
   },
 });
@@ -125,9 +135,12 @@ const transformEntities = define<TransformParams, { changed: number }>({
   label: 'Transform',
   parse: readTransformParams,
   run(draft, p) {
-    const targets = p.ids.map((id) => requireEditable(draft, id));
-    for (const e of targets) draft.putEntity({ ...e, geom: applyTransform(p.transform, e.geom) });
-    return { changed: targets.length };
+    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
+    const entities = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
+    const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id));
+    for (const e of entities) draft.putEntity({ ...e, geom: applyTransform(p.transform, e.geom) });
+    for (const n of notes) draft.putNote(transformNote(p.transform, n));
+    return { changed: entities.length + notes.length };
   },
 });
 
@@ -136,11 +149,20 @@ const copyEntities = define<TransformParams, { ids: number[] }>({
   label: 'Copy',
   parse: readTransformParams,
   run(draft, p) {
-    const sources = p.ids.map((id) => requireEditable(draft, id));
+    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
+    const sources = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
+    // A dimension, centre mark or hatch belongs to the geometry it measures, so it is not copied.
+    const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id)).filter(isFreeNote);
     const ids: number[] = [];
     for (const e of sources) {
       const id = draft.allocateId();
       draft.putEntity({ ...e, id, z: id, geom: applyTransform(p.transform, e.geom) });
+      ids.push(id);
+    }
+    for (const n of notes) {
+      const id = draft.allocateId();
+      const moved: Note = transformNote(p.transform, n);
+      draft.putNote({ ...moved, id, z: id });
       ids.push(id);
     }
     return { ids };
@@ -165,8 +187,16 @@ const setEntityProps = define<SetPropsParams, { changed: number }>({
   },
   run(draft, p) {
     if (p.layer !== undefined) requireUnlocked(draft, p.layer);
-    const targets = p.ids.map((id) => requireEditable(draft, id));
+    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
+    const targets = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
     let changed = 0;
+    for (const n of p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id))) {
+      const next: Note = { ...n, layer: p.layer ?? n.layer, color: p.color ?? n.color, lineweight: p.lineweight ?? n.lineweight };
+      if (next.layer !== n.layer || next.color !== n.color || next.lineweight !== n.lineweight) {
+        draft.putNote(next);
+        changed += 1;
+      }
+    }
     for (const e of targets) {
       const next: Entity = {
         ...e,
@@ -361,6 +391,7 @@ const setUnits = define<SetUnitsParams, Record<string, never>>({
 
 export const COMMANDS = {
   ...EDIT_COMMANDS,
+  ...NOTE_COMMANDS,
   'entity.add': addEntity,
   'entity.delete': deleteEntities,
   'entity.transform': transformEntities,

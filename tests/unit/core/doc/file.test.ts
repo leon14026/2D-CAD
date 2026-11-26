@@ -18,15 +18,20 @@ describe('saving', () => {
       [
         '{',
         '  "format": "archilite",',
-        '  "version": 1,',
+        '  "version": 2,',
         '  "title": "Untitled",',
         '  "units": "mm",',
         '  "currentLayer": 1,',
+        '  "currentDimStyle": "ISO",',
         '  "nextId": 2,',
+        '  "dimStyles": [',
+        '    {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}',
+        '  ],',
         '  "layers": [',
         '    {"id":1,"name":"Default","color":"#1f2a33","linetype":"continuous","lineweight":0.25,"visible":true,"locked":false}',
         '  ],',
-        '  "entities": []',
+        '  "entities": [],',
+        '  "notes": []',
         '}',
         '',
       ].join('\n'),
@@ -123,7 +128,7 @@ describe('malformed and future files are rejected with a clear message', () => {
     ['version 0', edit((f) => (f['version'] = 0)), /"version" must be a whole number of 1 or more/, 'version'],
     ['version 1.5', edit((f) => (f['version'] = 1.5)), /"version" must be a whole number/, 'version'],
     ['version as text', edit((f) => (f['version'] = '1')), /not text "1"/, 'version'],
-    ['future version 2', edit((f) => (f['version'] = 2)), /saved by a newer version of ArchiLite \(file format 2\).*open file format 1/, 'version'],
+    ['future version 3', edit((f) => (f['version'] = 3)), /saved by a newer version of ArchiLite \(file format 3\).*open file format 2/, 'version'],
     ['future version 99', edit((f) => (f['version'] = 99)), /newer version/, 'version'],
     ['unknown units', edit((f) => (f['units'] = 'yd')), /at units: must be one of "mm", "cm", "m", "in", "ft"/, 'units'],
     ['empty title', edit((f) => (f['title'] = '  ')), /at title: must not be empty/, 'title'],
@@ -174,6 +179,6 @@ describe('malformed and future files are rejected with a clear message', () => {
 
   it('documentFromJson accepts already-parsed data', () => {
     expect(documentFromJson(valid())).toEqual(buildExampleBracket());
-    expect(FILE_VERSION).toBe(1);
+    expect(FILE_VERSION).toBe(2);
   });
 });

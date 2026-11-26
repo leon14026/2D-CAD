@@ -12,7 +12,10 @@ import {
   distanceToCurve,
   explodePolyline,
   intersect,
+  loopCurves,
+  pointInLoop,
   segment,
+  shapeBounds,
   shapeMagnitude,
   tolFor,
   type Bounds,
@@ -20,12 +23,12 @@ import {
   type Shape,
   type Vec2,
 } from '../geom';
-import { compareDrawOrder, findLayer, type Doc, type Entity } from '../doc';
+import { compareDrawOrder, docEnv, findLayer, hatchLoops, pickShapes, resolveNotes, textBox, type Doc, type Entity, type Note, type Resolved } from '../doc';
 import { DocIndex, entityBounds } from './doc-index';
 
 export type BoxMode = 'window' | 'crossing';
 
-export function isSelectable(doc: Doc, e: Entity): boolean {
+export function isSelectable(doc: Doc, e: { readonly layer: number }): boolean {
   const layer = findLayer(doc, e.layer);
   return layer !== undefined && layer.visible && !layer.locked;
 }
@@ -93,15 +96,28 @@ export function selectInBox(doc: Doc, box: Bounds, mode: BoxMode): number[] {
   // on the box edge within tolerance are not lost before the exact tests below.
   const reach = tolFor(box.minX, box.minY, box.maxX, box.maxY, index.magnitude);
   const query = { minX: box.minX - reach, minY: box.minY - reach, maxX: box.maxX + reach, maxY: box.maxY + reach };
-  return index
+  const hits: { id: number; z: number }[] = index
     .query(query)
     .filter((e) => isSelectable(doc, e))
     .filter((e) => {
       const b = entityBounds(e);
       return mode === 'window' ? boxContains(box, b, tol) : shapeTouchesBox(e.geom, box, b);
-    })
-    .sort(compareDrawOrder)
-    .map((e) => e.id);
+    });
+  const resolved = resolveNotes(doc);
+  for (const n of index.queryNotes(query)) {
+    const r = resolved.get(n.id);
+    if (!r?.ok || !isSelectable(doc, n)) continue;
+    const b = r.r.bounds;
+    const hit =
+      mode === 'window'
+        ? boxContains(box, b, tol)
+        : boxContains(box, b, tol) ||
+          (n.body.kind === 'hatch'
+            ? b.minX <= box.maxX && b.maxX >= box.minX && b.minY <= box.maxY && b.maxY >= box.minY
+            : pickShapes(r.r.prims).some((s) => shapeTouchesBox(s, box, shapeBounds(s))));
+    if (hit) hits.push(n);
+  }
+  return hits.sort(compareDrawOrder).map((e) => e.id);
 }
 
 /** Distance from a point to the nearest part of a shape. */
@@ -109,19 +125,48 @@ export function distanceToShape(s: Shape, p: Vec2): number {
   return Math.min(...curvesOf(s).map((c) => distanceToCurve(c, p)));
 }
 
-/** The entity nearest to `p` within `radius` (drawing units), or null. Ties go to the one drawn on top. */
-export function pickAt(doc: Doc, p: Vec2, radius: number): number | null {
-  const box = { minX: p.x - radius, minY: p.y - radius, maxX: p.x + radius, maxY: p.y + radius };
-  let best: Entity | null = null;
-  let bestDistance = Infinity;
-  for (const e of DocIndex.of(doc).query(box)) {
-    if (!isSelectable(doc, e)) continue;
-    const d = distanceToShape(e.geom, p);
-    if (d > radius) continue;
-    if (d < bestDistance || (d === bestDistance && best && compareDrawOrder(e, best) > 0)) {
-      best = e;
-      bestDistance = d;
+/** How far a click at `p` is from a note: 0 inside a text box, `radius` inside a hatch, else the distance to its lines. */
+function noteDistance(doc: Doc, n: Note, resolved: Resolved, p: Vec2, radius: number): number {
+  let best = Infinity;
+  for (const prim of resolved.prims) {
+    if (prim.k === 'text') {
+      const box = textBox(prim);
+      if (pointInLoop({ kind: 'polyline', vertices: box.map((v) => ({ x: v.x, y: v.y, bulge: 0 })), closed: true }, p)) return 0;
     }
   }
-  return best ? best.id : null;
+  for (const s of pickShapes(resolved.prims)) best = Math.min(best, distanceToShape(s, p));
+  if (n.body.kind === 'hatch') {
+    const loops = hatchLoops(docEnv(doc), n.body);
+    const outer = loops[0];
+    if (outer && pointInLoop(outer, p) && !loops.slice(1).some((i) => pointInLoop(i, p))) best = Math.min(best, radius);
+    for (const l of loops) for (const c of loopCurves(l)) best = Math.min(best, distanceToCurve(c, p));
+    // A hatch lies under the geometry it fills: when a click is as near to a boundary as to the
+    // hatch, the boundary wins. The nudge is far below anything the eye can tell apart.
+    if (best < radius) best = Math.min(radius, best + radius * 1e-6);
+  }
+  return best;
+}
+
+/** The entity or note nearest to `p` within `radius` (drawing units), or null. Ties go to the one drawn on top. */
+export function pickAt(doc: Doc, p: Vec2, radius: number): number | null {
+  const box = { minX: p.x - radius, minY: p.y - radius, maxX: p.x + radius, maxY: p.y + radius };
+  let best: { id: number; z: number } | null = null;
+  let bestDistance = Infinity;
+  const consider = (item: { id: number; z: number }, d: number) => {
+    if (d > radius) return;
+    if (d < bestDistance || (d === bestDistance && best && compareDrawOrder(item, best) > 0)) {
+      best = item;
+      bestDistance = d;
+    }
+  };
+  const index = DocIndex.of(doc);
+  for (const e of index.query(box)) {
+    if (isSelectable(doc, e)) consider(e, distanceToShape(e.geom, p));
+  }
+  const resolved = resolveNotes(doc);
+  for (const n of index.queryNotes(box)) {
+    const r = resolved.get(n.id);
+    if (r?.ok && isSelectable(doc, n)) consider(n, noteDistance(doc, n, r.r, p, radius));
+  }
+  return best ? (best as { id: number }).id : null;
 }

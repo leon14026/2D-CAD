@@ -12,6 +12,7 @@ import {
   loadDocument,
   newDocument,
   saveDocument,
+  type DimStyle,
   type Doc,
 } from '../core/doc';
 import { isSelectable, type SnapKind } from '../core/spatial';
@@ -22,8 +23,14 @@ import { EXAMPLE_FILE, LARGE_EXAMPLE_FILE } from './examples';
 import { doRedo, doUndo, isDirty, type Store } from './store';
 
 const FIT_MARGIN = 28;
-/** Width the tool rail takes from the left of the drawing area, gap included (CSS pixels). */
+/** Width the tool rail takes from the left of the drawing area when it is one column, gap included (CSS pixels). */
 export const RAIL_WIDTH = 42;
+
+/** The rail's width now, gap included: on short windows it continues in a second column. */
+function railWidth(): number {
+  const rail = document.getElementById('al-tools');
+  return rail && rail.offsetWidth > 0 ? rail.offsetWidth + (RAIL_WIDTH - 36) : RAIL_WIDTH;
+}
 
 export class Actions {
   constructor(
@@ -38,7 +45,7 @@ export class Actions {
     const ext = this.view.extents();
     if (!ext) return;
     const { width, height } = this.view;
-    const left = RULER + RAIL_WIDTH;
+    const left = RULER + railWidth();
     const vp = fitRect(ext, width - left, height - RULER, FIT_MARGIN, this.store.get().viewport);
     this.store.set({ viewport: { ...vp, originX: vp.originX + left, originY: vp.originY + RULER } });
   }
@@ -99,7 +106,8 @@ export class Actions {
 
   selectAll(): void {
     const doc = this.store.get().session.doc;
-    this.store.set({ selection: new Set([...doc.entities.values()].filter((e) => isSelectable(doc, e)).map((e) => e.id)) });
+    const everything = [...doc.entities.values(), ...doc.notes.values()];
+    this.store.set({ selection: new Set(everything.filter((e) => isSelectable(doc, e)).map((e) => e.id)) });
   }
 
   clearSelection(): void {
@@ -152,6 +160,20 @@ export class Actions {
     const ids = [...this.store.get().selection];
     if (ids.length === 0) return;
     if (this.run('entity.delete', { ids })) this.store.set({ message: { kind: 'info', text: `Deleted ${ids.length === 1 ? 'one object' : `${ids.length} objects`}. Ctrl+Z brings ${ids.length === 1 ? 'it' : 'them'} back.` } });
+  }
+
+  /** Changes fields of an annotation, such as its text or a title block's fields. */
+  editNote(id: number, patch: Record<string, unknown>): void {
+    this.run('note.edit', { id, patch });
+  }
+
+  /** Saves a dimension style under its name (replacing one of that name, or adding one) and uses it. */
+  saveDimStyle(style: DimStyle): void {
+    if (this.run('dimstyle.set', { style })) this.run('dimstyle.use', { name: style.name });
+  }
+
+  useDimStyle(name: string): void {
+    this.run('dimstyle.use', { name });
   }
 
   setLayerVisible(id: number, visible: boolean): void {
