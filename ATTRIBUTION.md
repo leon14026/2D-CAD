@@ -20,9 +20,9 @@ source and licence.
 | Item | Author | Source | Licence | Notes |
 |---|---|---|---|---|
 | B612 typeface (regular and bold, Latin subset, WOFF2) | The B612 Project Authors | [polarsys/b612](https://github.com/polarsys/b612), packaged as `@fontsource/b612` 5.3.0 | SIL Open Font License 1.1 | The interface typeface, designed for aircraft cockpit displays. Licence text shipped at `/licenses/B612-OFL-1.1.txt`. Unmodified; not sold on its own. |
+| Pyodide 0.29.5 (CPython in WebAssembly) | Pyodide contributors | [pyodide/pyodide](https://github.com/pyodide/pyodide), packaged as `pyodide` 0.29.5 | Mozilla Public License 2.0 | Loaded only when a Python script runs, from `/pyodide/` on this origin. Used unmodified. Licence text shipped at `/licenses/Pyodide-MPL-2.0.txt`. |
 
-No other third-party code, icons or images ship. ArchiLite's icons are original line drawings
-defined in `src/ui/dom.ts`.
+ArchiLite's icons are original line drawings defined in `src/ui/dom.ts`.
 
 ## Licence texts
 
@@ -31,3 +31,4 @@ defined in `src/ui/dom.ts`.
 | `LICENSE-APACHE` | Standard text of the Apache License, Version 2.0 (Apache Software Foundation), without the appendix. |
 | `LICENSE-MIT` | Standard text of the MIT License. |
 | `public/licenses/B612-OFL-1.1.txt` | The B612 copyright notice and the SIL Open Font License 1.1, copied unchanged from `@fontsource/b612`. |
+| `public/licenses/Pyodide-MPL-2.0.txt` | The Mozilla Public License, version 2.0, which governs Pyodide. |

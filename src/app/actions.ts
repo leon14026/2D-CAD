@@ -15,7 +15,9 @@ import {
   type DimStyle,
   type Doc,
 } from '../core/doc';
+import { applyJavaScript, applyPython, type ScriptLanguage } from '../script';
 import { exportDxf, exportPdf, exportSvg, importDxf, IoError, looksLikeDxf } from '../io';
+import { ensurePython } from './python';
 import { isSelectable, type SnapKind } from '../core/spatial';
 import { exportPng } from '../render/png';
 import { RULER } from '../render/rulers';
@@ -75,6 +77,45 @@ export class Actions {
 
   toggleSelectionPanel(): void {
     this.store.set((s) => ({ showSelection: !s.showSelection }));
+  }
+
+  toggleScriptPanel(): void {
+    this.store.set((s) => ({ showScript: !s.showScript }));
+  }
+
+  showScriptPanel(): void {
+    this.store.set({ showScript: true });
+  }
+
+  /**
+   * Runs a script against the current drawing as one undo step. Python loads Pyodide from
+   * this origin the first time; JavaScript never does.
+   */
+  async runScript(language: ScriptLanguage, source: string): Promise<{ ok: boolean; log: string[]; error?: string }> {
+    try {
+      if (language === 'javascript') {
+        const { session, log } = applyJavaScript(this.store.get().session, source);
+        this.store.set({
+          session,
+          message: { kind: 'info', text: log.length > 0 ? log.join('\n') : 'Script finished.' },
+        });
+        if (session.doc !== this.store.get().savedDoc) this.fit();
+        return { ok: true, log };
+      }
+      this.store.set({ message: { kind: 'info', text: 'Loading Python…' } });
+      const py = await ensurePython();
+      const { session, log } = await applyPython(this.store.get().session, source, py);
+      this.store.set({
+        session,
+        message: { kind: 'info', text: log.length > 0 ? log.join('\n') : 'Script finished.' },
+      });
+      if (session.doc !== this.store.get().savedDoc) this.fit();
+      return { ok: true, log };
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      this.store.set({ message: { kind: 'error', text: error } });
+      return { ok: false, log: [], error };
+    }
   }
 
   // ---------- snaps and tracking ----------

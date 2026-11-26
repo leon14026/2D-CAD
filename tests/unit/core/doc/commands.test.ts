@@ -4,13 +4,16 @@ import {
   canUndo,
   CommandError,
   COMMANDS,
+  commitDraft,
   createSession,
+  Draft,
   execute,
   executeUnchecked,
   isCommandId,
   newDocument,
   redo,
   redoLabel,
+  runCommandOnDraft,
   undo,
   undoLabel,
   type CommandId,
@@ -287,5 +290,19 @@ describe('registry and history', () => {
   it('rejects a bad undo limit', () => {
     expect(() => createSession(newDocument(), 0)).toThrow(RangeError);
     expect(() => createSession(newDocument(), 1.5)).toThrow(RangeError);
+  });
+
+  it('runCommandOnDraft and commitDraft batch several commands into one undo', () => {
+    const session = createSession();
+    const draft = new Draft(session.doc);
+    runCommandOnDraft(draft, 'entity.add', { geom: line });
+    runCommandOnDraft(draft, 'entity.add', { geom: circle(vec(0, 0), 4) });
+    const done = commitDraft(session, draft, 'script.run', 'Run script', { n: 2 });
+    expect(done.result).toEqual({ n: 2 });
+    expect(done.session.doc.entities.size).toBe(2);
+    expect(done.session.undoStack).toHaveLength(1);
+    expect(done.session.undoStack[0]?.command).toBe('script.run');
+    expect(commitDraft(session, new Draft(session.doc), 'script.run', 'Run script', null).session).toBe(session);
+    expect(() => runCommandOnDraft(draft, 'entity.teleport', {})).toThrow(/no command called/);
   });
 });

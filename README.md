@@ -13,8 +13,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
   open one. Until then, export DXF from the other program and open that.
 
-**Status:** Phase 7 (import and export) built: DXF in and out, SVG, 1:1 PDF and PNG, on top of
-Phase 6's annotations. Phase 8 (scripting) next. See
+**Status:** Phase 8 (scripting) built: JavaScript and Python (`cad` API, script panel, Pyodide
+on demand) on top of Phase 7's import and export. Phase 9 (blocks, sheets, constraints) is
+stretch. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
@@ -43,6 +44,7 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Annotate | Last group on the tool rail, or D linear dimension, X text, H hatch; select a dimension, text or hatch to edit it in the selection panel |
 | Delete | Delete key or the selection panel; Ctrl+Z brings it back |
 | Panels, grid, lineweights | `[`, `]`, G, W |
+| Run a script | Script button, backtick, or Ctrl+K then "script". JavaScript is local; the first Python run downloads Pyodide from this site |
 
 Drawings are saved as `.archilite` files on your computer; nothing is uploaded.
 

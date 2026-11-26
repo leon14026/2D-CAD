@@ -96,18 +96,23 @@ src/core/      pure TypeScript: no DOM, no imports from outside src/core, no pac
   tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4);
                modify tools in modify.ts (Phase 5), annotation tools in annotate.ts (Phase 6)
 src/io/        DXF import/export, SVG, PDF (Phase 7); no runtime packages
+src/script/    JavaScript API and Python runner (Phase 8). Mutations go through the command
+               registry as one undo step. The Pyodide package is never imported from here.
 src/render/    Canvas 2D: scene.ts (entities), notes.ts (annotations), view.ts (canvases), rulers,
                grid, viewport maths, png.ts (PNG export)
 src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
-               panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor)
+               panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor),
+               script-panel.ts
 src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
                palette list), interaction.ts (mouse), drafting.ts (tools on screen: snaps,
-               tracking, keys), tools.ts (tool names, icons, keys), testing.ts (?test hook);
+               tracking, keys), tools.ts (tool names, icons, keys), testing.ts (?test hook),
+               python.ts (loads Pyodide from ./pyodide/ on demand);
                brand.ts holds the product name (the only place it is defined)
 src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
 public/        static files copied to the site as-is (examples/bracket.archilite)
 docs/          file-format.md: the .archilite format, kept in step with src/core/doc/file.ts
-tests/unit/    Vitest; tests/unit/core mirrors src/core; tests/unit/io covers DXF/SVG/PDF
+tests/unit/    Vitest; tests/unit/core mirrors src/core; tests/unit/io covers DXF/SVG/PDF;
+               tests/unit/script covers the JS/Python identity gate
 tests/e2e/     Playwright browser tests
 tests/oracle/  independent checks in Python (hatch areas against shapely; exported DXF against
                ezdxf + shapely), run in CI

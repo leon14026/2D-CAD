@@ -466,9 +466,24 @@ Builds: scripting API over the command registry, script panel, Pyodide lazy load
 binding, example scripts (bolt circle, flange, slot pattern).
 
 Gate:
-- [ ] The same script in JavaScript and Python produces an identical document.
-- [ ] Scripts have no network access.
-- [ ] Loading Pyodide does not change the base download budget or startup time.
+- [x] The same script in JavaScript and Python produces an identical document.
+- [x] Scripts have no network access.
+- [x] Loading Pyodide does not change the base download budget or startup time.
+
+Implementation notes (for later phases):
+- **`src/script`** is the drawing API (`cad.line`, `cad.circle`, `cad.arc`, `cad.rect`,
+  `cad.polyline`, `cad.layer`, `cad.polar`, `cad.title`, `cad.run`, `cad.print`). Every call
+  goes through `runCommandOnDraft`, and the whole script is one undo step (`script.run`).
+  Angles in the API are degrees; the kernel stays in radians. `cad.polar` uses `cosSin`, so
+  quarter turns are exact in both languages.
+- **JavaScript** runs in `new Function` with `fetch`, XHR, WebSocket and Worker shadowed.
+  **Python** is Pyodide 0.29.5, copied to `dist/pyodide/` at build and fetched from the same
+  origin only when a Python script runs (`src/app/python.ts`). The interpreter's `js.fetch` and
+  `urllib` are patched; the page's real `fetch` is left alone so Pyodide can load its wasm.
+- **Not in the base budget.** `scripts/size-budget.mjs` already skips `pyodide/`. Opening the
+  app, or the script panel on JavaScript, must not request those files.
+- **Examples** (bolt circle, flange, slot pattern) live in `src/script/examples.ts`. The
+  identity gate compares `saveDocument` of the JS run against the Python run.
 
 ### Phase 9 (stretch) — Blocks, sheets, constraints
 

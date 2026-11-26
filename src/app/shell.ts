@@ -44,6 +44,7 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     { label: 'Show or hide lineweights', keys: 'W', run: () => actions.toggleLineweights() },
     { label: 'Show or hide the layers panel', keys: '[', run: () => actions.toggleLayersPanel() },
     { label: 'Show or hide the selection panel', keys: ']', run: () => actions.toggleSelectionPanel() },
+    { label: 'Show or hide the script panel', keys: '`', run: () => actions.toggleScriptPanel() },
     { label: 'Open a drawing…', keys: 'Ctrl O', run: () => requireElement('#al-file', HTMLInputElement).click() },
     { label: 'Save the drawing', keys: 'Ctrl S', run: () => actions.save() },
     { label: 'Export as DXF', run: () => actions.exportDxf() },
@@ -51,6 +52,7 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     { label: 'Export as PDF (1:1)', run: () => actions.exportPdf() },
     { label: 'Export as PNG', run: () => void actions.exportPng() },
     { label: 'Load the example bracket', run: () => void actions.loadExample() },
+    { label: 'Show the script panel', run: () => actions.showScriptPanel() },
     { label: 'Load the large test drawing (20,000 entities)', run: () => void actions.loadExample(true) },
     { label: 'Start a new drawing', run: () => actions.newDrawing() },
     { label: 'Open the file inspector', run: () => window.open('./inspect.html', '_self') },
@@ -140,6 +142,16 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     el('button', { className: 'al-button', attrs: { type: 'button' }, on: { click: () => fileInput.click() } }, icon('open'), 'Open'),
     el('button', { className: 'al-button al-button-primary', attrs: { type: 'button' }, on: { click: () => actions.save() } }, icon('save'), 'Save'),
     exportMenu(actions),
+    el(
+      'button',
+      {
+        className: 'al-button',
+        attrs: { type: 'button', id: 'al-script-toggle' },
+        on: { click: () => actions.toggleScriptPanel() },
+      },
+      icon('script'),
+      'Script',
+    ),
   );
   fileInput.addEventListener('change', () => {
     const file = fileInput.files?.[0];
@@ -221,6 +233,12 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     document.body.classList.toggle('al-drafting', s.tool !== null);
     document.body.classList.toggle('al-hide-left', !s.showLayers);
     document.body.classList.toggle('al-hide-right', !s.showSelection);
+    document.body.classList.toggle('al-show-script', s.showScript);
+    const scriptToggle = document.getElementById('al-script-toggle');
+    if (scriptToggle) {
+      scriptToggle.setAttribute('aria-pressed', String(s.showScript));
+      scriptToggle.setAttribute('title', s.showScript ? 'Hide the script panel (`)' : 'Show the script panel (`)');
+    }
     if (s.message !== p?.message) {
       clearTimeout(toastTimer);
       if (s.message) {
@@ -279,6 +297,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     if (key === 'w') return run(() => actions.toggleLineweights());
     if (key === '[') return run(() => actions.toggleLayersPanel());
     if (key === ']') return run(() => actions.toggleSelectionPanel());
+    if (key === '`') return run(() => actions.toggleScriptPanel());
     if (key === '+' || key === '=') return run(() => actions.zoom(1.25));
     if (key === '-' || key === '_') return run(() => actions.zoom(0.8));
     const step = 60;

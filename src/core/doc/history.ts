@@ -5,7 +5,8 @@ import { newDocument, type Doc } from './model';
 import { noteEntityIds, noteProblem } from './notes';
 
 export interface Transaction {
-  readonly command: CommandId;
+  /** Command id, or `script.run` when many commands were applied as one undo step. */
+  readonly command: string;
   readonly label: string;
   readonly changes: readonly Change[];
 }
@@ -54,15 +55,11 @@ function pruneBrokenNotes(draft: Draft): number {
 }
 
 /**
- * Runs a command. Parameters are always validated, even from typed callers. On any error the
- * original session is untouched and a CommandError explains why.
+ * Runs a named command against a draft (used by the script host to batch many commands into
+ * one undo step). Parameters are always validated. On error the draft may be dirty; the
+ * caller must discard it.
  */
-export function execute<K extends CommandId>(session: Session, id: K, params: ParamsOf<K>): Executed<ResultOf<K>> {
-  return executeUnchecked(session, id, params) as Executed<ResultOf<K>>;
-}
-
-/** Runs a command named at run time (from a script or the command palette). */
-export function executeUnchecked(session: Session, id: string, params: unknown): Executed<unknown> {
+export function runCommandOnDraft(draft: Draft, id: string, params: unknown): unknown {
   if (!isCommandId(id)) throw new CommandError(`There is no command called "${id}".`);
   const def = COMMANDS[id] as CommandDef<unknown, unknown>;
   let parsed: unknown;
@@ -72,19 +69,27 @@ export function executeUnchecked(session: Session, id: string, params: unknown):
     // Parsers throw ValidationError, whose message names the offending parameter.
     throw new CommandError(`Invalid parameters for ${id}: ${(err as Error).message}`);
   }
-  const draft = new Draft(session.doc);
-  let result: unknown;
   try {
-    result = def.run(draft, parsed);
+    return def.run(draft, parsed);
   } catch (err) {
     // Geometry that becomes invalid (e.g. scaled to a zero radius) surfaces as a RangeError.
     if (err instanceof RangeError) throw new CommandError(`${def.label} failed: ${err.message}`);
     throw err;
   }
+}
+
+/** Turns a finished draft into a new session. Empty drafts leave the session object unchanged. */
+export function commitDraft(
+  session: Session,
+  draft: Draft,
+  command: string,
+  label: string,
+  result: unknown,
+): Executed<unknown> {
   const pruned = pruneBrokenNotes(draft);
   const changes = draft.changes();
-  if (changes.length === 0) return { session, result, pruned: 0 };
-  const undoStack = [...session.undoStack, { command: id, label: def.label, changes }];
+  if (changes.length === 0) return { session, result, pruned };
+  const undoStack = [...session.undoStack, { command, label, changes }];
   return {
     session: {
       ...session,
@@ -95,6 +100,22 @@ export function executeUnchecked(session: Session, id: string, params: unknown):
     result,
     pruned,
   };
+}
+
+/**
+ * Runs a command. Parameters are always validated, even from typed callers. On any error the
+ * original session is untouched and a CommandError explains why.
+ */
+export function execute<K extends CommandId>(session: Session, id: K, params: ParamsOf<K>): Executed<ResultOf<K>> {
+  return executeUnchecked(session, id, params) as Executed<ResultOf<K>>;
+}
+
+/** Runs a command named at run time (from a script or the command palette). */
+export function executeUnchecked(session: Session, id: string, params: unknown): Executed<unknown> {
+  if (!isCommandId(id)) throw new CommandError(`There is no command called "${id}".`);
+  const draft = new Draft(session.doc);
+  const result = runCommandOnDraft(draft, id, params);
+  return commitDraft(session, draft, id, COMMANDS[id].label, result);
 }
 
 export function canUndo(session: Session): boolean {

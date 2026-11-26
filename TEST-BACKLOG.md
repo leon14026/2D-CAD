@@ -249,12 +249,27 @@ as well as `.archilite`.
       program (lines, circles, a polyline), Open it. Do the lengths in the selection panel match
       the other program? Note anything dropped (the toast will say how many objects were left out).
 
+### Phase 8: scripting
+
+- [ ] **M8.1 JavaScript bolt circle.** On the work laptop, open the live site (or this PR's
+      Pages preview). Press Script. Leave JavaScript and "Bolt circle". Press Run. Expect: a
+      Ø100 outline, Ø40 bore, six Ø8 holes on a Ø70 pitch, title "Bolt circle". Ctrl+Z removes
+      all of it in one step. Repeat with Flange and Slot pattern.
+- [ ] **M8.2 First Python load.** Switch the language to Python (the matching example should
+      appear). Press Run. Note how long until the drawing appears. Expect: the same picture as
+      M8.1, and a wait of a few seconds the first time only (Pyodide is about 12 MB from this
+      site, not from another origin). If it never finishes, or the browser talks to another
+      host, tell Claude.
+- [ ] **M8.3 Later Python loads.** Start a new drawing. Run the Python flange, then the slot
+      pattern. Expect: each run after the first is much quicker, still one undo step.
+- [ ] **M8.4 No network from a script.** In JavaScript, replace the editor with
+      `fetch('https://example.com')` and Run. Expect: a toast that scripts have no network
+      access, and an empty drawing.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 8:** run the example Python scripts on the work laptop. Check that the first Python load
-  is acceptable and later loads are fast.
 - **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
   features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
