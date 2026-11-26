@@ -45,15 +45,16 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   - Hatch under dimension text is unchanged: exports match the screen (see Phase 6).
   - Notes do not round-trip as dimensions: they export as exploded line work, text and
     hatches. Geometry round-trips.
-- Gate (local, awaiting CI):
+- Gate (passed in CI, Ubuntu 26.04 runner: 66 browser tests; pan 17.4 ms, zoom 23.5 ms per frame):
   - **ezdxf + shapely:** 100 mm line at (0,0)–(100,0); bracket outline 5978.539816 mm² and
     slot 278.539816 mm² with four Ø8 holes; annotate hatch 2400 − 41π. Worst hatch-oracle
     relative difference still 4.12e-11.
   - **PDF:** 100 mm line measures 283.4646 pt (unit test and in the browser).
   - 1,128 unit and property tests; 66 browser tests; 10 approved screenshots (`app-window`
-    refreshed for the Export button and Phase 7 pill). 100% line coverage of `src/core`.
-  - Size 103.8 KB of 300 KB. Performance with 20,000 entities, GPU off: pan 7.7 ms, zoom
-    11.7 ms per frame on the workspace.
+    refreshed for the Export button and Phase 7 pill). 100% line coverage of `src/core`
+    (branches 99.41%).
+  - Size 103.8 KB of 300 KB. Performance with 20,000 entities, GPU off: pan 7.8 ms, zoom
+    11.8 ms per frame on the workspace; pan 17.4 ms, zoom 23.5 ms on the GitHub runner.
 - Found and fixed while building:
   - LWPOLYLINE group 42 (bulge) is written on every vertex. Omitting zero bulges shifted
     later non-zero bulges onto the wrong vertices on import.
