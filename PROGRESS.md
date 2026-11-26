@@ -24,6 +24,11 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-26: Phase 9 gate passed in CI
+
+- Phase gate on #12 is green (Ubuntu runner: 73 browser tests; pan 21.6 ms, zoom 24.7 ms
+  per frame). Merge #8 then #9 first.
+
 ### 2026-11-26: Phase 9 (blocks, sheets, constraints) started
 
 - Phase 8's PR #9 is still open, so this branch starts from
@@ -44,8 +49,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     randomness. Bound point references only.
   - Layout tools sit on the rail (block, insert, coincident, horizontal, vertical, distance);
     the rest are in the command palette.
-- Gate (passed locally, Ubuntu workspace: 73 browser tests; pan 8.4 ms, zoom 12.4 ms per
-  frame):
+- Gate (passed in CI, Ubuntu runner: 73 browser tests; pan 21.6 ms, zoom 24.7 ms per frame):
   - Constraints re-solve to the same `saveDocument` after `constraint.solve`.
   - A constrained plate (80 × 50, four hole inserts, a Layout sheet) is built start to finish
     through the command registry and opened in the app.
@@ -53,7 +57,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     button and Phase 9 pill (`--repeat-each=5`). 100% line coverage of `src/core` (branches
     98.12%). Size 120.9 KB of 300 KB.
   - Performance with 20,000 entities, GPU off: pan 8.4 ms, zoom 12.4 ms per frame on the
-    workspace.
+    workspace; pan 21.6 ms, zoom 24.7 ms on the GitHub runner.
 
 ### 2026-11-26: Phase 8 (scripting) started
 
