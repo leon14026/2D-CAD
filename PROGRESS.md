@@ -14,7 +14,7 @@ Phase 7, import and export (DXF, SVG, PDF, PNG).
 | 3. Viewer | Done | [#4](https://github.com/leon14026/2D-CAD/pull/4) | 2026-11-26 |
 | 4. Precision drafting | Done | [#5](https://github.com/leon14026/2D-CAD/pull/5) | 2026-11-26 |
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
-| 6. Annotation | Built; gate passing locally, awaiting CI | [#7](https://github.com/leon14026/2D-CAD/pull/7) | — |
+| 6. Annotation | Done, gate passed in CI; awaiting merge | [#7](https://github.com/leon14026/2D-CAD/pull/7) | — |
 | 7. Import and export | Not started | — | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
@@ -23,7 +23,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
-### 2026-11-26: Phase 6 (annotation) built, PR #7
+### 2026-11-26: Phase 6 (annotation) complete, PR #7
 
 - Started after PRs #2 to #6 were merged to `main` at your request, so the branch starts from
   `main`.
@@ -53,7 +53,7 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   - Where a hatch and a boundary are equally near a click, the boundary is picked.
   - The tool rail continues in a second column on short windows instead of scrolling, so no
     tool is hidden; fit leaves room for it.
-- Gate (all passing locally on the workspace; CI result below once the PR's check finishes):
+- Gate (passed in CI, Ubuntu 26.04 runner: 61 browser tests; pan 12.2 ms, zoom 17.1 ms per frame):
   - **500 random cases:** every dimension (linear, aligned, radius, diameter, angle) shows
     exactly the value measured from its geometry.
   - **500 random cases each:** dimensions follow their geometry after move, rotate, scale and
@@ -69,8 +69,8 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
     clicked into the real app it equals the same file exactly.
   - 100% line coverage of `src/core` (branches 99.41%). 1,110 unit and property tests; 61
     browser tests; 10 approved screenshots (new: the annotation reference drawing).
-  - Performance with 20,000 entities, GPU off: pan 10.6 ms, zoom 15.8 ms per frame. 95.1 KB of the
-    300 KB budget.
+  - Performance with 20,000 entities, GPU off: pan 10.5 ms, zoom 17.7 ms per frame on the
+    workspace. 95.1 KB of the 300 KB budget.
 - Found and fixed while building:
   - **Clicking a hatch's edge picked the hatch** instead of the line under it. A hatch lies
     under geometry, so a boundary now wins a tie. (My first fix clamped every hatch distance,
