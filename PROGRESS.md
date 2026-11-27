@@ -2,8 +2,8 @@
 
 **Now:** Phases 1 to 9 are merged and live, with a follow-up on DXF import ([#13](https://github.com/leon14026/2D-CAD/pull/13)).
 A second follow-up explodes DXF block inserts ([#15](https://github.com/leon14026/2D-CAD/pull/15), in review).
-Phase 10 (DWG) is planned, and Phase 11 (phone browser, [#11](https://github.com/leon14026/2D-CAD/pull/11)) is planned.
-Phase 10 and Phase 11 do not depend on each other.
+Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
+([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 10 and Phase 11 do not depend on each other.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -25,6 +25,11 @@ Phase 10 and Phase 11 do not depend on each other.
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 11 plan merged
+
+- PR [#11](https://github.com/leon14026/2D-CAD/pull/11) merged to `main`. Docs only; no phone
+  layout yet. Phase 10 (DWG) and Phase 11 (phone) still do not depend on each other.
 
 ### 2026-11-26: Review of #15 (DXF INSERT explode)
 
