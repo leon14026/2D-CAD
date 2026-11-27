@@ -1,5 +1,6 @@
 import { applyChanges, type Change } from './changes';
 import { COMMANDS, isCommandId, type CommandDef, type CommandId, type ParamsOf, type ResultOf } from './commands';
+import { pruneAndSolve } from './constraints';
 import { CommandError, Draft } from './draft';
 import { newDocument, type Doc } from './model';
 import { noteEntityIds, noteProblem } from './notes';
@@ -87,6 +88,7 @@ export function commitDraft(
   result: unknown,
 ): Executed<unknown> {
   const pruned = pruneBrokenNotes(draft);
+  pruneAndSolve(draft);
   const changes = draft.changes();
   if (changes.length === 0) return { session, result, pruned };
   const undoStack = [...session.undoStack, { command, label, changes }];

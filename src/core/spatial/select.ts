@@ -23,7 +23,7 @@ import {
   type Shape,
   type Vec2,
 } from '../geom';
-import { compareDrawOrder, docEnv, findLayer, hatchLoops, pickShapes, resolveNotes, textBox, type Doc, type Entity, type Note, type Resolved } from '../doc';
+import { compareDrawOrder, docEnv, findLayer, hatchLoops, insertBounds, insertShapes, onCurrentSheet, pickShapes, resolveNotes, textBox, type Doc, type Entity, type Note, type Resolved } from '../doc';
 import { DocIndex, entityBounds } from './doc-index';
 
 export type BoxMode = 'window' | 'crossing';
@@ -98,15 +98,25 @@ export function selectInBox(doc: Doc, box: Bounds, mode: BoxMode): number[] {
   const query = { minX: box.minX - reach, minY: box.minY - reach, maxX: box.maxX + reach, maxY: box.maxY + reach };
   const hits: { id: number; z: number }[] = index
     .query(query)
-    .filter((e) => isSelectable(doc, e))
+    .filter((e) => isSelectable(doc, e) && onCurrentSheet(doc, e))
     .filter((e) => {
       const b = entityBounds(e);
       return mode === 'window' ? boxContains(box, b, tol) : shapeTouchesBox(e.geom, box, b);
     });
+  for (const ins of index.queryInserts(query)) {
+    if (!isSelectable(doc, ins) || !onCurrentSheet(doc, ins)) continue;
+    const b = insertBounds(doc, ins);
+    if (!b) continue;
+    const hit =
+      mode === 'window'
+        ? boxContains(box, b, tol)
+        : boxContains(box, b, tol) || insertShapes(doc, ins).some((s) => shapeTouchesBox(s, box, shapeBounds(s)));
+    if (hit) hits.push(ins);
+  }
   const resolved = resolveNotes(doc);
   for (const n of index.queryNotes(query)) {
     const r = resolved.get(n.id);
-    if (!r?.ok || !isSelectable(doc, n)) continue;
+    if (!r?.ok || !isSelectable(doc, n) || !onCurrentSheet(doc, n)) continue;
     const b = r.r.bounds;
     const hit =
       mode === 'window'
@@ -161,12 +171,18 @@ export function pickAt(doc: Doc, p: Vec2, radius: number): number | null {
   };
   const index = DocIndex.of(doc);
   for (const e of index.query(box)) {
-    if (isSelectable(doc, e)) consider(e, distanceToShape(e.geom, p));
+    if (isSelectable(doc, e) && onCurrentSheet(doc, e)) consider(e, distanceToShape(e.geom, p));
+  }
+  for (const ins of index.queryInserts(box)) {
+    if (!isSelectable(doc, ins) || !onCurrentSheet(doc, ins)) continue;
+    const shapes = insertShapes(doc, ins);
+    if (shapes.length === 0) continue;
+    consider(ins, Math.min(...shapes.map((s) => distanceToShape(s, p))));
   }
   const resolved = resolveNotes(doc);
   for (const n of index.queryNotes(box)) {
     const r = resolved.get(n.id);
-    if (r?.ok && isSelectable(doc, n)) consider(n, noteDistance(doc, n, r.r, p, radius));
+    if (r?.ok && isSelectable(doc, n) && onCurrentSheet(doc, n)) consider(n, noteDistance(doc, n, r.r, p, radius));
   }
   return best ? (best as { id: number }).id : null;
 }

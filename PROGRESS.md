@@ -1,9 +1,8 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
-Phase 8 (scripting) is in review (#9) on top of that branch. Next up is whichever of
-Phase 9 (stretch), Phase 10 (DWG), or Phase 11 (phone) you pick. Phase 10 and Phase 11 do
-not depend on each other.
+**Now:** Phases 1 to 9 are merged and live, with a follow-up on DXF import ([#13](https://github.com/leon14026/2D-CAD/pull/13)).
+Phase 10 (DWG) is planned, and Phase 11 (phone browser, [#11](https://github.com/leon14026/2D-CAD/pull/11)) is planned.
+Phase 10 and Phase 11 do not depend on each other.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -16,9 +15,9 @@ not depend on each other.
 | 4. Precision drafting | Done | [#5](https://github.com/leon14026/2D-CAD/pull/5) | 2026-11-26 |
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
-| 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
-| 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
-| 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
+| 7. Import and export | Done | [#8](https://github.com/leon14026/2D-CAD/pull/8) | 2026-11-26 |
+| 8. Scripting (JavaScript, Python via Pyodide) | Done | [#9](https://github.com/leon14026/2D-CAD/pull/9) | 2026-11-26 |
+| 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 
@@ -35,6 +34,60 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   A phone build without DWG is complete.
 - The gate is an emulated 390×844 touch browser in CI, plus the owner's iPhone and Android
   phone (`TEST-BACKLOG.md`). The 300 KB budget and the desk screenshots stay.
+
+### 2026-11-26: DXF text codes, units control, layer-name tooltips
+
+- Follow-up on Phase 9, PR [#13](https://github.com/leon14026/2D-CAD/pull/13). Merge #8 then
+  #9 then #12 first.
+- After opening a floorplan DXF: room names were showing `%%u`, the file was tagged
+  millimetres while drawn in inches with no UI to relabel, and xref layer names ellipsed
+  without a tooltip of the full name.
+- TEXT/MTEXT drop `%%u`/`%%o` and map `%%c`/`%%d`/`%%p` to Ø/°/±. Status bar unit cycles the
+  label without scaling; palette has treat-as and scale-to for each unit. Layer buttons title
+  the full name. Local gate: 1,183 unit tests, 75 browser tests, 121.4 KB gzipped.
+
+### 2026-11-26: Review of #12 (Phase 9)
+
+- Found: the constraint solver stopped quietly after 48 rounds or when it stopped improving,
+  and nothing told the user when constraints conflicted or were not reached. A conflicting
+  pair (radius 3 and radius 4) just left a compromise circle.
+- Fixed: `unmetConstraints` in `src/core/doc/constraints.ts`, and a status message from
+  `src/app/constraint-warning.ts` after any change that leaves one unmet (M9.5).
+
+### 2026-11-26: Phase 9 gate passed in CI
+
+- Phase gate on #12 is green (Ubuntu runner: 73 browser tests; pan 21.6 ms, zoom 24.7 ms
+  per frame). Merge #8 then #9 first.
+
+### 2026-11-26: Phase 9 (blocks, sheets, constraints) started
+
+- Phase 8's PR #9 is still open, so this branch starts from
+  `cursor/phase-8-scripting-487f`. Merge #8 then #9 first. This phase is PR #12.
+- Built:
+  - **Sheets.** Named paper sizes (`Sheet 1` by default). Membership is `obj.sheet ??` the
+    first sheet. Status bar button cycles sheets; command palette adds and switches.
+  - **Blocks.** Named definitions in local coordinates; inserts share the entity id space.
+    Create consumes the selection and leaves an insert. Explode reuses the insert id for the
+    first piece. No nested blocks.
+  - **Constraints.** Coincident, horizontal, vertical, distance, fix, midpoint, parallel,
+    perpendicular, equal, concentric, tangent, radius, length, angle. Re-solved in
+    `commitDraft` after every edit, in id order, until the residual stops shrinking.
+  - **File format 3.** Version 1 and 2 files still open.
+- Decisions:
+  - Sheets and blocks are named, not ids. Optional `sheet` is omitted on the first sheet.
+  - No extra runtime package. The solver is projection / Gauss-Seidel, deterministic, no
+    randomness. Bound point references only.
+  - Layout tools sit on the rail (block, insert, coincident, horizontal, vertical, distance);
+    the rest are in the command palette.
+- Gate (passed in CI, Ubuntu runner: 73 browser tests; pan 21.6 ms, zoom 24.7 ms per frame):
+  - Constraints re-solve to the same `saveDocument` after `constraint.solve`.
+  - A constrained plate (80 × 50, four hole inserts, a Layout sheet) is built start to finish
+    through the command registry and opened in the app.
+  - 1,182 unit tests; 73 browser tests; `app-window` refreshed for the Layout rail, sheet
+    button and Phase 9 pill (`--repeat-each=5`). 100% line coverage of `src/core` (branches
+    98.12%). Size 120.9 KB of 300 KB.
+  - Performance with 20,000 entities, GPU off: pan 8.4 ms, zoom 12.4 ms per frame on the
+    workspace; pan 21.6 ms, zoom 24.7 ms on the GitHub runner.
 
 ### 2026-11-26: Phase 8 (scripting) started
 

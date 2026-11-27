@@ -248,6 +248,14 @@ as well as `.archilite`.
 - [ ] **M7.6 Open a DXF from elsewhere.** If you have a simple DXF from LibreCAD or another
       program (lines, circles, a polyline), Open it. Do the lengths in the selection panel match
       the other program? Note anything dropped (the toast will say how many objects were left out).
+- [ ] **M7.7 Floorplan text, units and layer names.** Open a floorplan DXF that uses
+      `%%u` room labels (GREAT ROOM, W.I.C.). Expect: those names without the `%%u`. If the
+      status bar says mm but the rooms are in feet-and-inches, click the unit (or Ctrl+K
+      "Treat drawing units as inches") so a 672 wall reads as inches, not millimetres — the
+      numbers stay put. Hover a long xref layer name; the tooltip is the full name. A new
+      linear dimension on a wall should measure the geometry you picked. Original CAD
+      dimensions, hatches and block inserts (fixtures) are still left out; the toast says
+      how many.
 
 ### Phase 8: scripting
 
@@ -267,11 +275,33 @@ as well as `.archilite`.
       in scripts, and an empty drawing. Then run the Python bolt circle, press Ctrl+Z, and use
       "Load the example". Expect: the example loads (the page's own fetch still works).
 
+### Phase 9: blocks, sheets, constraints
+
+- [ ] **M9.1 A real part, start to finish.** On the work laptop, draw a plate with a rectangular
+      outline, hold the sides horizontal and vertical and the width and height with constraints,
+      turn one hole into a block, and insert the other holes. Add a second sheet and put another
+      insert of the hole on it. Expect: dragging a corner keeps the rectangle a rectangle of the
+      same size; switching sheets in the status bar hides the other sheet; exploding one insert
+      does not change the others. Save, reopen, and check the numbers still match.
+- [ ] **M9.2 Constraints after an edit.** Draw a line that is not quite horizontal. Horizontal
+      constraint, then move one end with Move. Expect: the line lies flat again. Undo once:
+      the move comes back, then the line flattens again. If it stays skewed, tell Claude.
+- [ ] **M9.3 Block inserts in another program.** Export the plate from M9.1 as DXF. Open it in
+      LibreCAD. Expect: the current sheet's lines and the exploded look of each insert (DXF has
+      no ArchiLite blocks). Switch sheet, export again, and check the other sheet.
+- [ ] **M9.4 Scripted block.** In the script panel, run a few lines that `cad.circle` a hole,
+      `cad.block` it, `cad.insert` two copies, then `cad.sheet` and insert one more. Expect: one
+      undo step removes all of it.
+
+- [ ] **M9.5 Conflicting constraints are reported.** Draw a circle. Add a radius constraint of
+      3, then another of 4. Expect: a red message "2 constraints could not be met (radius)" and
+      a circle of radius about 3.5. Undo the second constraint: the message goes away and the
+      radius is 3.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
   features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
   paper space). Until this phase, use DXF. This can wait until after the phone work.

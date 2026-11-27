@@ -1,5 +1,8 @@
 import type { LengthUnit, Shape } from '../geom';
+import type { Block, Insert } from './blocks';
+import type { Constraint } from './constraints';
 import { DEFAULT_DIM_STYLE, DEFAULT_DIM_STYLE_NAME, type DimStyle, type Note } from './notes';
+import { DEFAULT_SHEET_NAME, defaultSheets, type Sheet } from './sheets';
 import {
   BY_LAYER,
   DEFAULT_LAYER_STYLE,
@@ -31,6 +34,11 @@ export interface Entity {
   readonly linetype: LinetypeRef;
   readonly lineweight: LineweightRef;
   readonly geom: Shape;
+  /**
+   * Named sheet this object lives on. Omitted when it is the first sheet, so version-2 files
+   * and new geometry on "Sheet 1" stay compact.
+   */
+  readonly sheet?: string;
 }
 
 export interface DocSettings {
@@ -41,11 +49,14 @@ export interface DocSettings {
   readonly dimStyles: readonly DimStyle[];
   /** The style new dimensions, leaders and centre marks use. */
   readonly currentDimStyle: string;
+  /** The named sheet the view shows and that new objects go on. */
+  readonly currentSheet: string;
 }
 
 /**
- * A drawing. Immutable: every edit produces a new Doc. Layers and entities share one id
- * space, allocated from `nextId`.
+ * A drawing. Immutable: every edit produces a new Doc. Layers, entities, notes, inserts and
+ * constraints share one id space, allocated from `nextId`. Sheets and blocks are named, like
+ * dimension styles.
  */
 export interface Doc {
   readonly settings: DocSettings;
@@ -54,6 +65,14 @@ export interface Doc {
   readonly entities: ReadonlyMap<number, Entity>;
   /** Dimensions, text, hatches and the rest. They share the id space and layers with entities. */
   readonly notes: ReadonlyMap<number, Note>;
+  /** Paper sheets. There is always at least one. */
+  readonly sheets: readonly Sheet[];
+  /** Named reusable geometry, inserted by `inserts`. */
+  readonly blocks: readonly Block[];
+  /** Block inserts. They share the id space with entities and notes. */
+  readonly inserts: ReadonlyMap<number, Insert>;
+  /** Geometric and dimensional constraints, re-solved after every edit. */
+  readonly constraints: ReadonlyMap<number, Constraint>;
 }
 
 export const MAX_NAME_LENGTH = 64;
@@ -80,11 +99,16 @@ export function newDocument(options: NewDocumentOptions = {}): Doc {
       currentLayer: 1,
       dimStyles: [DEFAULT_DIM_STYLE],
       currentDimStyle: DEFAULT_DIM_STYLE_NAME,
+      currentSheet: DEFAULT_SHEET_NAME,
     },
     nextId: 2,
     layers: [layer],
     entities: new Map(),
     notes: new Map(),
+    sheets: defaultSheets(),
+    blocks: [],
+    inserts: new Map(),
+    constraints: new Map(),
   };
 }
 

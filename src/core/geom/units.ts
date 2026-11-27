@@ -14,6 +14,15 @@ export const MICROMETRES_PER_UNIT: Readonly<Record<LengthUnit, number>> = Object
 
 export const LENGTH_UNITS: readonly LengthUnit[] = Object.freeze(['mm', 'cm', 'm', 'in', 'ft']);
 
+/** The unit name in the UI: "Treat drawing units as millimetres". */
+export const UNIT_WORDS: Readonly<Record<LengthUnit, string>> = Object.freeze({
+  mm: 'millimetres',
+  cm: 'centimetres',
+  m: 'metres',
+  in: 'inches',
+  ft: 'feet',
+});
+
 export function isLengthUnit(value: string): value is LengthUnit {
   return (LENGTH_UNITS as readonly string[]).includes(value);
 }

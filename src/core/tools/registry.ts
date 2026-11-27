@@ -1,4 +1,22 @@
 import { centreMarkTool, dimAlignedTool, dimAngleTool, dimDiameterTool, dimLinearTool, dimRadiusTool, hatchTool, leaderTool, textTool, titleBlockTool } from './annotate';
+import {
+  angleConstraintTool,
+  blockTool,
+  coincidentTool,
+  concentricTool,
+  distanceConstraintTool,
+  equalTool,
+  fixTool,
+  horizontalTool,
+  insertTool,
+  lengthConstraintTool,
+  midpointTool,
+  parallelTool,
+  perpendicularTool,
+  radiusConstraintTool,
+  tangentTool,
+  verticalTool,
+} from './layout';
 import { arcCenterTool, arcTool, circleTool, lineTool, polygonTool, polylineTool, rectangleTool } from './draw';
 import {
   arrayTool,
@@ -51,6 +69,22 @@ export const TOOLS = {
   centreMark: centreMarkTool,
   hatch: hatchTool,
   titleBlock: titleBlockTool,
+  block: blockTool,
+  insert: insertTool,
+  coincident: coincidentTool,
+  horizontal: horizontalTool,
+  vertical: verticalTool,
+  parallel: parallelTool,
+  perpendicular: perpendicularTool,
+  equal: equalTool,
+  concentric: concentricTool,
+  tangent: tangentTool,
+  constrainDistance: distanceConstraintTool,
+  constrainRadius: radiusConstraintTool,
+  constrainLength: lengthConstraintTool,
+  constrainAngle: angleConstraintTool,
+  fix: fixTool,
+  midpointConstraint: midpointTool,
 } as const satisfies Record<string, ToolDef>;
 
 export type ToolId = keyof typeof TOOLS;

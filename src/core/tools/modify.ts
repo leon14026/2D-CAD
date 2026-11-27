@@ -6,7 +6,7 @@
  * selected, they first ask for a selection (select as usual, then Enter). Offset, trim, extend,
  * fillet and chamfer work on objects picked one at a time and repeat until Enter or Esc.
  */
-import type { Entity } from '../doc';
+import { insertShapes, type Entity } from '../doc';
 import {
   angleOf,
   degToRad,
@@ -45,7 +45,9 @@ function takeSelection(s: ToolState, i: ToolInput, ctx: ToolContext): ToolResult
 function moved(s: ToolState, ctx: ToolContext, t: Transform): Shape[] {
   return s.ids.flatMap((id) => {
     const e = ctx.doc.entities.get(id) as Entity | undefined;
-    return e ? [transformShape(t, e.geom)] : [];
+    if (e) return [transformShape(t, e.geom)];
+    const ins = ctx.doc.inserts.get(id);
+    return ins ? insertShapes(ctx.doc, ins).map((g) => transformShape(t, g)) : [];
   });
 }
 

@@ -91,10 +91,13 @@ src/core/      pure TypeScript: no DOM, no imports from outside src/core, no pac
   doc/         document model, commands, undo/redo, file format (Phase 2); modify commands
                in edit-commands.ts, shared command helpers in command-kit.ts (Phase 5);
                annotations ("notes") in notes.ts (model and resolve), note-validate.ts,
-               note-commands.ts (Phase 6)
-  spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4)
+               note-commands.ts (Phase 6); sheets.ts, blocks.ts, constraints.ts,
+               layout-commands.ts (Phase 9)
+  spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4);
+               inserts are indexed too (Phase 9)
   tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4);
-               modify tools in modify.ts (Phase 5), annotation tools in annotate.ts (Phase 6)
+               modify tools in modify.ts (Phase 5), annotation tools in annotate.ts (Phase 6),
+               blocks/inserts/constraints in layout.ts (Phase 9)
 src/io/        DXF import/export, SVG, PDF (Phase 7); no runtime packages
 src/script/    JavaScript API and Python runner (Phase 8). Mutations go through the command
                registry as one undo step. The Pyodide package is never imported from here.
@@ -141,6 +144,9 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   thing at a time and return commands, never touching the document. Drive them through
   `drafting.ts` (`feed`, `feedTyped`) in both the app and tests. A new tool also gets an entry
   in `src/app/tools.ts` (rail button, palette label, key).
+- Sheets, blocks and constraints (Phase 9) are document data: `pruneAndSolve` runs in
+  `commitDraft` after every command. Bound point references only. Optional `sheet` is omitted
+  on the first sheet. Inserts share the entity id space; sheets and blocks are named.
 - Refusals are explained in plain words and change nothing: tools return `refuse(state, why)`,
   commands throw `CommandError`.
 - Commands that split or rebuild an entity keep its layer, style and draw order, and the first

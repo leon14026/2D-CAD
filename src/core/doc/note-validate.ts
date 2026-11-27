@@ -257,7 +257,8 @@ export function readNoteBody(v: unknown, path: string): NoteBody {
 }
 
 export function readNote(v: unknown, path: string): Note {
-  const o = readObject(v, path, ['id', 'layer', 'z', 'color', 'lineweight', 'body']);
+  const o = readObject(v, path, ['id', 'layer', 'z', 'color', 'lineweight', 'body'], ['sheet']);
+  const sheet = Object.hasOwn(o, 'sheet') ? readName(o['sheet'], join(path, 'sheet'), 64) : undefined;
   return {
     id: readPositiveInteger(o['id'], join(path, 'id')),
     layer: readPositiveInteger(o['layer'], join(path, 'layer')),
@@ -265,5 +266,6 @@ export function readNote(v: unknown, path: string): Note {
     color: readColorRef(o['color'], join(path, 'color')),
     lineweight: readLineweightRef(o['lineweight'], join(path, 'lineweight')),
     body: readNoteBody(o['body'], join(path, 'body')),
+    ...(sheet ? { sheet } : {}),
   };
 }

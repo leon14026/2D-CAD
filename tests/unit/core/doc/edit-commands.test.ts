@@ -276,7 +276,7 @@ describe('entity.join and entity.explode', () => {
     const c = h.add(circle(P(50, 50), 1));
     h.fails('entity.join', { ids: [a, b] }, /Join failed: these pieces do not all meet end to end/);
     h.fails('entity.join', { ids: [a] }, /select at least two pieces/);
-    h.fails('entity.explode', { ids: [a, c] }, /no polylines to explode/);
+    h.fails('entity.explode', { ids: [a, c] }, /no polylines or block inserts to explode/);
   });
 
   it('a joined arc keeps its exact ends', () => {

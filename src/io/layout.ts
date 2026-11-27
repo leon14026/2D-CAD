@@ -2,7 +2,7 @@
  * Paper size and drawing bounds for exports. PDF and SVG are 1:1: one millimetre on the
  * drawing is one millimetre on the page.
  */
-import { SHEET_MM, type Doc } from '../core/doc';
+import { SHEET_MM, onCurrentSheet, type Doc } from '../core/doc';
 import { convertLength, type Bounds, type LengthUnit } from '../core/geom';
 import { DocIndex } from '../core/spatial';
 
@@ -38,9 +38,14 @@ export function visibleBounds(doc: Doc): Bounds | null {
  */
 export function paperFor(doc: Doc): Paper {
   for (const n of doc.notes.values()) {
-    if (n.body.kind !== 'titleBlock') continue;
+    if (n.body.kind !== 'titleBlock' || !onCurrentSheet(doc, n)) continue;
     const sheet = SHEET_MM[n.body.size];
     return { originX: n.body.at.x, originY: n.body.at.y, width: sheet.w, height: sheet.h };
+  }
+  const current = doc.sheets.find((s) => s.name === doc.settings.currentSheet);
+  if (current && doc.entities.size === 0 && doc.inserts.size === 0 && doc.notes.size === 0) {
+    const mm = SHEET_MM[current.size];
+    return { originX: 0, originY: 0, width: convertLength(mm.w, 'mm', doc.settings.units), height: convertLength(mm.h, 'mm', doc.settings.units) };
   }
   const margin = convertLength(MARGIN_MM, 'mm', doc.settings.units);
   const b = visibleBounds(doc);

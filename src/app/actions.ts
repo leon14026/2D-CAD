@@ -11,10 +11,12 @@ import {
   findLayer,
   loadDocument,
   newDocument,
+  onCurrentSheet,
   saveDocument,
   type DimStyle,
   type Doc,
 } from '../core/doc';
+import { LENGTH_UNITS, type LengthUnit } from '../core/geom';
 import { applyJavaScript, applyPython, type ScriptLanguage } from '../script';
 import { exportDxf, exportPdf, exportSvg, importDxf, IoError, looksLikeDxf } from '../io';
 import { ensurePython } from './python';
@@ -145,12 +147,52 @@ export class Actions {
     this.store.set({ polarOn: true, polarStep: degrees });
   }
 
+  /**
+   * `convert` false keeps the numbers and only changes the label (a 100 mm line becomes
+   * 100 in). `convert` true keeps real sizes (100 mm becomes 3.937 in).
+   */
+  setUnits(units: LengthUnit, convert: boolean): void {
+    this.run('doc.setUnits', { units, convert });
+  }
+
+  /** Relabels drawing units to the next unit in the list. Numbers do not change. */
+  cycleUnits(): void {
+    const from = this.store.get().session.doc.settings.units;
+    const i = LENGTH_UNITS.indexOf(from);
+    const next = LENGTH_UNITS[(i + 1) % LENGTH_UNITS.length] as LengthUnit;
+    this.setUnits(next, false);
+  }
+
   // ---------- selection ----------
 
   selectAll(): void {
     const doc = this.store.get().session.doc;
-    const everything = [...doc.entities.values(), ...doc.notes.values()];
-    this.store.set({ selection: new Set(everything.filter((e) => isSelectable(doc, e)).map((e) => e.id)) });
+    const everything = [...doc.entities.values(), ...doc.notes.values(), ...doc.inserts.values()];
+    this.store.set({
+      selection: new Set(everything.filter((e) => isSelectable(doc, e) && onCurrentSheet(doc, e)).map((e) => e.id)),
+    });
+  }
+
+  addSheet(name: string, size?: 'A4' | 'A3' | 'A2' | 'A1' | 'A0'): void {
+    if (this.run('sheet.add', { name, ...(size ? { size } : {}) })) this.fit();
+  }
+
+  useSheet(name: string): void {
+    if (this.run('sheet.setCurrent', { name })) {
+      this.store.set({ selection: new Set() });
+      this.fit();
+    }
+  }
+
+  cycleSheet(): void {
+    const doc = this.store.get().session.doc;
+    if (doc.sheets.length < 2) {
+      this.store.set({ message: { kind: 'info', text: 'This drawing has one sheet. Search commands for “Add a sheet”.' } });
+      return;
+    }
+    const i = doc.sheets.findIndex((s) => s.name === doc.settings.currentSheet);
+    const next = doc.sheets[(i + 1) % doc.sheets.length]!;
+    this.useSheet(next.name);
   }
 
   clearSelection(): void {

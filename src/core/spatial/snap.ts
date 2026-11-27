@@ -29,7 +29,7 @@ import {
   type Shape,
   type Vec2,
 } from '../geom';
-import type { Doc, Entity } from '../doc';
+import { insertShapes, onCurrentSheet, type Doc } from '../doc';
 import { DocIndex, isVisible } from './doc-index';
 
 export type SnapKind =
@@ -139,7 +139,13 @@ export function findSnap(doc: Doc, cursor: Vec2, radius: number, options: SnapOp
   if (kinds.size === 0) return null;
   const from = options.from ?? null;
   const box = { minX: cursor.x - radius, minY: cursor.y - radius, maxX: cursor.x + radius, maxY: cursor.y + radius };
-  const near = DocIndex.of(doc).query(box).filter((e) => isVisible(doc, e));
+  const index = DocIndex.of(doc);
+  const near = index.query(box).filter((e) => isVisible(doc, e) && onCurrentSheet(doc, e));
+  const nearInserts = index.queryInserts(box).filter((ins) => isVisible(doc, ins) && onCurrentSheet(doc, ins));
+  const pieces: { id: number; geom: Shape }[] = [
+    ...near.map((e) => ({ id: e.id, geom: e.geom })),
+    ...nearInserts.flatMap((ins) => insertShapes(doc, ins).map((geom) => ({ id: ins.id, geom }))),
+  ];
   const eps = tolFor(cursor.x, cursor.y, radius);
 
   const found: { best: Candidate | null } = { best: null };
@@ -151,17 +157,18 @@ export function findSnap(doc: Doc, cursor: Vec2, radius: number, options: SnapOp
     if (!best || d < best.d - eps || (d <= best.d + eps && rank < best.rank)) found.best = { hit: { kind, point, ids }, d, rank };
   };
 
-  for (const e of near) {
+  for (const e of pieces) {
     for (const kind of POINT_KINDS) {
       if (!kinds.has(kind)) continue;
       for (const p of snapPoints(e.geom, kind, cursor, from)) consider(kind, p, [e.id]);
     }
   }
   if (kinds.has('intersection')) {
-    for (let i = 0; i < near.length; i++) {
-      for (let j = i + 1; j < near.length; j++) {
-        const a = near[i] as Entity;
-        const b = near[j] as Entity;
+    for (let i = 0; i < pieces.length; i++) {
+      for (let j = i + 1; j < pieces.length; j++) {
+        const a = pieces[i]!;
+        const b = pieces[j]!;
+        if (a.id === b.id) continue;
         for (const p of intersect(a.geom, b.geom)) consider('intersection', p, [a.id, b.id]);
       }
     }
@@ -170,9 +177,9 @@ export function findSnap(doc: Doc, cursor: Vec2, radius: number, options: SnapOp
   const bestHit = (): SnapHit | null => found.best?.hit ?? null;
   if (bestHit()) return bestHit();
 
-  if (kinds.has('center') && !kinds.has('nearest')) return centreByEdge(near, cursor, radius);
+  if (kinds.has('center') && !kinds.has('nearest')) return centreByEdge(pieces, cursor, radius);
   if (kinds.has('nearest')) {
-    for (const e of near) {
+    for (const e of pieces) {
       for (const p of snapPoints(e.geom, 'nearest', cursor)) consider('nearest', p, [e.id]);
     }
   }
@@ -186,7 +193,7 @@ interface Candidate {
 }
 
 /** The centre of the circle or arc whose edge the cursor rests on (the closest one). */
-function centreByEdge(near: readonly Entity[], cursor: Vec2, radius: number): SnapHit | null {
+function centreByEdge(near: readonly { id: number; geom: Shape }[], cursor: Vec2, radius: number): SnapHit | null {
   let hit: SnapHit | null = null;
   let bestDistance = Infinity;
   for (const e of near) {

@@ -4,10 +4,12 @@
  */
 import {
   BY_LAYER,
+  compareDrawOrder,
   entitiesInDrawOrder,
   findLayer,
   HATCH_PATTERN_LABELS,
   HATCH_PATTERNS,
+  insertBounds,
   notesInDrawOrder,
   resolveNotes,
   resolveStyle,
@@ -17,6 +19,7 @@ import {
   type DimStyle,
   type Doc,
   type Entity,
+  type Insert,
   type Note,
   type NoteBody,
 } from '../core/doc';
@@ -42,6 +45,7 @@ export function mountLayersPanel(root: HTMLElement, store: Store, actions: Actio
     const doc = s.session.doc;
     const perLayer = new Map<number, number>();
     for (const e of doc.entities.values()) perLayer.set(e.layer, (perLayer.get(e.layer) ?? 0) + 1);
+    for (const ins of doc.inserts.values()) perLayer.set(ins.layer, (perLayer.get(ins.layer) ?? 0) + 1);
     count.textContent = `${doc.layers.length}`;
     list.replaceChildren(
       ...doc.layers.map((l) => {
@@ -86,7 +90,10 @@ export function mountLayersPanel(root: HTMLElement, store: Store, actions: Actio
           el('button', {
             className: 'al-layer-name',
             text: l.name,
-            attrs: { type: 'button', title: current ? 'Current layer: new lines go here' : 'Make this the current layer' },
+            attrs: {
+              type: 'button',
+              title: current ? `${l.name} (current layer: new lines go here)` : l.name,
+            },
             on: { click: () => actions.setCurrentLayer(l.id) },
           }),
           el('span', { className: 'al-layer-count', text: String(perLayer.get(l.id) ?? 0) }),
@@ -175,8 +182,9 @@ export interface SelectionActions {
 }
 
 /** Buttons that change the selection, shown under its properties. */
-function changeButtons(picked: readonly Entity[], a: SelectionActions): HTMLElement {
+function changeButtons(picked: readonly Entity[], a: SelectionActions, inserts: readonly Insert[] = []): HTMLElement {
   const anyPolyline = picked.some((e) => e.geom.kind === 'polyline');
+  const anyInsert = inserts.length > 0;
   const items: [string, IconName, () => void, boolean, string?][] = [
     ['Move', 'move', () => a.tool('move'), true],
     ['Copy', 'copy', () => a.tool('copy'), true],
@@ -186,7 +194,7 @@ function changeButtons(picked: readonly Entity[], a: SelectionActions): HTMLElem
     ['Array', 'array', () => a.tool('array'), true],
     ['Polar array', 'polarArray', () => a.tool('polarArray'), true],
     ['Join', 'join', () => a.join(), picked.length >= 2],
-    ['Explode', 'explode', () => a.explode(), anyPolyline],
+    ['Explode', 'explode', () => a.explode(), anyPolyline || anyInsert],
     ['Round off', 'corners', () => a.tool('roundCorners'), anyPolyline, 'Round every corner of the selected polylines'],
     ['Delete', 'remove', () => a.remove(), true],
   ];
@@ -374,7 +382,8 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
     const doc = s.session.doc;
     const picked = entitiesInDrawOrder(doc).filter((e) => s.selection.has(e.id));
     const notes = notesInDrawOrder(doc).filter((n) => s.selection.has(n.id));
-    const total = picked.length + notes.length;
+    const inserts = [...doc.inserts.values()].filter((ins) => s.selection.has(ins.id)).sort(compareDrawOrder);
+    const total = picked.length + notes.length + inserts.length;
     head.textContent = total ? `${total} selected` : '';
     if (total === 0) {
       body.replaceChildren(
@@ -387,19 +396,40 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
       );
       return;
     }
-    if (picked.length === 1 && notes.length === 0) {
+    if (picked.length === 1 && notes.length === 0 && inserts.length === 0) {
       const e = picked[0] as Entity;
       body.replaceChildren(
         props([['Kind', KIND[e.geom.kind]], ['Id', String(e.id)]], false),
         props(styleRows(doc, e), false),
         props(shapeRows(e.geom)),
-        changeButtons(picked, actions),
+        changeButtons(picked, actions, inserts),
       );
       return;
     }
-    if (picked.length === 0 && notes.length === 1) {
+    if (picked.length === 0 && notes.length === 0 && inserts.length === 1) {
+      const ins = inserts[0] as Insert;
+      const b = insertBounds(doc, ins);
+      body.replaceChildren(
+        props(
+          [
+            ['Kind', 'Block insert'],
+            ['Id', String(ins.id)],
+            ['Block', ins.block],
+            ['At', `${f(ins.at.x)}, ${f(ins.at.y)}`],
+            ['Rotation', `${f(radToDeg(ins.rotation))}°`],
+            ['Scale', f(ins.scale)],
+            ...(ins.flipped ? ([['Mirrored', 'yes']] as [string, string][]) : []),
+            ...(b ? ([['Width', f(b.maxX - b.minX)], ['Height', f(b.maxY - b.minY)]] as [string, string][]) : []),
+          ],
+          false,
+        ),
+        changeButtons(picked, actions, inserts),
+      );
+      return;
+    }
+    if (picked.length === 0 && notes.length === 1 && inserts.length === 0) {
       const n = notes[0] as Note;
-      body.replaceChildren(...noteDetails(doc, n, actions), changeButtons(picked, actions), ...(STYLED.has(n.body.kind) ? [dimStyleEditor(doc, actions)] : []));
+      body.replaceChildren(...noteDetails(doc, n, actions), changeButtons(picked, actions, inserts), ...(STYLED.has(n.body.kind) ? [dimStyleEditor(doc, actions)] : []));
       return;
     }
     const kinds = new Map<string, number>();
@@ -412,6 +442,7 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
       bounds = bounds ? unionBounds(bounds, b) : b;
     }
     for (const n of notes) kinds.set(NOTE_KIND[n.body.kind], (kinds.get(NOTE_KIND[n.body.kind]) ?? 0) + 1);
+    if (inserts.length) kinds.set('Block insert', inserts.length);
     const measured: HTMLElement[] = [];
     if (bounds) {
       const b = bounds as Bounds;
@@ -424,7 +455,7 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
         ]),
       );
     }
-    body.replaceChildren(props([...kinds].map(([k, n]) => [k, String(n)] as [string, string]), false), ...measured, changeButtons(picked, actions));
+    body.replaceChildren(props([...kinds].map(([k, n]) => [k, String(n)] as [string, string]), false), ...measured, changeButtons(picked, actions, inserts));
   };
   render(store.get());
   store.subscribe((s, p) => {

@@ -14,7 +14,7 @@
  * Coordinates are converted to device pixels in JavaScript (doubles), not through the canvas
  * transform, which some browsers apply in single precision.
  */
-import { compareDrawOrder, LINETYPES, type Doc, type Entity, type Layer } from '../core/doc';
+import { compareDrawOrder, insertShapes, LINETYPES, onCurrentSheet, type Doc, type Entity, type Layer } from '../core/doc';
 import { explodePolyline, type Curve, type Shape } from '../core/geom';
 import { DocIndex, entityBounds } from '../core/spatial';
 import { palette } from '../ui/palette';
@@ -69,7 +69,22 @@ const drawOrderCache = new WeakMap<Doc, readonly Entity[]>();
 function drawOrder(doc: Doc): readonly Entity[] {
   let list = drawOrderCache.get(doc);
   if (!list) {
-    list = [...doc.entities.values()].sort(compareDrawOrder);
+    const pieces: Entity[] = [...doc.entities.values()].filter((e) => onCurrentSheet(doc, e));
+    for (const ins of doc.inserts.values()) {
+      if (!onCurrentSheet(doc, ins)) continue;
+      for (const geom of insertShapes(doc, ins)) {
+        pieces.push({
+          id: ins.id,
+          layer: ins.layer,
+          z: ins.z,
+          color: ins.color,
+          linetype: ins.linetype,
+          lineweight: ins.lineweight,
+          geom,
+        });
+      }
+    }
+    list = pieces.sort(compareDrawOrder);
     drawOrderCache.set(doc, list);
   }
   return list;
@@ -86,18 +101,13 @@ function visibleEntities(doc: Doc, vp: Viewport, width: number, height: number):
   if (all && all.minX >= view.minX && all.maxX <= view.maxX && all.minY >= view.minY && all.maxY <= view.maxY) {
     return { list: drawOrder(doc).filter(shown), culled: 0 };
   }
-  const hits = index.query(view);
-  // With most of the drawing on screen, filtering the cached order beats sorting what's visible.
-  const list =
-    hits.length * 2 > doc.entities.size
-      ? hits.length === doc.entities.size
-        ? drawOrder(doc).filter(shown)
-        : (() => {
-            const hit = new Set(hits);
-            return drawOrder(doc).filter((e) => hit.has(e) && shown(e));
-          })()
-      : hits.filter(shown).sort(compareDrawOrder);
-  return { list, culled: doc.entities.size - hits.length };
+  const ids = new Set<number>([
+    ...index.query(view).map((e) => e.id),
+    ...index.queryInserts(view).map((ins) => ins.id),
+  ]);
+  const order = drawOrder(doc);
+  const list = order.filter((e) => shown(e) && ids.has(e.id));
+  return { list, culled: order.length - list.length };
 }
 
 /**

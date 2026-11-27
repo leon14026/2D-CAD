@@ -76,6 +76,12 @@ export const ICONS = {
   centreMark: ['M8 1.5v13', 'M1.5 8h13', 'M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   hatch: ['M2.5 2.5h11v11h-11z', 'M2.5 9l6.5-6.5', 'M2.5 13.5l11-11', 'M6 13.5l7.5-7.5', 'M10 13.5l3.5-3.5'],
   titleBlock: ['M2 2.5h12v11H2z', 'M2 10h12', 'M7 10v3.5', 'M2 12h5'],
+  block: ['M3 3.5h6v6H3z', 'M7 6.5h6v6H7z'],
+  insert: ['M3 3.5h5v5H3z', 'M10 8.5h4v4h-4z', 'M9 6.5l4-4', 'M13 2.5v3h-3'],
+  coincident: ['M3 8h10', 'M4.5 6.5 3 8l1.5 1.5', 'M11.5 6.5 13 8l-1.5 1.5', 'M8 8h.01'],
+  horizontal: ['M2.5 8h11', 'M2.5 6v4', 'M13.5 6v4'],
+  vertical: ['M8 2.5v11', 'M6 2.5h4', 'M6 13.5h4'],
+  constrainDistance: ['M2.5 11.5h11', 'M2.5 4.5v9', 'M13.5 4.5v9', 'M5.5 9.5h5'],
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -1,4 +1,4 @@
-# ArchiLite drawing file format (version 2)
+# ArchiLite drawing file format (version 3)
 
 ArchiLite saves drawings as UTF-8 JSON text with the extension `.archilite`. The format is plain and
 documented so you can read, diff, generate and repair drawings with any text editor or script.
@@ -12,11 +12,12 @@ contains.
 ```json
 {
   "format": "archilite",
-  "version": 2,
+  "version": 3,
   "title": "Example bracket",
   "units": "mm",
   "currentLayer": 2,
   "currentDimStyle": "ISO",
+  "currentSheet": "Sheet 1",
   "nextId": 21,
   "dimStyles": [
     {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
@@ -24,17 +25,23 @@ contains.
   "layers": [
     {"id":2,"name":"Outline","color":"#1f2a33","linetype":"continuous","lineweight":0.5,"visible":true,"locked":false}
   ],
+  "sheets": [
+    {"name":"Sheet 1","size":"A4"}
+  ],
+  "blocks": [],
   "entities": [
     {"id":6,"layer":3,"z":6,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":10,"y":10},"radius":4}}
   ],
   "notes": [
     {"id":22,"layer":2,"z":22,"color":"byLayer","lineweight":"byLayer","body":{"kind":"diameter","target":6,"at":{"x":10,"y":25},"style":"ISO"}}
-  ]
+  ],
+  "inserts": [],
+  "constraints": []
 }
 ```
 
-ArchiLite always writes one layer, entity, note or dimension style per line, in drawing order, so the same drawing
-always produces the same text and changes show up as clean line diffs in git.
+ArchiLite always writes one layer, sheet, block, entity, note, insert, constraint or dimension style per line, in
+drawing order, so the same drawing always produces the same text and changes show up as clean line diffs in git.
 
 ## Top-level fields
 
@@ -43,22 +50,29 @@ All fields are required. Any field not listed here is rejected.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | `"archilite"` | Identifies the file. |
-| `version` | whole number | File format version. This document describes version **2**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. Version 1 files (which have no annotations) still open. |
+| `version` | whole number | File format version. This document describes version **3**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. Version 1 and 2 files still open. |
 | `title` | text, 1–200 characters | Drawing title. Leading and trailing spaces are removed. |
 | `units` | `"mm"`, `"cm"`, `"m"`, `"in"` or `"ft"` | What one drawing unit means. All coordinates and radii are in these units. |
 | `currentLayer` | layer id | The layer new entities go on. |
 | `currentDimStyle` | style name | The dimension style new dimensions and leaders use. Must name one of `dimStyles`. *(version 2)* |
+| `currentSheet` | sheet name | The sheet the view shows and that new objects go on. Must name one of `sheets`. *(version 3)* |
 | `nextId` | whole number | The next id ArchiLite will hand out. Must be greater than every id in the file. |
 | `dimStyles` | list of dimension styles | At least one, at most 50, names unique ignoring upper/lower case. *(version 2)* |
 | `layers` | list of layers | At least one. The order is the order shown in the layer list. |
+| `sheets` | list of sheets | At least one, at most 32, names unique ignoring upper/lower case. *(version 3)* |
+| `blocks` | list of blocks | Named reusable geometry. May be empty. At most 100. *(version 3)* |
 | `entities` | list of entities | May be empty. |
 | `notes` | list of notes | Dimensions, text, leaders, centre marks, hatches and title blocks. May be empty. *(version 2)* |
+| `inserts` | list of block inserts | Placed copies of a block. May be empty. *(version 3)* |
+| `constraints` | list of constraints | Geometric and dimensional relations. May be empty. *(version 3)* |
 
-Layers, entities and notes share **one id space**: an id can't belong to two of them at once.
-Ids are whole numbers from 1 up.
+Layers, entities, notes, inserts and constraints share **one id space**: an id can't belong to two
+of them at once. Ids are whole numbers from 1 up. Sheets and blocks are **named**, like dimension
+styles: they do not take ids.
 
-A version 1 file has none of the three fields marked *(version 2)*. It opens with the default
-`ISO` style and no notes, and is saved as version 2 the next time.
+A version 1 file has none of the fields marked *(version 2)* or *(version 3)*. A version 2 file has
+none of the fields marked *(version 3)*. Older files open with the default `ISO` style, one A4 sheet
+called `Sheet 1`, and no blocks, inserts or constraints, and are saved as version 3 the next time.
 
 ## Layer
 
@@ -83,6 +97,7 @@ A version 1 file has none of the three fields marked *(version 2)*. It opens wit
 | `linetype` | `"byLayer"` or a linetype name | |
 | `lineweight` | `"byLayer"` or a lineweight | |
 | `geom` | shape (below) | The geometry. |
+| `sheet` | sheet name | Which sheet this entity lives on. Omitted when it is the first sheet. *(version 3)* |
 
 ## Shapes
 
@@ -118,6 +133,7 @@ and a `body` that says what it is.
 | `color` | `"byLayer"` or `"#rrggbb"` | |
 | `lineweight` | `"byLayer"` or a lineweight | |
 | `body` | note body (below) | |
+| `sheet` | sheet name | Which sheet this note lives on. Omitted when it is the first sheet. *(version 3)* |
 
 ### Dimension styles
 
@@ -176,6 +192,79 @@ A note whose references can't be resolved (a missing entity, the wrong kind of e
 points that coincide, a hatch boundary that isn't closed) is refused when the file is opened, with
 the location of the problem.
 
+## Sheets
+
+Named paper sheets. Geometry, notes, inserts and constraints live on one sheet; the view shows the
+current sheet. Sheets are named like dimension styles, not ids.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | text, 1–64 characters | Unique, ignoring upper/lower case. |
+| `size` | `"A4"`, `"A3"`, `"A2"`, `"A1"` or `"A0"` | Landscape ISO 216 size. |
+
+There is always at least one sheet. Objects with no `sheet` field belong to the first sheet in the
+list.
+
+## Blocks
+
+A named definition in local coordinates. Inserting it places a copy in the drawing. There is no
+nested block: explode an insert before putting it inside another block.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | text, 1–64 characters | Unique, ignoring upper/lower case. |
+| `members` | list of members | At least one, at most 500. Each has `geom` (a shape), `color`, `linetype` and `lineweight` (the same refs as an entity). Coordinates are relative to the insert base point. |
+
+## Inserts
+
+A placed copy of a block. Inserts share the id space with entities and notes.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | whole number | Unique id. |
+| `layer` | layer id | Must be an existing layer. |
+| `z` | number | Drawing order, same rule as entities. |
+| `color`, `linetype`, `lineweight` | same as an entity | Styles for the insert as a whole (`byLayer` stays `byLayer` on members). |
+| `block` | block name | Must name one of `blocks`. |
+| `at` | `{"x":…, "y":…}` | Where the block origin goes. |
+| `rotation` | number | Radians, anticlockwise from +x. Omitted when 0. |
+| `scale` | number, more than 0 | Omitted when 1. |
+| `flipped` | `true` | Mirrors local x before rotate and scale. Omitted when false. |
+| `sheet` | sheet name | Omitted when it is the first sheet. |
+
+## Constraints
+
+Relations that drive geometry. They are not measured dimensions: a distance constraint moves the
+geometry, while a dimension note only displays a length. After every edit ArchiLite re-solves them
+in id order until the residual stops shrinking. The same document always produces the same result.
+
+A constraint's point references must name a point on a drawn shape, not a free point.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | whole number | Unique id. |
+| `body` | constraint body (below) | |
+| `sheet` | sheet name | Omitted when it is the first sheet. |
+
+| `kind` | Other fields | Meaning |
+|---|---|---|
+| `"coincident"` | `a`, `b` (point references) | The two points occupy the same place. |
+| `"horizontal"` | `a`, `b` | The two points share a y. |
+| `"vertical"` | `a`, `b` | The two points share an x. |
+| `"distance"` | `a`, `b`, `value` (more than 0) | The distance between the two points. |
+| `"fix"` | `a`, `p` | Point `a` stays at `p`. |
+| `"midpoint"` | `a`, `of` (line id) | Point `a` stays at the middle of that line. |
+| `"parallel"` | `a`, `b` (line ids) | The two lines stay parallel. |
+| `"perpendicular"` | `a`, `b` | The two lines stay perpendicular. |
+| `"equal"` | `a`, `b` | The two lines stay the same length. |
+| `"concentric"` | `a`, `b` (circle or arc ids) | The two centres coincide. |
+| `"tangent"` | `a`, `b` | A circle or arc tangent to a line, or two circles. |
+| `"radius"` | `target` (circle or arc id), `value` (more than 0) | That radius. |
+| `"length"` | `target` (line id), `value` (more than 0) | That length. |
+| `"angle"` | `a`, `b` (line ids), `value` | The unsigned angle between the lines, in radians, strictly between 0 and π. |
+
+A constraint whose geometry is gone is dropped in the same undo step as the edit.
+
 ## Styles
 
 **Linetypes** are ArchiLite's own, using the element proportions of ISO 128-20 (lengths in multiples
@@ -209,7 +298,7 @@ Problem in the drawing file at entities[1].geom.radius: radius must be a positiv
 ```
 
 The location reads like a path: `entities[1]` is the second entity (counting from 0), `.geom.radius`
-its radius. Notes read the same way, for example `notes[0].body.target`.
+its radius. Notes, inserts and constraints read the same way.
 
 ## Versioning
 
