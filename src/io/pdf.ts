@@ -2,7 +2,7 @@
  * A small PDF writer: one page, vector line work, Helvetica text, true 1:1 scale.
  * A 100 mm line is 100 × 72 / 25.4 = 283.4646… PDF points.
  */
-import { arrowCorners, resolveNoteStyle, resolveNotes, resolveStyle, type Doc } from '../core/doc';
+import { arrowCorners, onCurrentSheet, piecesOnSheet, resolveNoteStyle, resolveNotes, resolveStyle, type Doc, type Entity } from '../core/doc';
 import { explodePolyline, type Shape, type Vec2 } from '../core/geom';
 import { arcCubics, circleCubics, type Cubic } from './bezier';
 import { paperFor, ptPerDrawingUnit } from './layout';
@@ -83,15 +83,17 @@ export function exportPdf(doc: Doc): string {
     ops.push(`${rgb(color)} RG ${n(weight)} w`);
   };
 
-  for (const e of doc.entities.values()) {
-    if (!shown.has(e.layer)) continue;
+  for (const p of piecesOnSheet(doc)) {
+    if (!shown.has(p.layer)) continue;
+    const e = { id: p.id, layer: p.layer, z: 0, color: p.color, linetype: p.linetype, lineweight: p.lineweight, geom: p.geom } satisfies Entity;
     const st = resolveStyle(doc, e);
     stroke(st.color, st.lineweight);
-    ops.push(`${shapeOps(e.geom)} S`);
+    ops.push(`${shapeOps(p.geom)} S`);
   }
 
   const resolved = resolveNotes(doc);
   for (const nte of doc.notes.values()) {
+    if (!onCurrentSheet(doc, nte)) continue;
     if (!shown.has(nte.layer)) continue;
     const r = resolved.get(nte.id);
     if (!r?.ok) continue;

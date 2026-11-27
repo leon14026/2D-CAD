@@ -15,7 +15,17 @@ import type { Store } from './store';
 
 export interface TestHook {
   openText(text: string): boolean;
-  state(): { entities: number; selection: number[]; viewport: Viewport; hover: number | null; undo: number; tool: string | null };
+  state(): {
+    entities: number;
+    selection: number[];
+    viewport: Viewport;
+    hover: number | null;
+    undo: number;
+    tool: string | null;
+    sheet: string;
+    inserts: number;
+    constraints: number;
+  };
   /** The drawing as .archilite text, for checking geometry exactly. */
   saveText(): string;
   exportDxf(): string;
@@ -55,6 +65,9 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
         hover: s.hover,
         undo: s.session.undoStack.length,
         tool: s.tool?.id ?? null,
+        sheet: s.session.doc.settings.currentSheet,
+        inserts: s.session.doc.inserts.size,
+        constraints: s.session.doc.constraints.size,
       };
     },
     saveText: () => saveDocument(store.get().session.doc),

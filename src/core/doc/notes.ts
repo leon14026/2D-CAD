@@ -209,6 +209,8 @@ export interface Note {
   readonly color: ColorRef;
   readonly lineweight: LineweightRef;
   readonly body: NoteBody;
+  /** Named sheet this annotation lives on. Omitted on the first sheet. */
+  readonly sheet?: string;
 }
 
 export function isDimension(b: NoteBody): boolean {
@@ -312,7 +314,7 @@ export function resolveRef(env: NoteEnv, ref: PointRef): Vec2 {
  */
 export function refAt(doc: Doc, p: Vec2): PointRef {
   const same = (q: Vec2) => q.x === p.x && q.y === p.y;
-  const entities = [...doc.entities.values()].sort((a, b) => a.id - b.id);
+  const entities = [...doc.entities.values()].filter((e) => (e.sheet ?? doc.sheets[0]?.name) === doc.settings.currentSheet).sort((a, b) => a.id - b.id);
   const env = docEnv(doc);
   // Every candidate is built from the entity itself, so each one resolves.
   const tryRef = (ref: PointRef): boolean => same(resolveRef(env, ref));

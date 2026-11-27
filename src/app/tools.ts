@@ -49,6 +49,15 @@ export const ANNOTATE_BUTTONS: readonly ToolButton[] = [
 ];
 
 /** Tools reached from the command palette and the selection panel. */
+export const LAYOUT_BUTTONS: readonly ToolButton[] = [
+  { id: 'block', label: 'Block', palette: 'Turn the selection into a reusable block', icon: 'block' },
+  { id: 'insert', label: 'Insert block', palette: 'Insert a block', icon: 'insert' },
+  { id: 'coincident', label: 'Coincident', palette: 'Make two points coincident', icon: 'coincident' },
+  { id: 'horizontal', label: 'Horizontal', palette: 'Keep two points at the same height', icon: 'horizontal' },
+  { id: 'vertical', label: 'Vertical', palette: 'Keep two points in a vertical line', icon: 'vertical' },
+  { id: 'constrainDistance', label: 'Distance constraint', palette: 'Hold the distance between two points', icon: 'constrainDistance' },
+];
+
 export const MORE_BUTTONS: readonly ToolButton[] = [
   { id: 'scale', label: 'Scale', palette: 'Scale the selection', icon: 'scale' },
   { id: 'chamfer', label: 'Chamfer', palette: 'Chamfer: cut the corner between two lines', icon: 'chamfer' },
@@ -58,9 +67,19 @@ export const MORE_BUTTONS: readonly ToolButton[] = [
   { id: 'cutCorners', label: 'Cut every corner', palette: 'Cut every corner of the selected polylines', icon: 'chamfer' },
   { id: 'centreMark', label: 'Centre mark', palette: 'Add a centre mark to a circle or arc', icon: 'centreMark' },
   { id: 'titleBlock', label: 'Title block', palette: 'Add a title block and sheet border', icon: 'titleBlock' },
+  { id: 'parallel', label: 'Parallel', palette: 'Keep two lines parallel', icon: 'horizontal' },
+  { id: 'perpendicular', label: 'Perpendicular', palette: 'Keep two lines perpendicular', icon: 'vertical' },
+  { id: 'equal', label: 'Equal length', palette: 'Keep two lines the same length', icon: 'constrainDistance' },
+  { id: 'concentric', label: 'Concentric', palette: 'Share a centre between two circles', icon: 'circle' },
+  { id: 'tangent', label: 'Tangent', palette: 'Keep a circle tangent to a line or another circle', icon: 'circle' },
+  { id: 'constrainRadius', label: 'Radius constraint', palette: 'Hold a circle or arc at a radius', icon: 'dimRadius' },
+  { id: 'constrainLength', label: 'Length constraint', palette: 'Hold a line at a length', icon: 'constrainDistance' },
+  { id: 'constrainAngle', label: 'Angle constraint', palette: 'Hold the angle between two lines', icon: 'dimAngle' },
+  { id: 'fix', label: 'Fix a point', palette: 'Hold a point still', icon: 'lock' },
+  { id: 'midpointConstraint', label: 'Midpoint', palette: 'Keep a point at the middle of a line', icon: 'coincident' },
 ];
 
-export const TOOL_BUTTONS: readonly ToolButton[] = [...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS, ...MORE_BUTTONS];
+export const TOOL_BUTTONS: readonly ToolButton[] = [...DRAW_BUTTONS, ...MODIFY_BUTTONS, ...ANNOTATE_BUTTONS, ...LAYOUT_BUTTONS, ...MORE_BUTTONS];
 
 /** Snap kinds as they read in a sentence: "Snap to endpoints". */
 export const SNAP_NAMES: Readonly<Record<SnapKind, string>> = {

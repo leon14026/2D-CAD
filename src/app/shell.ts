@@ -15,7 +15,7 @@ import type { Actions } from './actions';
 import type { DraftingController } from './drafting';
 import { isTyping } from './interaction';
 import { isDirty, type AppState, type Store } from './store';
-import { ANNOTATE_BUTTONS, DRAW_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
+import { ANNOTATE_BUTTONS, DRAW_BUTTONS, LAYOUT_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
 
 export function paletteEntries(actions: Actions, store: Store, drafting: DraftingController): PaletteEntry[] {
   const s = () => store.get();
@@ -23,7 +23,12 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     ...TOOL_BUTTONS.map((b) => ({ label: b.palette, ...(b.key && { keys: b.key.toUpperCase() }), run: () => drafting.start(b.id) })),
     { label: 'Stop the tool in use', keys: 'Esc', run: () => drafting.stop(), enabled: () => drafting.active },
     { label: 'Join the selected pieces into one polyline', run: () => actions.joinSelection(), enabled: () => s().selection.size >= 2 },
-    { label: 'Explode the selected polylines into lines and arcs', run: () => actions.explodeSelection(), enabled: () => s().selection.size > 0 },
+    { label: 'Explode the selected polylines and block inserts', run: () => actions.explodeSelection(), enabled: () => s().selection.size > 0 },
+    { label: 'Add a sheet', run: () => actions.addSheet(`Sheet ${s().session.doc.sheets.length + 1}`) },
+    ...s().session.doc.sheets.map((sheet) => ({
+      label: s().session.doc.settings.currentSheet === sheet.name ? `Stay on sheet ${sheet.name}` : `Switch to sheet ${sheet.name}`,
+      run: () => actions.useSheet(sheet.name),
+    })),
     { label: 'Delete the selection', keys: 'Del', run: () => actions.deleteSelection(), enabled: () => s().selection.size > 0 },
     { label: `Turn snaps ${s().snapOn ? 'off' : 'on'}`, keys: 'Shift S', run: () => actions.toggleSnaps() },
     { label: `Turn ortho ${s().ortho ? 'off' : 'on'} (horizontal and vertical only)`, keys: 'Shift O', run: () => actions.toggleOrtho() },
@@ -124,6 +129,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
       { label: 'Draw', buttons: DRAW_BUTTONS },
       { label: 'Modify', buttons: MODIFY_BUTTONS },
       { label: 'Annotate', buttons: ANNOTATE_BUTTONS },
+      { label: 'Layout', buttons: LAYOUT_BUTTONS },
     ],
     (id) =>
       id === null ? drafting.stop() : drafting.start(id),
@@ -190,11 +196,13 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   const snaps = requireElement('#al-snap-toggle', HTMLButtonElement);
   const ortho = requireElement('#al-ortho-toggle', HTMLButtonElement);
   const polar = requireElement('#al-polar-toggle', HTMLButtonElement);
+  const sheetBtn = requireElement('#al-sheet', HTMLButtonElement);
   grid.addEventListener('click', () => actions.toggleGrid());
   weights.addEventListener('click', () => actions.toggleLineweights());
   snaps.addEventListener('click', () => actions.toggleSnaps());
   ortho.addEventListener('click', () => actions.toggleOrtho());
   polar.addEventListener('click', () => actions.togglePolar());
+  sheetBtn.addEventListener('click', () => actions.cycleSheet());
   requireElement('#al-build', HTMLElement).textContent = build;
 
   // Messages.
@@ -213,12 +221,15 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     redoButton.title = canRedo(s.session) ? `Redo ${redoLabel(s.session)} (Ctrl Y)` : 'Nothing to redo';
     undoButton.setAttribute('aria-label', undoButton.title);
     redoButton.setAttribute('aria-label', redoButton.title);
-    empty.hidden = doc.entities.size + doc.notes.size > 0;
+    empty.hidden = doc.entities.size + doc.notes.size + doc.inserts.size > 0;
     scale.textContent = `Scale ${screenScaleLabel(s.viewport, convertLength(1, doc.settings.units, 'mm'))}`;
     units.textContent = doc.settings.units;
-    const things = doc.entities.size + doc.notes.size;
+    sheetBtn.textContent = doc.settings.currentSheet;
+    sheetBtn.title = doc.sheets.length > 1 ? `Sheet ${doc.settings.currentSheet} (click to switch)` : `Sheet ${doc.settings.currentSheet}`;
+    const things = doc.entities.size + doc.notes.size + doc.inserts.size;
     const notes = doc.notes.size > 0 ? `, ${doc.notes.size} ${doc.notes.size === 1 ? 'annotation' : 'annotations'}` : '';
-    count.textContent = s.selection.size > 0 ? `${s.selection.size} of ${things} selected` : `${doc.entities.size} entities${notes}`;
+    const inserts = doc.inserts.size > 0 ? `, ${doc.inserts.size} ${doc.inserts.size === 1 ? 'insert' : 'inserts'}` : '';
+    count.textContent = s.selection.size > 0 ? `${s.selection.size} of ${things} selected` : `${doc.entities.size} entities${notes}${inserts}`;
     grid.setAttribute('aria-pressed', String(s.showGrid));
     grid.textContent = s.showGrid ? 'Grid on' : 'Grid off';
     weights.setAttribute('aria-pressed', String(s.lineweights));

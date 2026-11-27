@@ -29,7 +29,9 @@ import {
   type StyleProps,
 } from './command-kit';
 import { CommandError } from './draft';
+import { transformInsert } from './blocks';
 import { EDIT_COMMANDS } from './edit-commands';
+import { LAYOUT_COMMANDS } from './layout-commands';
 import { NOTE_COMMANDS } from './note-commands';
 import { isFreeNote, transformNote, type Note } from './notes';
 import { MAX_NAME_LENGTH, MAX_TITLE_LENGTH, type Entity, type Layer } from './model';
@@ -91,6 +93,7 @@ const addEntity = define<AddEntityParams, { id: number }>({
       linetype: p.linetype ?? BY_LAYER,
       lineweight: p.lineweight ?? BY_LAYER,
       geom: p.geom,
+      ...draft.sheetField(),
     });
     return { id };
   },
@@ -109,12 +112,15 @@ const deleteEntities = define<IdsParams, { deleted: number }>({
   },
   run(draft, p) {
     const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
+    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
     for (const id of p.ids) {
       if (isNote(id)) requireNoteEditable(draft, id);
+      else if (isInsert(id)) requireUnlocked(draft, draft.insert(id)!.layer);
       else requireEditable(draft, id);
     }
     for (const id of p.ids) {
       if (isNote(id)) draft.deleteNote(id);
+      else if (isInsert(id)) draft.deleteInsert(id);
       else draft.deleteEntity(id);
     }
     return { deleted: p.ids.length };
@@ -136,11 +142,18 @@ const transformEntities = define<TransformParams, { changed: number }>({
   parse: readTransformParams,
   run(draft, p) {
     const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const entities = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
+    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
+    const entities = p.ids.filter((id) => !isNote(id) && !isInsert(id)).map((id) => requireEditable(draft, id));
     const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id));
+    const inserts = p.ids.filter(isInsert).map((id) => {
+      const ins = draft.insert(id)!;
+      requireUnlocked(draft, ins.layer);
+      return ins;
+    });
     for (const e of entities) draft.putEntity({ ...e, geom: applyTransform(p.transform, e.geom) });
     for (const n of notes) draft.putNote(transformNote(p.transform, n));
-    return { changed: entities.length + notes.length };
+    for (const ins of inserts) draft.putInsert(transformInsert(p.transform, ins));
+    return { changed: entities.length + notes.length + inserts.length };
   },
 });
 
@@ -150,9 +163,15 @@ const copyEntities = define<TransformParams, { ids: number[] }>({
   parse: readTransformParams,
   run(draft, p) {
     const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const sources = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
+    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
+    const sources = p.ids.filter((id) => !isNote(id) && !isInsert(id)).map((id) => requireEditable(draft, id));
     // A dimension, centre mark or hatch belongs to the geometry it measures, so it is not copied.
     const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id)).filter(isFreeNote);
+    const inserts = p.ids.filter(isInsert).map((id) => {
+      const ins = draft.insert(id)!;
+      requireUnlocked(draft, ins.layer);
+      return ins;
+    });
     const ids: number[] = [];
     for (const e of sources) {
       const id = draft.allocateId();
@@ -163,6 +182,12 @@ const copyEntities = define<TransformParams, { ids: number[] }>({
       const id = draft.allocateId();
       const moved: Note = transformNote(p.transform, n);
       draft.putNote({ ...moved, id, z: id });
+      ids.push(id);
+    }
+    for (const ins of inserts) {
+      const id = draft.allocateId();
+      const moved = transformInsert(p.transform, ins);
+      draft.putInsert({ ...moved, id, z: id });
       ids.push(id);
     }
     return { ids };
@@ -188,8 +213,23 @@ const setEntityProps = define<SetPropsParams, { changed: number }>({
   run(draft, p) {
     if (p.layer !== undefined) requireUnlocked(draft, p.layer);
     const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const targets = p.ids.filter((id) => !isNote(id)).map((id) => requireEditable(draft, id));
+    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
+    const targets = p.ids.filter((id) => !isNote(id) && !isInsert(id)).map((id) => requireEditable(draft, id));
     let changed = 0;
+    for (const ins of p.ids.filter(isInsert).map((id) => draft.insert(id)!)) {
+      requireUnlocked(draft, ins.layer);
+      const next = {
+        ...ins,
+        layer: p.layer ?? ins.layer,
+        color: p.color ?? ins.color,
+        linetype: p.linetype ?? ins.linetype,
+        lineweight: p.lineweight ?? ins.lineweight,
+      };
+      if (next.layer !== ins.layer || next.color !== ins.color || next.linetype !== ins.linetype || next.lineweight !== ins.lineweight) {
+        draft.putInsert(next);
+        changed += 1;
+      }
+    }
     for (const n of p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id))) {
       const next: Note = { ...n, layer: p.layer ?? n.layer, color: p.color ?? n.color, lineweight: p.lineweight ?? n.lineweight };
       if (next.layer !== n.layer || next.color !== n.color || next.lineweight !== n.lineweight) {
@@ -324,6 +364,9 @@ const deleteLayer = define<LayerIdParams, Record<string, never>>({
     for (const e of draft.entities()) {
       if (e.layer === p.id) throw new CommandError(`Layer "${layer.name}" is not empty. Move or delete its contents first.`);
     }
+    for (const ins of draft.inserts()) {
+      if (ins.layer === p.id) throw new CommandError(`Layer "${layer.name}" is not empty. Move or delete its contents first.`);
+    }
     draft.setLayers(draft.layers.filter((l) => l.id !== p.id));
     return {};
   },
@@ -381,6 +424,7 @@ const setUnits = define<SetUnitsParams, Record<string, never>>({
     if (p.convert) {
       const t = scaleAbout(ORIGIN, convertLength(1, from, p.units));
       for (const e of [...draft.entities()]) draft.putEntity({ ...e, geom: applyTransform(t, e.geom) });
+      for (const ins of [...draft.inserts()]) draft.putInsert(transformInsert(t, ins));
     }
     draft.setSettings({ ...draft.settings, units: p.units });
     return {};
@@ -392,6 +436,7 @@ const setUnits = define<SetUnitsParams, Record<string, never>>({
 export const COMMANDS = {
   ...EDIT_COMMANDS,
   ...NOTE_COMMANDS,
+  ...LAYOUT_COMMANDS,
   'entity.add': addEntity,
   'entity.delete': deleteEntities,
   'entity.transform': transformEntities,

@@ -2,6 +2,7 @@ import './ui/theme.css';
 import { Actions } from './app/actions';
 import { buildInfo } from './app/build-info';
 import { DraftingController } from './app/drafting';
+import { watchConstraints } from './app/constraint-warning';
 import { attachInteraction } from './app/interaction';
 import { mountShell } from './app/shell';
 import { initialState, Store } from './app/store';
@@ -34,6 +35,9 @@ mountScriptPanel(requireElement('#al-script-panel', HTMLElement), store, actions
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);
 attachInteraction(store, view, drafting, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });
 installTestHook(store, view, actions);
+// Last on purpose: it sets a message from inside a listener, and listeners after it would see the
+// older state. Registered last, the toast has already shown the command's own message.
+watchConstraints(store);
 
 view.renderNow();
 performance.mark('archilite-ready');

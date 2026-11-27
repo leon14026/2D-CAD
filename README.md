@@ -10,12 +10,13 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Engineering-grade accuracy.** Real units, true arcs, exact snaps, dimensions measured from
   geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
+- **Blocks, sheets and constraints.** Reusable blocks, extra paper sheets, and constraints that
+  re-solve after every edit (Phase 9).
 - **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
   open one. Until then, export DXF from the other program and open that.
 
-**Status:** Phase 8 (scripting) built: JavaScript and Python (`cad` API, script panel, Pyodide
-on demand) on top of Phase 7's import and export. Phase 9 (blocks, sheets, constraints) is
-stretch. See
+**Status:** Phase 9 (blocks, sheets, constraints) built on top of Phase 8's scripting and
+Phase 7's import and export. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
@@ -41,7 +42,9 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Finish or stop a tool | Enter or right-click finishes; Esc stops |
 | Snaps, ortho, tracking | Status bar, or Shift+S, Shift+O, Shift+T; hold Shift for horizontal or vertical |
 | Modify | Lower half of the tool rail, or M move, O offset, T trim, E extend; select something for more in the selection panel |
-| Annotate | Last group on the tool rail, or D linear dimension, X text, H hatch; select a dimension, text or hatch to edit it in the selection panel |
+| Annotate | Last-but-one group on the tool rail, or D linear dimension, X text, H hatch; select a dimension, text or hatch to edit it in the selection panel |
+| Blocks and constraints | Layout group on the tool rail: block, insert, coincident, horizontal, vertical, distance; more constraints in Ctrl+K |
+| Switch sheet | Sheet name in the status bar, or Ctrl+K then "Add a sheet" / "Switch to sheet …" |
 | Delete | Delete key or the selection panel; Ctrl+Z brings it back |
 | Panels, grid, lineweights | `[`, `]`, G, W |
 | Run a script | Script button, backtick, or Ctrl+K then "script". JavaScript is local; the first Python run downloads Pyodide from this site |

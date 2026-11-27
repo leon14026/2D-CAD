@@ -1,5 +1,8 @@
+import type { Block, Insert } from './blocks';
+import type { Constraint } from './constraints';
 import type { Doc, DocSettings, Entity, Layer } from './model';
 import type { Note } from './notes';
+import type { Sheet } from './sheets';
 
 /**
  * One recorded difference between two documents. A command's changes, applied forwards, turn
@@ -9,7 +12,11 @@ import type { Note } from './notes';
 export type Change =
   | { readonly kind: 'entity'; readonly id: number; readonly before: Entity | null; readonly after: Entity | null }
   | { readonly kind: 'note'; readonly id: number; readonly before: Note | null; readonly after: Note | null }
+  | { readonly kind: 'insert'; readonly id: number; readonly before: Insert | null; readonly after: Insert | null }
+  | { readonly kind: 'constraint'; readonly id: number; readonly before: Constraint | null; readonly after: Constraint | null }
   | { readonly kind: 'layers'; readonly before: readonly Layer[]; readonly after: readonly Layer[] }
+  | { readonly kind: 'sheets'; readonly before: readonly Sheet[]; readonly after: readonly Sheet[] }
+  | { readonly kind: 'blocks'; readonly before: readonly Block[]; readonly after: readonly Block[] }
   | { readonly kind: 'settings'; readonly before: DocSettings; readonly after: DocSettings }
   | { readonly kind: 'nextId'; readonly before: number; readonly after: number };
 
@@ -20,7 +27,9 @@ export function applyChanges(doc: Doc, changes: readonly Change[], direction: Di
   const forward = direction === 'forward';
   let entities: Map<number, Entity> | null = null;
   let notes: Map<number, Note> | null = null;
-  let { layers, settings, nextId } = doc;
+  let inserts: Map<number, Insert> | null = null;
+  let constraints: Map<number, Constraint> | null = null;
+  let { layers, settings, nextId, sheets, blocks } = doc;
   for (const c of ordered) {
     switch (c.kind) {
       case 'entity': {
@@ -37,8 +46,28 @@ export function applyChanges(doc: Doc, changes: readonly Change[], direction: Di
         else notes.delete(c.id);
         break;
       }
+      case 'insert': {
+        inserts ??= new Map(doc.inserts);
+        const value = forward ? c.after : c.before;
+        if (value) inserts.set(c.id, value);
+        else inserts.delete(c.id);
+        break;
+      }
+      case 'constraint': {
+        constraints ??= new Map(doc.constraints);
+        const value = forward ? c.after : c.before;
+        if (value) constraints.set(c.id, value);
+        else constraints.delete(c.id);
+        break;
+      }
       case 'layers':
         layers = forward ? c.after : c.before;
+        break;
+      case 'sheets':
+        sheets = forward ? c.after : c.before;
+        break;
+      case 'blocks':
+        blocks = forward ? c.after : c.before;
         break;
       case 'settings':
         settings = forward ? c.after : c.before;
@@ -48,5 +77,15 @@ export function applyChanges(doc: Doc, changes: readonly Change[], direction: Di
         break;
     }
   }
-  return { settings, nextId, layers, entities: entities ?? doc.entities, notes: notes ?? doc.notes };
+  return {
+    settings,
+    nextId,
+    layers,
+    entities: entities ?? doc.entities,
+    notes: notes ?? doc.notes,
+    sheets,
+    blocks,
+    inserts: inserts ?? doc.inserts,
+    constraints: constraints ?? doc.constraints,
+  };
 }

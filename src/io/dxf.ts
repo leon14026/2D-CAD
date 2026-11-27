@@ -16,6 +16,8 @@ import {
   canonicalShape,
   hatchLoops,
   newDocument,
+  onCurrentSheet,
+  piecesOnSheet,
   resolveNotes,
   type ColorRef,
   type Doc,
@@ -552,6 +554,7 @@ export function importDxf(text: string): DxfImport {
   }
 
   const doc: Doc = {
+    ...doc0,
     settings: { ...doc0.settings, units: parsed.units, currentLayer: layers[0]!.id },
     nextId,
     layers,
@@ -982,13 +985,14 @@ export function exportDxf(doc: Doc): string {
   out.pair(0, 'SECTION');
   out.pair(2, 'ENTITIES');
 
-  for (const e of doc.entities.values()) {
+  for (const e of piecesOnSheet(doc)) {
     if (!shown.has(e.layer)) continue;
     writeShape(out, e.geom, layerName(e.layer), e.color, e.linetype === BY_LAYER ? undefined : e.linetype, e.lineweight === BY_LAYER ? undefined : e.lineweight);
   }
 
   const resolved = resolveNotes(doc);
   for (const n of doc.notes.values()) {
+    if (!onCurrentSheet(doc, n)) continue;
     if (!shown.has(n.layer)) continue;
     const layer = layerName(n.layer);
     const color: ColorRef = n.color === BY_LAYER ? BY_LAYER : n.color;

@@ -492,8 +492,26 @@ Implementation notes (for later phases):
 Builds: reusable blocks, multi-sheet layouts, geometric and dimensional constraints.
 
 Gate:
-- [ ] Constraints re-solve to the same result after every edit.
-- [ ] A real part drawing is produced start to finish in ArchiLite.
+- [x] Constraints re-solve to the same result after every edit.
+- [x] A real part drawing is produced start to finish in ArchiLite.
+
+Implementation notes (for later phases):
+- **File format 3.** `Doc.sheets`, `Doc.blocks`, `Doc.inserts` and `Doc.constraints`. Sheets and
+  blocks are named like dimension styles, not ids. Inserts and constraints share the entity/note
+  id space. `sheet` on an entity, note, insert or constraint is omitted when it is the first
+  sheet. Version 1 and 2 files open with one A4 sheet called "Sheet 1" and empty blocks.
+- **Solver.** `pruneAndSolve` runs in `commitDraft` after every command. Constraints apply in id
+  order, Gauss-Seidel style, up to `MAX_SOLVE_ITERS` (48). The stop test is `tolFor(mag, res)` —
+  do not pass the previous residual into `tolFor` (an infinite last residual would stop after
+  one iteration). The same document always produces the same result.
+  The solver stops quietly when constraints conflict or cannot be reached, so the app asks
+  `unmetConstraints` after every change and shows "N constraints could not be met" (anything
+  further than `CONSTRAINT_MET_TOL`, 1e-6, from true). Added in review of #12.
+- **No extra runtime package.** Blocks, sheets and constraints are TypeScript in `src/core/doc`
+  (`blocks.ts`, `sheets.ts`, `constraints.ts`, `layout-commands.ts`) and tools in
+  `src/core/tools/layout.ts`. Bound `PointRef`s only: a constraint cannot name a free point.
+- **Scripts.** `cad.block`, `cad.insert`, `cad.sheet`, `cad.useSheet` on the host. The plate in
+  `tests/unit/core/doc/constrained-plate.ts` is the start-to-finish part drawing.
 
 ### Phase 10 — DWG import (read only)
 

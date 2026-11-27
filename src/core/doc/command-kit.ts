@@ -69,6 +69,7 @@ export function requireEditable(draft: Draft, id: number): Entity {
   const e = draft.entity(id);
   if (!e) {
     if (draft.note(id)) throw new CommandError('That is an annotation, and this command works on drawn shapes only.');
+    if (draft.insert(id)) throw new CommandError('That is a block insert. Explode it to edit the shapes inside.');
     throw new CommandError(`There is no entity with id ${id}.`);
   }
   requireUnlocked(draft, e.layer);

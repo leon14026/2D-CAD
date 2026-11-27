@@ -415,6 +415,11 @@ describe('files with notes', () => {
     delete json.notes;
     delete json.dimStyles;
     delete json.currentDimStyle;
+    delete json.currentSheet;
+    delete json.sheets;
+    delete json.blocks;
+    delete json.inserts;
+    delete json.constraints;
     json.entities = json.entities.slice(0, 2);
     const doc = loadDocument(JSON.stringify(json));
     expect(doc.notes.size).toBe(0);

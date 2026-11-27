@@ -9,7 +9,7 @@ import {
   type Bounds,
   type Shape,
 } from '../core/geom';
-import { entitiesInDrawOrder, type Doc } from '../core/doc';
+import { compareDrawOrder, entitiesInDrawOrder, insertBounds, type Doc } from '../core/doc';
 import { formatCoordinate } from '../ui/format';
 
 export interface EntityRow {
@@ -86,6 +86,20 @@ export function summarize(doc: Doc): Summary {
       area: d.area,
     };
   });
+  for (const ins of [...doc.inserts.values()].sort(compareDrawOrder)) {
+    counts.set(ins.layer, (counts.get(ins.layer) ?? 0) + 1);
+    kinds['Block insert'] = (kinds['Block insert'] ?? 0) + 1;
+    const b = insertBounds(doc, ins);
+    if (b) extents = extents ? unionBounds(extents, b) : b;
+    rows.push({
+      id: ins.id,
+      layer: layerNames.get(ins.layer) ?? '?',
+      kind: 'Block insert',
+      size: ins.block,
+      length: 0,
+      area: null,
+    });
+  }
   return {
     title: doc.settings.title,
     units: doc.settings.units,

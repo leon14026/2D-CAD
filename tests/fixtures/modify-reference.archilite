@@ -1,10 +1,11 @@
 {
   "format": "archilite",
-  "version": 2,
+  "version": 3,
   "title": "Modify reference",
   "units": "mm",
   "currentLayer": 1,
   "currentDimStyle": "ISO",
+  "currentSheet": "Sheet 1",
   "nextId": 32,
   "dimStyles": [
     {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
@@ -12,6 +13,10 @@
   "layers": [
     {"id":1,"name":"Default","color":"#1f2a33","linetype":"continuous","lineweight":0.25,"visible":true,"locked":false}
   ],
+  "sheets": [
+    {"name":"Sheet 1","size":"A4"}
+  ],
+  "blocks": [],
   "entities": [
     {"id":2,"layer":1,"z":2,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":0,"y":10,"bulge":0.41421356237309503},{"x":10,"y":0,"bulge":0},{"x":110,"y":0,"bulge":0.41421356237309503},{"x":120,"y":10,"bulge":0},{"x":120,"y":70,"bulge":0.41421356237309503},{"x":110,"y":80,"bulge":0},{"x":10,"y":80,"bulge":0.41421356237309503},{"x":0,"y":70,"bulge":0}],"closed":true}},
     {"id":3,"layer":1,"z":3,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":5,"y":10,"bulge":0.41421356237309503},{"x":10,"y":4.999999999999998,"bulge":0},{"x":110,"y":5,"bulge":0.41421356237309503},{"x":115,"y":10,"bulge":0},{"x":115,"y":70,"bulge":0.41421356237309503},{"x":110,"y":75,"bulge":0},{"x":10,"y":75,"bulge":0.41421356237309503},{"x":4.999999999999998,"y":70,"bulge":0}],"closed":true}},
@@ -43,5 +48,7 @@
     {"id":31,"layer":1,"z":26,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":18,"y":32.80384757729337},"end":{"x":20.196152422706632,"y":41}}},
     {"id":27,"layer":1,"z":27,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":130,"y":0,"bulge":0},{"x":140,"y":0,"bulge":0},{"x":140,"y":10,"bulge":0}],"closed":false}}
   ],
-  "notes": []
+  "notes": [],
+  "inserts": [],
+  "constraints": []
 }

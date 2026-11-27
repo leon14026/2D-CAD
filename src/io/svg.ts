@@ -7,10 +7,13 @@ import {
   BY_LAYER,
   LINETYPES,
   arrowCorners,
+  onCurrentSheet,
+  piecesOnSheet,
   resolveNoteStyle,
   resolveNotes,
   resolveStyle,
   type Doc,
+  type Entity,
 } from '../core/doc';
 import { explodePolyline, radToDeg, type Shape, type Vec2 } from '../core/geom';
 import { arcCubics, circleCubics, type Cubic } from './bezier';
@@ -58,14 +61,16 @@ export function exportSvg(doc: Doc): string {
     return d.trim();
   };
 
-  for (const e of doc.entities.values()) {
-    if (!shown.has(e.layer)) continue;
+  for (const p of piecesOnSheet(doc)) {
+    if (!shown.has(p.layer)) continue;
+    const e = { id: p.id, layer: p.layer, z: 0, color: p.color, linetype: p.linetype, lineweight: p.lineweight, geom: p.geom } satisfies Entity;
     const st = resolveStyle(doc, e);
-    parts.push(`<path d="${xml(shapePath(e.geom))}" ${stroke(st.color, st.lineweight, st.linetype)}/>`);
+    parts.push(`<path d="${xml(shapePath(p.geom))}" ${stroke(st.color, st.lineweight, st.linetype)}/>`);
   }
 
   const resolved = resolveNotes(doc);
   for (const n of doc.notes.values()) {
+    if (!onCurrentSheet(doc, n)) continue;
     if (!shown.has(n.layer)) continue;
     const r = resolved.get(n.id);
     if (!r?.ok) continue;
