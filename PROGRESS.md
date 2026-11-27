@@ -30,6 +30,13 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Phase 10 gate passed in CI
+
+- Phase gate on [#27](https://github.com/leon14026/2D-CAD/pull/27) is green (Ubuntu runner:
+  82 browser tests; pan avg 9.6 ms, zoom avg 14.2 ms per frame on 20,000 entities; size
+  124.5 KB of 300 KB, DWG decoder 999.6 KB gzipped of 3 MB). Owner tests M10.1 and M10.2
+  stay open.
+
 ### 2026-11-27: Phase 10 PR opened
 
 - PR [#27](https://github.com/leon14026/2D-CAD/pull/27) on `cursor/phase-10-dwg-487f`, against
