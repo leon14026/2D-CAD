@@ -26,6 +26,15 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-26: Review of #15 (DXF INSERT explode)
+
+- Found: explosion repeated a block once per INSERT with no limit. Ten inserts of a block
+  that holds ten inserts, seven levels deep, is a million lines from about 3 KB of text
+  (4 s to open); one level more ran out of memory. A rows-and-columns INSERT array imported
+  one copy and dropped the others without a word.
+- Fixed: explosion counts objects and inserts as it goes and refuses the file past 200,000 of
+  either, in plain words. Array inserts are skipped and counted.
+
 ### 2026-11-26: DXF INSERT explode
 
 - Follow-up on #13, PR [#15](https://github.com/leon14026/2D-CAD/pull/15). Merge #8 then #9

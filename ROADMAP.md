@@ -456,8 +456,10 @@ Implementation notes (for later phases):
   HATCH whose boundary is the hatch's loops, so areas survive. Import reads those entity types
   and simple TEXT/MTEXT (`%%c`/`%%d`/`%%p` become Ø/°/±; `%%u`/`%%o` toggles are dropped).
   INSERT is exploded into those same types (nested inserts included; layer 0 takes the
-  insert's layer). Non-uniform X/Y scale, missing blocks, DIMENSION, HATCH and the rest
-  are skipped and counted. Binary DXF is refused. After open, the status bar unit label
+  insert's layer). Non-uniform X/Y scale, rows-and-columns INSERT arrays, missing blocks,
+  DIMENSION, HATCH and the rest are skipped and counted. Explosion stops at 200,000 objects or
+  200,000 inserts and refuses the file in plain words (a 3 KB file of nested blocks can ask
+  for a million lines). Binary DXF is refused. After open, the status bar unit label
   cycles the name without scaling (a millimetre-tagged inch drawing becomes inches);
   Ctrl+K also has "Scale the drawing to …".
 - **SVG and PDF** are 1:1. One millimetre on the drawing is one millimetre on the page. PDF user
