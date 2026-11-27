@@ -1,10 +1,12 @@
 /**
  * Geometric and dimensional constraints. They are relations, not measured dimensions: a
- * distance constraint drives the geometry, while a dimension note only displays a length.
+ * distance constraint drives the geometry, while a dimension note only displays a length
+ * unless it is a driving dimension (Phase 13), in which case the two are linked by id.
  *
  * After every command the solver runs to a fixed point. The same document always produces
  * the same result: constraints are applied in id order, a set number of times, with no
- * randomness.
+ * randomness. User edits pin the points the user just placed; if a constraint cannot be
+ * kept, the edit is refused and nothing changes.
  */
 import {
   add,
@@ -24,7 +26,7 @@ import {
   type Shape,
   type Vec2,
 } from '../geom';
-import type { Draft } from './draft';
+import { CommandError, type Draft } from './draft';
 import type { Doc, Entity } from './model';
 import { docEnv, resolveRef, type NoteEnv, type PointRef } from './notes';
 import { onCurrentSheet } from './sheets';
@@ -35,7 +37,14 @@ export type ConstraintBody =
   | { readonly kind: 'coincident'; readonly a: PointRef; readonly b: PointRef }
   | { readonly kind: 'horizontal'; readonly a: PointRef; readonly b: PointRef }
   | { readonly kind: 'vertical'; readonly a: PointRef; readonly b: PointRef }
-  | { readonly kind: 'distance'; readonly a: PointRef; readonly b: PointRef; readonly value: number }
+  | {
+      readonly kind: 'distance';
+      readonly a: PointRef;
+      readonly b: PointRef;
+      readonly value: number;
+      /** Omitted (or not set) means the straight-line distance. */
+      readonly axis?: 'x' | 'y';
+    }
   | { readonly kind: 'fix'; readonly a: PointRef; readonly p: Vec2 }
   | { readonly kind: 'midpoint'; readonly a: PointRef; readonly of: number }
   | { readonly kind: 'parallel'; readonly a: number; readonly b: number }
@@ -66,10 +75,19 @@ export const CONSTRAINT_KINDS = [
 
 export type ConstraintKind = ConstraintBody['kind'];
 
+/** How a distance constraint is measured. Omitted on the body means `any`. */
+export type DistanceAxis = 'any' | 'x' | 'y';
+
+export function distanceAxis(b: Extract<ConstraintBody, { kind: 'distance' }>): DistanceAxis {
+  return b.axis ?? 'any';
+}
+
 export interface Constraint {
   readonly id: number;
   readonly body: ConstraintBody;
   readonly sheet?: string;
+  /** Driving dimension this constraint holds. Omitted when it is not linked to a note. */
+  readonly note?: number;
 }
 
 export function constraintEntityIds(c: Constraint): number[] {
@@ -168,8 +186,12 @@ export function residualOf(env: NoteEnv, b: ConstraintBody): number {
       return Math.abs(resolveRef(env, b.a).y - resolveRef(env, b.b).y);
     case 'vertical':
       return Math.abs(resolveRef(env, b.a).x - resolveRef(env, b.b).x);
-    case 'distance':
-      return Math.abs(distance(resolveRef(env, b.a), resolveRef(env, b.b)) - b.value);
+    case 'distance': {
+      const a = resolveRef(env, b.a);
+      const c = resolveRef(env, b.b);
+      const span = b.axis === 'x' ? Math.abs(c.x - a.x) : b.axis === 'y' ? Math.abs(c.y - a.y) : distance(a, c);
+      return Math.abs(span - b.value);
+    }
     case 'fix':
       return distance(resolveRef(env, b.a), b.p);
     case 'midpoint':
@@ -267,6 +289,105 @@ export function unmetConstraints(doc: Doc): UnmetConstraint[] {
   return out.sort((a, b) => a.id - b.id);
 }
 
+function pointRole(ref: PointRef): string {
+  if (ref.kind === 'end' && ref.end === 'start') return 'The start of this line';
+  if (ref.kind === 'end' && ref.end === 'end') return 'The end of this line';
+  if (ref.kind === 'center') return 'The centre of this circle';
+  if (ref.kind === 'mid') return 'The middle of this line';
+  if (ref.kind === 'vertex') return 'This corner';
+  return 'This point';
+}
+
+/** Plain-words refusal when a user edit cannot keep a constraint. */
+export function constraintRefuseMessage(c: Constraint): string {
+  const id = c.id;
+  const b = c.body;
+  switch (b.kind) {
+    case 'fix':
+      return `${pointRole(b.a)} is fixed (constraint ${id}). Change or delete that constraint first.`;
+    case 'distance':
+      return `This distance is held at ${b.value} (constraint ${id}). Change or delete that constraint first.`;
+    case 'length':
+      return `This length is held at ${b.value} (constraint ${id}). Change or delete that constraint first.`;
+    case 'radius':
+      return `This radius is held at ${b.value} (constraint ${id}). Change or delete that constraint first.`;
+    case 'horizontal':
+      return `This line is held horizontal (constraint ${id}). Change or delete that constraint first.`;
+    case 'vertical':
+      return `This line is held vertical (constraint ${id}). Change or delete that constraint first.`;
+    case 'angle':
+      return `This angle is held (constraint ${id}). Change or delete that constraint first.`;
+    default:
+      return `${b.kind} (constraint ${id}) could not be kept. Change or delete that constraint first.`;
+  }
+}
+
+export interface SolvePins {
+  readonly points: ReadonlyMap<string, Vec2>;
+  readonly radii: ReadonlyMap<number, number>;
+}
+
+function namedPoints(e: Entity): { readonly key: string; readonly p: Vec2 }[] {
+  const g = e.geom;
+  switch (g.kind) {
+    case 'segment':
+      return [
+        { key: 'start', p: g.start },
+        { key: 'end', p: g.end },
+      ];
+    case 'circle':
+    case 'arc':
+      return [{ key: 'center', p: g.center }];
+    case 'polyline':
+      return g.vertices.map((v, i) => ({ key: `v:${i}`, p: { x: v.x, y: v.y } }));
+  }
+}
+
+function entityRadius(e: Entity): number | undefined {
+  return e.geom.kind === 'circle' || e.geom.kind === 'arc' ? e.geom.radius : undefined;
+}
+
+/**
+ * Points (and radii) the command just placed: named handles that moved on entities that
+ * already existed. The solver holds these still and moves the rest.
+ */
+export function pinsFromDraft(draft: Draft): SolvePins {
+  const points = new Map<string, Vec2>();
+  const radii = new Map<number, number>();
+  for (const id of draft.touchedEntityIds()) {
+    const before = draft.base.entities.get(id);
+    const after = draft.entity(id);
+    if (!before || !after) continue;
+    for (const h of namedPoints(after)) points.set(`${id}:${h.key}`, h.p);
+    const r1 = entityRadius(after);
+    if (r1 !== undefined) radii.set(id, r1);
+  }
+  return { points, radii };
+}
+
+function hasPins(pins: SolvePins): boolean {
+  return pins.points.size > 0 || pins.radii.size > 0;
+}
+
+export function unmetOnDraft(draft: Draft): UnmetConstraint[] {
+  const env = envOf(draft);
+  const first = draft.sheets[0]?.name;
+  const current = draft.settings.currentSheet;
+  const out: UnmetConstraint[] = [];
+  for (const c of draft.constraints()) {
+    const name = c.sheet ?? first;
+    if (name !== current) continue;
+    let residual: number;
+    try {
+      residual = residualOf(env, c.body);
+    } catch {
+      residual = Infinity;
+    }
+    if (!(residual <= CONSTRAINT_MET_TOL)) out.push({ id: c.id, kind: c.body.kind, residual });
+  }
+  return out.sort((a, b) => (b.residual - a.residual) || a.id - b.id);
+}
+
 interface Handle {
   readonly id: number;
   readonly key: string;
@@ -329,46 +450,122 @@ function lineDistNormal(line: Segment, p: Vec2): { dist: number; side: Vec2 } {
   return { dist: Math.abs(signed), side: signed >= 0 ? n : { x: -n.x, y: -n.y } };
 }
 
-function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radii: Map<number, number[]>): void {
+function pinOf(pins: SolvePins, ref: PointRef): Vec2 | undefined {
+  const h = refHandle(ref);
+  return h ? pins.points.get(`${h.id}:${h.key}`) : undefined;
+}
+
+function pinHandle(pins: SolvePins, id: number, key: string): Vec2 | undefined {
+  return pins.points.get(`${id}:${key}`);
+}
+
+function placeAtDistance(from: Vec2, toward: Vec2, value: number): Vec2 {
+  const d = distance(from, toward);
+  if (d === 0) return { x: from.x + value, y: from.y };
+  return add(from, scale(sub(toward, from), value / d));
+}
+
+function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radii: Map<number, number[]>, pins: SolvePins): void {
   const put = (ref: PointRef, p: Vec2) => push(pts, refHandle(ref), p);
   switch (b.kind) {
     case 'coincident': {
       const a = resolveRef(env, b.a);
       const c = resolveRef(env, b.b);
-      const m = midpoint(a, c);
-      put(b.a, m);
-      put(b.b, m);
+      const pa = pinOf(pins, b.a);
+      const pb = pinOf(pins, b.b);
+      if (pa && !pb) {
+        put(b.b, pa);
+        return;
+      }
+      if (pb && !pa) {
+        put(b.a, pb);
+        return;
+      }
+      if (pa && pb) return;
+      put(b.b, a);
       return;
     }
     case 'horizontal': {
       const a = resolveRef(env, b.a);
       const c = resolveRef(env, b.b);
-      const y = (a.y + c.y) / 2;
-      put(b.a, { x: a.x, y });
-      put(b.b, { x: c.x, y });
+      const pa = pinOf(pins, b.a);
+      const pb = pinOf(pins, b.b);
+      if (pa && !pb) {
+        put(b.b, { x: c.x, y: pa.y });
+        return;
+      }
+      if (pb && !pa) {
+        put(b.a, { x: a.x, y: pb.y });
+        return;
+      }
+      if (pa && pb) return;
+      put(b.b, { x: c.x, y: a.y });
       return;
     }
     case 'vertical': {
       const a = resolveRef(env, b.a);
       const c = resolveRef(env, b.b);
-      const x = (a.x + c.x) / 2;
-      put(b.a, { x, y: a.y });
-      put(b.b, { x, y: c.y });
+      const pa = pinOf(pins, b.a);
+      const pb = pinOf(pins, b.b);
+      if (pa && !pb) {
+        put(b.b, { x: pa.x, y: c.y });
+        return;
+      }
+      if (pb && !pa) {
+        put(b.a, { x: pb.x, y: a.y });
+        return;
+      }
+      if (pa && pb) return;
+      put(b.b, { x: a.x, y: c.y });
       return;
     }
     case 'distance': {
       const a = resolveRef(env, b.a);
       const c = resolveRef(env, b.b);
-      const d = distance(a, c);
-      if (d === 0) {
-        put(b.a, a);
-        put(b.b, { x: a.x + b.value, y: a.y });
+      const pa = pinOf(pins, b.a);
+      const pb = pinOf(pins, b.b);
+      if (b.axis === 'x') {
+        if (pa && !pb) {
+          const sign = c.x >= pa.x ? 1 : -1;
+          put(b.b, { x: pa.x + sign * b.value, y: c.y });
+          return;
+        }
+        if (pb && !pa) {
+          const sign = pb.x >= a.x ? 1 : -1;
+          put(b.a, { x: pb.x - sign * b.value, y: a.y });
+          return;
+        }
+        if (pa && pb) return;
+        const sign = c.x >= a.x ? 1 : -1;
+        put(b.b, { x: a.x + sign * b.value, y: c.y });
         return;
       }
-      const mid = midpoint(a, c);
-      const u = scale(sub(c, a), b.value / (2 * d));
-      put(b.a, sub(mid, u));
-      put(b.b, add(mid, u));
+      if (b.axis === 'y') {
+        if (pa && !pb) {
+          const sign = c.y >= pa.y ? 1 : -1;
+          put(b.b, { x: c.x, y: pa.y + sign * b.value });
+          return;
+        }
+        if (pb && !pa) {
+          const sign = pb.y >= a.y ? 1 : -1;
+          put(b.a, { x: a.x, y: pb.y - sign * b.value });
+          return;
+        }
+        if (pa && pb) return;
+        const sign = c.y >= a.y ? 1 : -1;
+        put(b.b, { x: c.x, y: a.y + sign * b.value });
+        return;
+      }
+      if (pa && !pb) {
+        put(b.b, placeAtDistance(pa, c, b.value));
+        return;
+      }
+      if (pb && !pa) {
+        put(b.a, placeAtDistance(pb, a, b.value));
+        return;
+      }
+      if (pa && pb) return;
+      put(b.b, placeAtDistance(a, c, b.value));
       return;
     }
     case 'fix':
@@ -412,9 +609,18 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
     case 'concentric': {
       const a = needRound(env, b.a, 'concentric');
       const c = needRound(env, b.b, 'concentric');
-      const m = midpoint(a.center, c.center);
-      push(pts, { id: b.a, key: 'center' }, m);
-      push(pts, { id: b.b, key: 'center' }, m);
+      const pa = pinHandle(pins, b.a, 'center');
+      const pb = pinHandle(pins, b.b, 'center');
+      if (pa && !pb) {
+        push(pts, { id: b.b, key: 'center' }, pa);
+        return;
+      }
+      if (pb && !pa) {
+        push(pts, { id: b.a, key: 'center' }, pb);
+        return;
+      }
+      if (pa && pb) return;
+      push(pts, { id: b.b, key: 'center' }, a.center);
       return;
     }
     case 'tangent': {
@@ -429,9 +635,21 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
       return;
     }
     case 'length': {
-      const s = setLength(needSegment(env, b.target, 'length'), b.value);
-      push(pts, { id: b.target, key: 'start' }, s.start);
-      push(pts, { id: b.target, key: 'end' }, s.end);
+      const s = needSegment(env, b.target, 'length');
+      const ps = pinHandle(pins, b.target, 'start');
+      const pe = pinHandle(pins, b.target, 'end');
+      if (ps && pe) return;
+      if (ps && !pe) {
+        push(pts, { id: b.target, key: 'end' }, placeAtDistance(ps, s.end, b.value));
+        return;
+      }
+      if (pe && !ps) {
+        push(pts, { id: b.target, key: 'start' }, placeAtDistance(pe, s.start, b.value));
+        return;
+      }
+      const next = setLength(s, b.value);
+      push(pts, { id: b.target, key: 'start' }, next.start);
+      push(pts, { id: b.target, key: 'end' }, next.end);
       return;
     }
     case 'angle': {
@@ -529,9 +747,10 @@ function writeEntity(e: Entity, pts: Map<string, Vec2>, radius: number | undefin
 
 /**
  * Applies every constraint on the current sheet to the draft, in id order, until the
- * residual stops shrinking or a fixed iteration count is reached.
+ * residual stops shrinking or a fixed iteration count is reached. `pins` are handles the
+ * user just placed: they stay put and the rest of the drawing follows.
  */
-export function solveConstraints(draft: Draft): void {
+export function solveConstraints(draft: Draft, pins: SolvePins = { points: new Map(), radii: new Map() }): void {
   const list = [...draft.constraints()].filter((c) => {
     const first = draft.sheets[0]?.name;
     const name = c.sheet ?? first;
@@ -540,21 +759,34 @@ export function solveConstraints(draft: Draft): void {
   if (list.length === 0) return;
   list.sort((a, b) => a.id - b.id);
   const env = envOf(draft);
+  const effective = {
+    points: new Map(pins.points),
+    radii: new Map(pins.radii),
+  };
+  for (const c of list) {
+    if (c.body.kind !== 'fix') continue;
+    const h = refHandle(c.body.a);
+    if (!h) continue;
+    const key = `${h.id}:${h.key}`;
+    if (!effective.points.has(key)) effective.points.set(key, c.body.p);
+  }
   let last = Infinity;
   for (let iter = 0; iter < MAX_SOLVE_ITERS; iter++) {
     const pts = new Map<string, Vec2[]>();
     const radii = new Map<number, number[]>();
     for (const c of list) {
       try {
-        propose(env, c.body, pts, radii);
+        propose(env, c.body, pts, radii, effective);
       } catch {
         // A constraint that cannot apply this iteration is skipped; prune happens separately.
       }
     }
     const averaged = new Map<string, Vec2>();
     for (const [k, v] of pts) averaged.set(k, avg(v));
+    for (const [k, p] of effective.points) averaged.set(k, p);
     const radiusOf = new Map<number, number>();
     for (const [id, v] of radii) radiusOf.set(id, mean(v));
+    for (const [id, r] of effective.radii) radiusOf.set(id, r);
     let moved = 0;
     const seen = new Set<number>();
     for (const key of averaged.keys()) seen.add(Number(key.slice(0, key.indexOf(':'))));
@@ -574,8 +806,7 @@ export function solveConstraints(draft: Draft): void {
         res = Math.max(res, last);
       }
     }
-    const mag = [...draft.entities()].reduce((m, e) => Math.max(m, Math.abs(e.geom.kind === 'circle' || e.geom.kind === 'arc' ? e.geom.center.x : 0)), 1);
-    if (res <= tolFor(mag, res) || (moved === 0 && iter > 0) || (iter > 2 && res >= last)) return;
+    if (res <= tolFor() || (moved === 0 && iter > 0) || (iter > 2 && res >= last)) return;
     last = res;
   }
 }
@@ -586,10 +817,19 @@ export function pruneAndSolve(draft: Draft): number {
   let n = 0;
   for (const c of [...draft.constraints()]) {
     if (constraintProblem(env, c) !== null) {
+      if (c.note !== undefined) draft.deleteNote(c.note);
       draft.deleteConstraint(c.id);
       n += 1;
     }
   }
-  if ([...draft.constraints()].length > 0) solveConstraints(draft);
+  const pins = pinsFromDraft(draft);
+  if ([...draft.constraints()].length > 0) solveConstraints(draft, pins);
+  if (hasPins(pins)) {
+    const unmet = unmetOnDraft(draft);
+    if (unmet.length > 0) {
+      const c = draft.constraint(unmet[0]!.id);
+      throw new CommandError(c ? constraintRefuseMessage(c) : 'That change cannot keep the constraints.');
+    }
+  }
   return n;
 }

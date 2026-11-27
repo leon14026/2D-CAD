@@ -305,7 +305,7 @@ describe('constraints', () => {
     s = run(s, 'sheet.add', { name: 'Layout', size: 'A3' });
     const text = saveDocument(s.doc);
     expect(loadDocument(text)).toEqual(s.doc);
-    expect(text).toContain('"version": 3');
+    expect(text).toContain('"version": 4');
     expect(text).toContain('"currentSheet"');
   });
 

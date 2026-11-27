@@ -25,7 +25,7 @@ import { screenToWorld, type Point } from '../render/viewport';
 import type { CursorEntry } from '../ui/entry';
 import { formatCoordinate } from '../ui/format';
 import { PICK_RADIUS } from './interaction';
-import type { AppState, Store } from './store';
+import { visibleConstraintMarks, type AppState, type Store } from './store';
 
 /** How close (CSS pixels) the cursor must be to a snap point. */
 export const SNAP_RADIUS_PX = 10;
@@ -168,7 +168,7 @@ export class DraftingController {
   pick(p: Point): void {
     const s = this.store.get();
     const world = screenToWorld(s.viewport, p);
-    const id = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit);
+    const id = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
     if (id === null) this.store.set({ toolError: 'Nothing there to pick. Click on a line, arc or circle.' });
     else this.input({ kind: 'pick', id, point: world });
   }

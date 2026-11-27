@@ -5,6 +5,7 @@ import {
   coincidentTool,
   concentricTool,
   distanceConstraintTool,
+  editConstraintTool,
   equalTool,
   fixTool,
   horizontalTool,
@@ -85,6 +86,7 @@ export const TOOLS = {
   constrainAngle: angleConstraintTool,
   fix: fixTool,
   midpointConstraint: midpointTool,
+  editConstraint: editConstraintTool,
 } as const satisfies Record<string, ToolDef>;
 
 export type ToolId = keyof typeof TOOLS;

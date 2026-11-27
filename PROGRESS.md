@@ -23,11 +23,16 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | Planned | — | — |
+| 13. Driving dimensions and editing constrained drawings | In progress | this PR | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 13 started
+
+- Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a
+  conflicting edit, constraint marks, FILE_VERSION 4. Independent of Phases 10–12.
 
 ### 2026-11-27: Phase 13 planned
 

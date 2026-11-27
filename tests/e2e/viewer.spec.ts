@@ -187,7 +187,7 @@ test('opening a damaged file explains why and keeps the current drawing', async 
   await page.locator('#al-file').setInputFiles({
     name: 'broken.archilite',
     mimeType: 'application/json',
-    buffer: Buffer.from(EXAMPLE.replace('"version": 3', '"version": 4')),
+    buffer: Buffer.from(EXAMPLE.replace(/"version": \d+/, '"version": 5')),
   });
   const toast = page.locator('#al-toast');
   await expect(toast).toContainText('broken.archilite could not be opened.');

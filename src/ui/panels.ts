@@ -5,17 +5,25 @@
 import {
   BY_LAYER,
   compareDrawOrder,
+  constraintDisplayValue,
+  constraintHasValue,
+  constraintKindLabel,
+  constraintStoredValue,
+  constraintsTouching,
   entitiesInDrawOrder,
   findLayer,
+  formatFixPoint,
   HATCH_PATTERN_LABELS,
   HATCH_PATTERNS,
   insertBounds,
+  isDimension,
   notesInDrawOrder,
   resolveNotes,
   resolveStyle,
   SHEET_SIZES,
   TITLE_FIELD_LABELS,
   TITLE_FIELDS,
+  type Constraint,
   type DimStyle,
   type Doc,
   type Entity,
@@ -179,6 +187,11 @@ export interface SelectionActions {
   editNote(id: number, patch: Record<string, unknown>): void;
   useDimStyle(name: string): void;
   saveDimStyle(style: DimStyle): void;
+  setNoteReference(id: number, reference: boolean): void;
+  setConstraintValue(id: number, value: number): void;
+  setConstraintFix(id: number, p: { readonly x: number; readonly y: number }): void;
+  removeConstraint(id: number): void;
+  selectIds(ids: readonly number[]): void;
 }
 
 /** Buttons that change the selection, shown under its properties. */
@@ -319,7 +332,86 @@ function noteDetails(doc: Doc, n: Note, a: SelectionActions): HTMLElement[] {
     default:
       break;
   }
+  if (isDimension(b)) {
+    const driving = n.drive !== undefined;
+    const rows: HTMLElement[][] = [
+      formRow(
+        'Holds the drawing',
+        selectInput(
+          [
+            ['yes', 'Yes'],
+            ['no', 'No (reference)'],
+          ] as const,
+          driving ? 'yes' : 'no',
+          (v) => a.setNoteReference(n.id, v === 'no'),
+        ),
+      ),
+    ];
+    const c = driving && n.drive !== undefined ? doc.constraints.get(n.drive) : undefined;
+    if (c && constraintHasValue(c.body)) {
+      const shown = c.body.kind === 'angle' ? degrees(constraintDisplayValue(doc, c) ?? 0) : (constraintDisplayValue(doc, c) ?? 0);
+      rows.push(
+        formRow(
+          c.body.kind === 'angle' ? 'Value (°)' : 'Value',
+          numberInput(shown, (v) => {
+            const stored = c.body.kind === 'angle' ? degToRad(v) : constraintStoredValue(doc, c, v);
+            a.setConstraintValue(c.id, stored);
+          }, 'any', 0),
+        ),
+      );
+    }
+    out.push(form(...rows));
+  }
   return out;
+}
+
+function constraintRow(doc: Doc, c: Constraint, a: SelectionActions): HTMLElement {
+  const value = constraintDisplayValue(doc, c);
+  const shown = value !== null && c.body.kind === 'angle' ? degrees(value) : value;
+  const fields: HTMLElement[][] = [];
+  if (shown !== null && constraintHasValue(c.body)) {
+    fields.push(
+      formRow(
+        c.body.kind === 'angle' ? 'Value (°)' : 'Value',
+        numberInput(shown, (v) => {
+          const stored = c.body.kind === 'angle' ? degToRad(v) : constraintStoredValue(doc, c, v);
+          a.setConstraintValue(c.id, stored);
+        }, 'any', 0),
+      ),
+    );
+  }
+  if (c.body.kind === 'fix') {
+    fields.push(
+      formRow(
+        'Point',
+        textInput(formatFixPoint(c.body.p), (text) => {
+          const parts = text.split(',').map((p) => Number(p.trim()));
+          if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) a.setConstraintFix(c.id, { x: parts[0]!, y: parts[1]! });
+        }),
+      ),
+    );
+  }
+  return el(
+    'div',
+    {
+      className: 'al-constraint',
+      attrs: { 'data-constraint': String(c.id) },
+      on: { click: () => a.selectIds([c.id]) },
+    },
+    el('div', { className: 'al-constraint-head' }, el('span', { text: `${constraintKindLabel(c.body.kind)} (${c.id})` })),
+    ...(fields.length > 0 ? [form(...fields)] : []),
+    el('button', {
+      className: 'al-action',
+      text: 'Delete',
+      attrs: { type: 'button', title: 'Delete this constraint' },
+      on: {
+        click: (ev) => {
+          ev.stopPropagation();
+          a.removeConstraint(c.id);
+        },
+      },
+    }),
+  );
 }
 
 let styleEditorOpen = false;
@@ -383,7 +475,9 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
     const picked = entitiesInDrawOrder(doc).filter((e) => s.selection.has(e.id));
     const notes = notesInDrawOrder(doc).filter((n) => s.selection.has(n.id));
     const inserts = [...doc.inserts.values()].filter((ins) => s.selection.has(ins.id)).sort(compareDrawOrder);
-    const total = picked.length + notes.length + inserts.length;
+    const selectedConstraints = [...doc.constraints.values()].filter((c) => s.selection.has(c.id)).sort((a, b) => a.id - b.id);
+    const related = constraintsTouching(doc, s.selection);
+    const total = picked.length + notes.length + inserts.length + selectedConstraints.length;
     head.textContent = total ? `${total} selected` : '';
     if (total === 0) {
       body.replaceChildren(
@@ -396,12 +490,29 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
       );
       return;
     }
-    if (picked.length === 1 && notes.length === 0 && inserts.length === 0) {
+    if (picked.length === 1 && notes.length === 0 && inserts.length === 0 && selectedConstraints.length === 0) {
       const e = picked[0] as Entity;
       body.replaceChildren(
         props([['Kind', KIND[e.geom.kind]], ['Id', String(e.id)]], false),
         props(styleRows(doc, e), false),
         props(shapeRows(e.geom)),
+        ...(related.length > 0 ? [el('div', { className: 'al-constraint-list' }, el('h3', { text: 'Constraints' }), ...related.map((c) => constraintRow(doc, c, actions)))] : []),
+        changeButtons(picked, actions, inserts),
+      );
+      return;
+    }
+    if (picked.length === 0 && notes.length === 0 && inserts.length === 0 && selectedConstraints.length === 1) {
+      const c = selectedConstraints[0] as Constraint;
+      body.replaceChildren(
+        props(
+          [
+            ['Kind', constraintKindLabel(c.body.kind)],
+            ['Id', String(c.id)],
+            ...(c.note !== undefined ? ([['Dimension', String(c.note)]] as [string, string][]) : []),
+          ],
+          false,
+        ),
+        constraintRow(doc, c, actions),
         changeButtons(picked, actions, inserts),
       );
       return;
@@ -427,9 +538,13 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
       );
       return;
     }
-    if (picked.length === 0 && notes.length === 1 && inserts.length === 0) {
+    if (picked.length === 0 && notes.length === 1 && inserts.length === 0 && selectedConstraints.length === 0) {
       const n = notes[0] as Note;
-      body.replaceChildren(...noteDetails(doc, n, actions), changeButtons(picked, actions, inserts), ...(STYLED.has(n.body.kind) ? [dimStyleEditor(doc, actions)] : []));
+      body.replaceChildren(
+        ...noteDetails(doc, n, actions),
+        changeButtons(picked, actions, inserts),
+        ...(STYLED.has(n.body.kind) ? [dimStyleEditor(doc, actions)] : []),
+      );
       return;
     }
     const kinds = new Map<string, number>();
@@ -443,6 +558,7 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
     }
     for (const n of notes) kinds.set(NOTE_KIND[n.body.kind], (kinds.get(NOTE_KIND[n.body.kind]) ?? 0) + 1);
     if (inserts.length) kinds.set('Block insert', inserts.length);
+    if (selectedConstraints.length) kinds.set('Constraint', selectedConstraints.length);
     const measured: HTMLElement[] = [];
     if (bounds) {
       const b = bounds as Bounds;
@@ -455,7 +571,14 @@ export function mountSelectionPanel(root: HTMLElement, store: Store, actions: Se
         ]),
       );
     }
-    body.replaceChildren(props([...kinds].map(([k, n]) => [k, String(n)] as [string, string]), false), ...measured, changeButtons(picked, actions, inserts));
+    body.replaceChildren(
+      props([...kinds].map(([k, n]) => [k, String(n)] as [string, string]), false),
+      ...measured,
+      ...(related.length > 0
+        ? [el('div', { className: 'al-constraint-list' }, el('h3', { text: 'Constraints' }), ...related.map((c) => constraintRow(doc, c, actions)))]
+        : []),
+      changeButtons(picked, actions, inserts),
+    );
   };
   render(store.get());
   store.subscribe((s, p) => {

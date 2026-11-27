@@ -61,11 +61,11 @@ describe('the annotation reference drawing', () => {
   });
 
   it('every dimension shows the hand-worked value', () => {
-    expect(shown(of('linear')[0] as Note).r.text).toBe('60.00'); // the plate's width
-    expect(shown(of('aligned')[0] as Note).r.text).toBe('28.28'); // 20√2 = 28.2843
-    expect(shown(of('angle')[0] as Note).r.text).toBe('45.0°');
-    expect(shown(of('diameter')[0] as Note).r.text).toBe('Ø8.00');
-    expect(shown(of('radius')[0] as Note).r.text).toBe('R5.00');
+    expect(shown(of('linear')[0] as Note).r.text).toBe('(60.00)'); // the plate's width, reference
+    expect(shown(of('aligned')[0] as Note).r.text).toBe('(28.28)'); // 20√2 = 28.2843
+    expect(shown(of('angle')[0] as Note).r.text).toBe('(45.0°)');
+    expect(shown(of('diameter')[0] as Note).r.text).toBe('(Ø8.00)');
+    expect(shown(of('radius')[0] as Note).r.text).toBe('(R5.00)');
   });
 
   it('the hatch covers the plate less both holes: 60 × 40 − 16π − 25π', () => {
