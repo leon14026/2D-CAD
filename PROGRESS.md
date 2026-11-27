@@ -1,6 +1,7 @@
 # ArchiLite progress
 
 **Now:** Phases 1 to 9 are merged and live, with a follow-up on DXF import ([#13](https://github.com/leon14026/2D-CAD/pull/13)).
+A second follow-up explodes DXF block inserts ([#15](https://github.com/leon14026/2D-CAD/pull/15), in review).
 Phase 10 (DWG) is planned, and Phase 11 (phone browser, [#11](https://github.com/leon14026/2D-CAD/pull/11)) is planned.
 Phase 10 and Phase 11 do not depend on each other.
 
@@ -24,6 +25,26 @@ Phase 10 and Phase 11 do not depend on each other.
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Review of #15 (DXF INSERT explode)
+
+- Found: explosion repeated a block once per INSERT with no limit. Ten inserts of a block
+  that holds ten inserts, seven levels deep, is a million lines from about 3 KB of text
+  (4 s to open); one level more ran out of memory. A rows-and-columns INSERT array imported
+  one copy and dropped the others without a word.
+- Fixed: explosion counts objects and inserts as it goes and refuses the file past 200,000 of
+  either, in plain words. Array inserts are skipped and counted.
+
+### 2026-11-26: DXF INSERT explode
+
+- Follow-up on #13, PR [#15](https://github.com/leon14026/2D-CAD/pull/15). Merge #8 then #9
+  then #12 then #13 first.
+- Kitchen and bath fixtures on the floorplan DXF were INSERT and were skipped. Import now
+  reads the BLOCKS section and explodes INSERT (including nested inserts) into
+  LINE/CIRCLE/ARC/LWPOLYLINE/TEXT/MTEXT. Missing blocks, cycles, and non-uniform X/Y scale
+  are skipped and counted. DIMENSION and HATCH stay skipped.
+- The same floorplan now opens as 916 entities and 98 notes, with 89 objects left out.
+  Local gate: 1,188 unit tests, 76 browser tests, 122.1 KB gzipped.
 
 ### 2026-11-26: Phase 11 (phone browser) planned
 

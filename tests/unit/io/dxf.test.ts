@@ -11,7 +11,8 @@ import {
   vec,
   type Shape,
 } from '../../../src/core/geom';
-import { exportDxf, importDxf, looksLikeDxf } from '../../../src/io/dxf';
+import { exportDxf, importDxf, looksLikeDxf, MAX_EXPLODED_OBJECTS } from '../../../src/io/dxf';
+import { IoError } from '../../../src/io/error';
 import { expectClose, expectPoint } from '../core/helpers';
 import { buildExampleBracket } from '../core/doc/example-bracket';
 
@@ -291,6 +292,368 @@ describe('DXF import of a minimal file', () => {
       .map((b) => (b.kind === 'text' ? b.text : ''));
     expect(texts).toEqual(['GREAT ROOM', 'Ø10°', '±0.1%', 'A%%z%%']);
   });
+
+  it('explodes INSERT into the block’s geometry at the insert point', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'BLOCKS',
+      '0',
+      'BLOCK',
+      '2',
+      'BAR',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'LINE',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '11',
+      '10',
+      '21',
+      '0',
+      '0',
+      'ENDBLK',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'BAR',
+      '10',
+      '5',
+      '20',
+      '7',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    expect(doc.entities.size).toBe(1);
+    const g = [...doc.entities.values()][0]?.geom;
+    expect(g?.kind).toBe('segment');
+    if (g?.kind !== 'segment') return;
+    expectPoint(g.start, { x: 5, y: 7 });
+    expectPoint(g.end, { x: 15, y: 7 });
+  });
+
+  it('rotates an exploded INSERT and skips a missing block', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'BLOCKS',
+      '0',
+      'BLOCK',
+      '2',
+      'BAR',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'LINE',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '11',
+      '10',
+      '21',
+      '0',
+      '0',
+      'ENDBLK',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'BAR',
+      '10',
+      '0',
+      '20',
+      '0',
+      '50',
+      '90',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'NOPE',
+      '10',
+      '1',
+      '20',
+      '1',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(1);
+    expect(doc.entities.size).toBe(1);
+    const g = [...doc.entities.values()][0]?.geom;
+    expect(g?.kind).toBe('segment');
+    if (g?.kind !== 'segment') return;
+    expectPoint(g.start, { x: 0, y: 0 });
+    expectPoint(g.end, { x: 0, y: 10 });
+  });
+
+  it('explodes a nested INSERT', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'BLOCKS',
+      '0',
+      'BLOCK',
+      '2',
+      'INNER',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'CIRCLE',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '40',
+      '2',
+      '0',
+      'ENDBLK',
+      '0',
+      'BLOCK',
+      '2',
+      'OUTER',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'INNER',
+      '10',
+      '3',
+      '20',
+      '4',
+      '0',
+      'ENDBLK',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'OUTER',
+      '10',
+      '10',
+      '20',
+      '20',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    expect(doc.entities.size).toBe(1);
+    const g = [...doc.entities.values()][0]?.geom;
+    expect(g?.kind).toBe('circle');
+    if (g?.kind !== 'circle') return;
+    expectPoint(g.center, { x: 13, y: 24 });
+    expectClose(g.radius, 2);
+  });
+
+  it('gives layer-0 block members the INSERT’s layer and keeps named layers', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'TABLES',
+      '0',
+      'TABLE',
+      '2',
+      'LAYER',
+      '0',
+      'LAYER',
+      '2',
+      'FIXTURES',
+      '70',
+      '0',
+      '0',
+      'LAYER',
+      '2',
+      'DOORS',
+      '70',
+      '0',
+      '0',
+      'ENDTAB',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'BLOCKS',
+      '0',
+      'BLOCK',
+      '2',
+      'SINK',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'LINE',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '11',
+      '1',
+      '21',
+      '0',
+      '0',
+      'LINE',
+      '8',
+      'DOORS',
+      '10',
+      '0',
+      '20',
+      '1',
+      '11',
+      '1',
+      '21',
+      '1',
+      '0',
+      'ENDBLK',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'INSERT',
+      '8',
+      'FIXTURES',
+      '2',
+      'SINK',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    expect(doc.entities.size).toBe(2);
+    const names = [...doc.entities.values()].map((e) => doc.layers.find((l) => l.id === e.layer)?.name);
+    expect(names.sort()).toEqual(['DOORS', 'FIXTURES']);
+  });
+
+  it('skips a non-uniform INSERT scale', () => {
+    const dxf = [
+      '0',
+      'SECTION',
+      '2',
+      'BLOCKS',
+      '0',
+      'BLOCK',
+      '2',
+      'BAR',
+      '10',
+      '0',
+      '20',
+      '0',
+      '0',
+      'LINE',
+      '8',
+      '0',
+      '10',
+      '0',
+      '20',
+      '0',
+      '11',
+      '10',
+      '21',
+      '0',
+      '0',
+      'ENDBLK',
+      '0',
+      'ENDSEC',
+      '0',
+      'SECTION',
+      '2',
+      'ENTITIES',
+      '0',
+      'INSERT',
+      '8',
+      '0',
+      '2',
+      'BAR',
+      '10',
+      '0',
+      '20',
+      '0',
+      '41',
+      '1',
+      '42',
+      '2',
+      '0',
+      'ENDSEC',
+      '0',
+      'EOF',
+      '',
+    ].join('\n');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(1);
+    expect(doc.entities.size).toBe(0);
+  });
 });
 
 describe('shipped drawings export', () => {
@@ -300,5 +663,57 @@ describe('shipped drawings export', () => {
     expect(dxf).toContain('CIRCLE');
     expect(dxf).toContain('LWPOLYLINE');
     expect(importDxf(dxf).doc.entities.size).toBe(doc.entities.size);
+  });
+});
+
+function pairs(...items: (string | number)[]): string {
+  const out: string[] = [];
+  for (let i = 0; i < items.length; i += 2) out.push(`${items[i]}\n${items[i + 1]}`);
+  return `${out.join('\n')}\n`;
+}
+
+/** `levels` blocks B0..B(levels-1); each holds `fanout` inserts of the next; the last holds one line. */
+function nestedBlocksDxf(levels: number, fanout: number, leafLine: boolean): string {
+  let s = pairs(0, 'SECTION', 2, 'BLOCKS');
+  for (let l = 0; l < levels; l++) {
+    s += pairs(0, 'BLOCK', 2, `B${l}`, 10, 0, 20, 0);
+    if (l === levels - 1) {
+      if (leafLine) s += pairs(0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 1, 21, 0);
+    } else {
+      for (let i = 0; i < fanout; i++) s += pairs(0, 'INSERT', 8, '0', 2, `B${l + 1}`, 10, i, 20, 0);
+    }
+    s += pairs(0, 'ENDBLK');
+  }
+  s += pairs(0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES', 0, 'INSERT', 8, '0', 2, 'B0', 10, 0, 20, 0, 0, 'ENDSEC', 0, 'EOF');
+  return s;
+}
+
+describe('DXF block explosion limits', () => {
+  it('opens nested blocks that expand to a sensible number of objects', () => {
+    const { doc, skipped } = importDxf(nestedBlocksDxf(4, 10, true));
+    expect(doc.entities.size).toBe(1000);
+    expect(skipped).toBe(0);
+  });
+
+  it('refuses nested blocks that would expand past the object cap', () => {
+    // 10^6 lines from a file of a few kilobytes: stops as soon as the cap is passed.
+    const text = nestedBlocksDxf(7, 10, true);
+    expect(text.length).toBeLessThan(10_000);
+    expect(() => importDxf(text)).toThrow(IoError);
+    expect(() => importDxf(text)).toThrow(/more than 200,000 objects/);
+    expect(MAX_EXPLODED_OBJECTS).toBe(200_000);
+  });
+
+  it('refuses nested inserts of empty blocks that would be endless work', () => {
+    expect(() => importDxf(nestedBlocksDxf(7, 10, false))).toThrow(/more than 200,000/);
+  });
+
+  it('skips and counts a rows-and-columns INSERT array instead of importing one copy', () => {
+    const dxf =
+      pairs(0, 'SECTION', 2, 'BLOCKS', 0, 'BLOCK', 2, 'BAR', 10, 0, 20, 0, 0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 10, 21, 0, 0, 'ENDBLK', 0, 'ENDSEC') +
+      pairs(0, 'SECTION', 2, 'ENTITIES', 0, 'INSERT', 8, '0', 2, 'BAR', 10, 0, 20, 0, 70, 3, 71, 1, 44, 20, 0, 'ENDSEC', 0, 'EOF');
+    const { doc, skipped } = importDxf(dxf);
+    expect(doc.entities.size).toBe(0);
+    expect(skipped).toBe(1);
   });
 });
