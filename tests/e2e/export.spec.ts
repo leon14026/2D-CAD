@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { openExample, state, watchErrors } from './helpers';
 
@@ -192,6 +193,23 @@ test('a DXF MTEXT note drops alignment commands', async ({ page }) => {
   expect(save).toContain('W/ SELF CLOSING HINGES');
   expect(save).not.toContain('\\A1;');
   expect(save).not.toContain('\\P');
+});
+
+test('a DXF linear dimension becomes a live ArchiLite note', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('./?test');
+  await page.locator('#al-file').setInputFiles({
+    name: 'linear-100.dxf',
+    mimeType: 'application/dxf',
+    buffer: readFileSync('tests/fixtures/linear-100.dxf'),
+  });
+  await expect(page.locator('#al-toast')).toContainText('Opened');
+  await expect(page.locator('#al-count')).toHaveText('1 entities, 1 annotation');
+  const save = await page.evaluate(() => (window as unknown as { __archilite: { saveText(): string } }).__archilite.saveText());
+  const json = JSON.parse(save) as { notes: { body: { kind: string } }[] };
+  expect(json.notes[0]?.body.kind).toBe('linear');
+  expect(json.notes[0]?.body).not.toHaveProperty('value');
+  expect(errors).toEqual([]);
 });
 
 test('a bad DXF is refused with a plain message', async ({ page }) => {

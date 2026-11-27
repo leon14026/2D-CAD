@@ -7,7 +7,9 @@
  * toggles and turn %%c / %%d / %%p into Ø / ° / ±. MTEXT alignment, font, height
  * and paragraph commands (`\A1;`, `\F…;`, `\P`) are dropped or turned into
  * newlines; they are not shown as text. `\U+XXXX` becomes that character. Block INSERT is exploded into those
- * same types (nested inserts included). Anything else is skipped and counted.
+ * same types (nested inserts included). DIMENSION becomes a live note bound to
+ * geometry (where to measure, never the stored number). Anything else is skipped
+ * and counted, including HATCH and a dimension whose text is an override.
  *
  * The writer targets the R2000 (AC1015) text form. Binary DXF is refused.
  */
@@ -19,9 +21,11 @@ import {
   arrowCorners,
   canonicalShape,
   hatchLoops,
+  DEFAULT_DIM_STYLE_NAME,
   newDocument,
   onCurrentSheet,
   piecesOnSheet,
+  refAt,
   resolveNotes,
   type ColorRef,
   type Doc,
@@ -32,6 +36,8 @@ import {
   type Lineweight,
   type LineweightRef,
   type Note,
+  type NoteBody,
+  type PointRef,
 } from '../core/doc';
 import {
   ORIGIN,
@@ -39,6 +45,9 @@ import {
   ccwSweep,
   convertLength,
   degToRad,
+  distance,
+  intersect,
+  midpoint,
   mirror,
   normalizeAngle,
   polyline,
@@ -313,7 +322,8 @@ function parseTablesAndEntities(pairs: Pair[]): {
       current.type === 'LWPOLYLINE' ||
       current.type === 'TEXT' ||
       current.type === 'MTEXT' ||
-      current.type === 'INSERT'
+      current.type === 'INSERT' ||
+      current.type === 'DIMENSION'
     ) {
       target.push(current);
     } else if (!currentBlock && (KNOWN_ENTITIES.has(current.type) || current.type.length > 0)) {
@@ -455,6 +465,16 @@ function xy(values: Map<number, string[]>, xCode: number, yCode: number, path: s
   const ys = allVal(values, yCode);
   if (xs.length === 0 || ys.length === 0) throw new IoError(`DXF ${path} is missing coordinates.`, path);
   return { x: num(xs[xs.length - 1] as string, path), y: num(ys[ys.length - 1] as string, path) };
+}
+
+function xyOpt(values: Map<number, string[]>, xCode: number, yCode: number): Vec2 | null {
+  const xs = allVal(values, xCode);
+  const ys = allVal(values, yCode);
+  if (xs.length === 0 || ys.length === 0) return null;
+  const x = Number((xs[xs.length - 1] as string).trim());
+  const y = Number((ys[ys.length - 1] as string).trim());
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x: x + 0, y: y + 0 };
 }
 
 function shapeFromEntity(e: DxfEntity): Shape | null {
@@ -704,6 +724,63 @@ function insertSteps(e: DxfEntity, base: Vec2): Transform[] | null {
   return steps;
 }
 
+function applyPt(steps: readonly Transform[], p: Vec2): Vec2 {
+  let q = p;
+  for (const t of steps) q = transformPoint(t, q);
+  return { x: q.x + 0, y: q.y + 0 };
+}
+
+/** Group 70 low bits: 0 rotated/linear, 1 aligned, 2 angular, 3 diameter, 4 radius, 5 3-point angular, 6 ordinate. */
+interface DimPiece {
+  readonly kind: 'dimension';
+  readonly layer: string;
+  readonly color: ColorRef;
+  readonly lineweight: LineweightRef | undefined;
+  readonly dimType: number;
+  readonly angle: number;
+  readonly dimLine: Vec2;
+  readonly textAt: Vec2 | null;
+  readonly a: Vec2 | null;
+  readonly b: Vec2 | null;
+  readonly c: Vec2 | null;
+  readonly d: Vec2 | null;
+}
+
+function dimOverride(raw: string | undefined): boolean {
+  if (raw === undefined) return false;
+  const t = raw.trim();
+  return t !== '' && t !== '<>';
+}
+
+function dimPiece(e: DxfEntity): DimPiece | null {
+  if (dimOverride(lastVal(e.values, 1))) return null;
+  const flags = Number(lastVal(e.values, 70) ?? '0');
+  if (!Number.isFinite(flags)) return null;
+  const dimType = flags & 7;
+  if (dimType === 6) return null;
+  const dimLine = xyOpt(e.values, 10, 20);
+  if (!dimLine) return null;
+  return {
+    kind: 'dimension',
+    layer: e.layer,
+    color: e.color,
+    lineweight: e.lineweight,
+    dimType,
+    angle: degToRad(Number(lastVal(e.values, 50) ?? '0') || 0),
+    dimLine,
+    textAt: xyOpt(e.values, 11, 21),
+    a: xyOpt(e.values, 13, 23),
+    b: xyOpt(e.values, 14, 24),
+    c: xyOpt(e.values, 15, 25),
+    d: xyOpt(e.values, 16, 26),
+  };
+}
+
+function mapDim(p: DimPiece, layer: string, mapPt: (v: Vec2) => Vec2): DimPiece {
+  const pt = (v: Vec2 | null): Vec2 | null => (v ? mapPt(v) : null);
+  return { ...p, layer, dimLine: mapPt(p.dimLine), textAt: pt(p.textAt), a: pt(p.a), b: pt(p.b), c: pt(p.c), d: pt(p.d) };
+}
+
 type FlatPiece =
   | {
       kind: 'shape';
@@ -723,7 +800,8 @@ type FlatPiece =
       angle: number;
       anchor: 'left' | 'center' | 'right';
       text: string;
-    };
+    }
+  | DimPiece;
 
 /**
  * Block explosion repeats a block once per INSERT, so a small file of nested blocks can ask for
@@ -761,7 +839,9 @@ function explodeList(
       // placed; importing only the first would drop geometry without saying so.
       const columns = Number(lastVal(e.values, 70) ?? '1');
       const rows = Number(lastVal(e.values, 71) ?? '1');
-      if (key === '' || visiting.has(key) || columns > 1 || rows > 1) {
+      // Anonymous *D blocks are the frozen dimension graphics. Skip them; the DIMENSION
+      // entity is mapped to a live note instead.
+      if (key === '' || key.startsWith('*d') || visiting.has(key) || columns > 1 || rows > 1) {
         skipped += 1;
         continue;
       }
@@ -781,6 +861,10 @@ function explodeList(
         const layer = isDxfLayerZero(p.layer) ? e.layer : p.layer;
         if (p.kind === 'shape') {
           pieces.push({ ...p, layer, geom: applySteps(steps, p.geom) });
+          continue;
+        }
+        if (p.kind === 'dimension') {
+          pieces.push(mapDim(p, layer, (v) => applyPt(steps, v)));
           continue;
         }
         let at = p.at;
@@ -807,6 +891,16 @@ function explodeList(
       } else skipped += 1;
       continue;
     }
+    if (e.type === 'DIMENSION') {
+      const dim = dimPiece(e);
+      if (!dim) {
+        skipped += 1;
+        continue;
+      }
+      if (++budget.objects > MAX_EXPLODED_OBJECTS) throw tooBig();
+      pieces.push(dim);
+      continue;
+    }
     const geom = shapeFromEntity(e);
     if (!geom) {
       skipped += 1;
@@ -816,6 +910,117 @@ function explodeList(
     pieces.push({ kind: 'shape', geom, layer: e.layer, color: e.color, linetype: e.linetype, lineweight: e.lineweight });
   }
   return { pieces, skipped };
+}
+
+function namedRef(doc: Doc, p: Vec2, tol: number): PointRef | null {
+  const r = refAt(doc, p, tol);
+  return r.kind === 'free' ? null : r;
+}
+
+function nearAxis(angle: number): 'horizontal' | 'vertical' | null {
+  const a = normalizeAngle(angle);
+  const dist = (t: number) => Math.min(ccwSweep(a, t), ccwSweep(t, a));
+  if (dist(0) <= 1e-8 || dist(Math.PI) <= 1e-8) return 'horizontal';
+  if (dist(Math.PI / 2) <= 1e-8 || dist((3 * Math.PI) / 2) <= 1e-8) return 'vertical';
+  return null;
+}
+
+function awayFrom(center: Vec2, ...pts: (Vec2 | null)[]): Vec2 | null {
+  for (const p of pts) {
+    if (p && distance(p, center) > 0) return p;
+  }
+  return null;
+}
+
+function roundTarget(doc: Doc, center: Vec2, on: Vec2 | null, tol: number): number | null {
+  const r = refAt(doc, center, tol);
+  if (r.kind !== 'center') return null;
+  const e = doc.entities.get(r.id);
+  if (!e || (e.geom.kind !== 'circle' && e.geom.kind !== 'arc')) return null;
+  if (on) {
+    const d = distance(on, e.geom.center);
+    if (Math.abs(d - e.geom.radius) > Math.max(tol, tolFor(e.geom.radius, d))) return null;
+  }
+  return r.id;
+}
+
+function angleCorner(p: DimPiece, tol: number): Vec2 | null {
+  if (p.dimType === 5 && p.b) return p.b;
+  if (!p.a || !p.b) return null;
+  const l1 = segment(p.a, p.b);
+  const pairs: [Vec2, Vec2][] = [];
+  if (p.c && p.d && (p.c.x !== p.d.x || p.c.y !== p.d.y)) pairs.push([p.c, p.d]);
+  if (p.c && (p.c.x !== p.dimLine.x || p.c.y !== p.dimLine.y)) pairs.push([p.c, p.dimLine]);
+  for (const [u, v] of pairs) {
+    const hits = intersect(l1, segment(u, v), tol);
+    if (hits[0]) return hits[0] as Vec2;
+  }
+  return null;
+}
+
+function dimTol(p: DimPiece): number {
+  const pts = [p.dimLine, p.textAt, p.a, p.b, p.c, p.d].filter((q): q is Vec2 => q !== null);
+  return tolFor(...pts.flatMap((q) => [q.x, q.y]));
+}
+
+function bindDim(doc: Doc, p: DimPiece, layer: number, id: number): Note | null {
+  const tol = dimTol(p);
+  const style = doc.settings.currentDimStyle || DEFAULT_DIM_STYLE_NAME;
+  const note = (body: NoteBody): Note => ({
+    id,
+    layer,
+    z: id,
+    color: p.color,
+    lineweight: p.lineweight ?? BY_LAYER,
+    body,
+  });
+  if (p.dimType === 0 || p.dimType === 1) {
+    if (!p.a || !p.b) return null;
+    const a = namedRef(doc, p.a, tol);
+    const b = namedRef(doc, p.b, tol);
+    if (!a || !b) return null;
+    if (p.dimType === 1) return note({ kind: 'aligned', a, b, at: p.dimLine, style });
+    const orient = nearAxis(p.angle);
+    if (!orient) return null;
+    return note({ kind: 'linear', orient, a, b, at: p.dimLine, style });
+  }
+  if (p.dimType === 3 || p.dimType === 4) {
+    const on = p.c;
+    let center = p.dimLine;
+    if (p.dimType === 3 && p.c) center = midpoint(p.dimLine, p.c);
+    let target = roundTarget(doc, center, on, tol);
+    if (target === null && p.dimType === 3) target = roundTarget(doc, p.dimLine, on, tol);
+    if (target === null) return null;
+    const e = doc.entities.get(target);
+    const c0 = e && (e.geom.kind === 'circle' || e.geom.kind === 'arc') ? e.geom.center : center;
+    const at = awayFrom(c0, p.textAt, p.c, p.dimLine, p.d);
+    if (!at) return null;
+    return note({ kind: p.dimType === 3 ? 'diameter' : 'radius', target, at, style });
+  }
+  if (p.dimType === 2 || p.dimType === 5) {
+    const corner = angleCorner(p, tol);
+    if (!corner) return null;
+    const vertex = namedRef(doc, corner, tol);
+    if (!vertex) return null;
+    const pts = [p.a, p.b, p.c, p.d, p.dimLine, p.textAt];
+    const arms: PointRef[] = [];
+    const seen = new Set<string>([JSON.stringify(vertex)]);
+    for (const q of pts) {
+      if (!q) continue;
+      const r = namedRef(doc, q, tol);
+      if (!r) continue;
+      const k = JSON.stringify(r);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      arms.push(r);
+      if (arms.length === 2) break;
+    }
+    if (arms.length < 2) return null;
+    const at = awayFrom(corner, p.d, p.textAt, p.dimLine, p.c);
+    if (!at) return null;
+    return note({ kind: 'angle', vertex, a: arms[0] as PointRef, b: arms[1] as PointRef, at, style });
+  }
+  return null;
 }
 
 /** Reads a text DXF into an ArchiLite document. Unknown objects are skipped, not fatal. */
@@ -870,7 +1075,12 @@ export function importDxf(text: string): DxfImport {
   const notes = new Map<number, Note>();
   const exploded = explodeList(parsed.entities, parsed.blocks, new Set(), { objects: 0, inserts: 0 });
   let skipped = parsed.skipped + exploded.skipped;
+  const pendingDims: DimPiece[] = [];
   for (const p of exploded.pieces) {
+    if (p.kind === 'dimension') {
+      pendingDims.push(p);
+      continue;
+    }
     const id = nextId++;
     if (p.kind === 'text') {
       notes.set(id, {
@@ -894,10 +1104,6 @@ export function importDxf(text: string): DxfImport {
     });
   }
 
-  if (entities.size === 0 && notes.size === 0 && parsed.entities.length === 0 && skipped === 0 && layers.length === 1) {
-    // Empty DXF is still a drawing.
-  }
-
   const doc: Doc = {
     ...doc0,
     settings: { ...doc0.settings, units: parsed.units, currentLayer: layers[0]!.id },
@@ -906,7 +1112,17 @@ export function importDxf(text: string): DxfImport {
     entities,
     notes,
   };
-  return { doc, skipped };
+  for (const p of pendingDims) {
+    const id = nextId;
+    const note = bindDim(doc, p, layerId(p.layer), id);
+    if (!note) {
+      skipped += 1;
+      continue;
+    }
+    notes.set(id, note);
+    nextId += 1;
+  }
+  return { doc: { ...doc, nextId, notes }, skipped };
 }
 
 // ---------- export ----------

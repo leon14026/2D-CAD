@@ -16,14 +16,13 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   open one. Until then, export DXF from the other program and open that.
 - **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
   browser. It does not need DWG, so it can land before or after Phase 10.
-- **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
-  measurements (where to measure, never the stored number). Until then they are skipped.
+- **Live DXF dimensions.** A DXF `DIMENSION` becomes an ArchiLite measurement (where to
+  measure, never the stored number). Hatches stay skipped.
 
-**Status:** Phases 1 to 9 are built and merged; Phase 9 adds blocks, sheets and constraints on top
-of scripting and import/export. Phase 11 (phone browser) is planned and does not wait on
-Phase 10. Phase 12 (live DXF dimensions) is planned and does not wait on Phase 10 or 11. Phase 13
-(driving dimensions and editing constrained drawings) is planned and does not wait on any of
-them. See
+**Status:** Phases 1 to 9 are built and merged. Phase 12 (live DXF dimensions) is in this
+pull request and does not wait on Phase 10, 11 or 13. Phase 13 (driving dimensions) is in
+[#21](https://github.com/leon14026/2D-CAD/pull/21) independently. Phase 11 (phone browser) is
+planned. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.

@@ -309,11 +309,12 @@ export function resolveRef(env: NoteEnv, ref: PointRef): Vec2 {
 }
 
 /**
- * Finds a reference for a point: if it sits exactly on an end, corner, middle or centre of an
- * entity, the reference follows that entity; otherwise it is a free point.
+ * Finds a reference for a point: if it sits on an end, corner, middle or centre of an
+ * entity, the reference follows that entity; otherwise it is a free point. `tol` is 0
+ * unless the caller (DXF import) needs the kernel's `tolFor`.
  */
-export function refAt(doc: Doc, p: Vec2): PointRef {
-  const same = (q: Vec2) => q.x === p.x && q.y === p.y;
+export function refAt(doc: Doc, p: Vec2, tol = 0): PointRef {
+  const same = (q: Vec2) => (tol > 0 ? distance(q, p) <= tol : q.x === p.x && q.y === p.y);
   const entities = [...doc.entities.values()].filter((e) => (e.sheet ?? doc.sheets[0]?.name) === doc.settings.currentSheet).sort((a, b) => a.id - b.id);
   const env = docEnv(doc);
   // Every candidate is built from the entity itself, so each one resolves.
