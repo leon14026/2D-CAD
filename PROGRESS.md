@@ -1,10 +1,10 @@
 # ArchiLite progress
 
 **Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
-and [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT) are on `main`.
+(text codes and units), [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT),
+and [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
 The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 ([#11](https://github.com/leon14026/2D-CAD/pull/11), [#16](https://github.com/leon14026/2D-CAD/pull/16)).
-MTEXT markup codes are in review ([#17](https://github.com/leon14026/2D-CAD/pull/17)).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -27,6 +27,12 @@ MTEXT markup codes are in review ([#17](https://github.com/leon14026/2D-CAD/pull
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: MTEXT markup follow-up merged
+
+- PR [#17](https://github.com/leon14026/2D-CAD/pull/17) merged to `main`. Alignment, font,
+  height and paragraph commands are dropped; `\P` is a newline; `\S1#2;` becomes `1/2`;
+  `\U+XXXX` becomes that character.
 
 ### 2026-11-27: Review of #17 (MTEXT commands)
 
