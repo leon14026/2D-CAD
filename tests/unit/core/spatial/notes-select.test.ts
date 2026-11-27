@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSession, execute, newDocument, type NoteBody, type Session } from '../../../../src/core/doc';
 import { circle, rectangle, segment, type Shape, type Vec2 } from '../../../../src/core/geom';
-import { boxFromCorners, DocIndex, pickAt, selectInBox } from '../../../../src/core/spatial';
+import { boxFromCorners, DocIndex, noteTextContains, pickAt, selectInBox } from '../../../../src/core/spatial';
 
 const P = (x: number, y: number): Vec2 => ({ x, y });
 
@@ -66,6 +66,15 @@ describe('selecting and picking notes', () => {
     expect(pickAt(w.doc, P(600, 600), 5)).toBeNull();
   });
 
+  it('noteTextContains is true only inside the number, not on the dimension line', () => {
+    const w = build();
+    expect(noteTextContains(w.doc, w.dim, P(250, -20))).toBe(false);
+    expect(noteTextContains(w.doc, w.dim, P(250, -20 + 1 + 1.75))).toBe(true); // textGap + half the 3.5 mm height
+    expect(noteTextContains(w.doc, w.text, P(401, 3))).toBe(true);
+    expect(noteTextContains(w.doc, w.hatch, P(20, 20))).toBe(false);
+    expect(noteTextContains(w.doc, 999_999, P(0, 0))).toBe(false);
+  });
+
   it('inside an island the hatch is not picked by its fill, only by its lines', () => {
     const w = build();
     expect(pickAt(w.doc, P(50, 50), 1)).toBeNull();
@@ -85,6 +94,7 @@ describe('selecting and picking notes', () => {
     const broken = { ...w.doc, entities: new Map([...w.doc.entities].filter(([id]) => id !== w.wall)) };
     expect(selectInBox(broken, boxFromCorners(P(190, -40), P(310, 10)), 'window')).toEqual([]);
     expect(pickAt(broken, P(250, -20), 2)).toBeNull();
+    expect(noteTextContains(broken, w.dim, P(250, -17.25))).toBe(false);
     expect(DocIndex.of(broken).visibleExtents()).not.toBeNull();
   });
 });

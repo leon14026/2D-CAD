@@ -85,6 +85,14 @@ export function constraintHasValue(body: ConstraintBody): body is ConstraintBody
   return body.kind === 'distance' || body.kind === 'radius' || body.kind === 'length' || body.kind === 'angle';
 }
 
+/** The valued constraint a pick names: the constraint itself, or the one a driving note holds. */
+export function valuedConstraintOf(doc: Doc, id: number): Constraint | null {
+  const note = doc.notes.get(id);
+  const c = doc.constraints.get(id) ?? (note?.drive !== undefined ? doc.constraints.get(note.drive) : undefined);
+  if (!c || !constraintHasValue(c.body)) return null;
+  return c;
+}
+
 /** The number shown for a constraint (diameter notes show twice the stored radius; angles in radians). */
 export function constraintDisplayValue(doc: Doc, c: Constraint): number | null {
   if (!constraintHasValue(c.body)) return null;

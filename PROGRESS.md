@@ -29,6 +29,12 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Click a dimension's number to redimension
+
+- SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
+  number now opens the entry box to type a new size. A click on the dimension lines only
+  selects. Double-click anywhere on the dimension still edits.
+
 ### 2026-11-27: Phase 13 started
 
 - Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a

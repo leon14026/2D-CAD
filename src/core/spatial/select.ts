@@ -159,15 +159,25 @@ export function distanceToShape(s: Shape, p: Vec2): number {
   return Math.min(...curvesOf(s).map((c) => distanceToCurve(c, p)));
 }
 
+/** True when `p` sits inside a note's text box (the number on a dimension, not its lines). */
+export function noteTextContains(doc: Doc, id: number, p: Vec2): boolean {
+  const r = resolveNotes(doc).get(id);
+  return r?.ok === true && pointInNoteText(r.r, p);
+}
+
+function pointInNoteText(resolved: Resolved, p: Vec2): boolean {
+  for (const prim of resolved.prims) {
+    if (prim.k !== 'text') continue;
+    const box = textBox(prim);
+    if (pointInLoop({ kind: 'polyline', vertices: box.map((v) => ({ x: v.x, y: v.y, bulge: 0 })), closed: true }, p)) return true;
+  }
+  return false;
+}
+
 /** How far a click at `p` is from a note: 0 inside a text box, `radius` inside a hatch, else the distance to its lines. */
 function noteDistance(doc: Doc, n: Note, resolved: Resolved, p: Vec2, radius: number): number {
   let best = Infinity;
-  for (const prim of resolved.prims) {
-    if (prim.k === 'text') {
-      const box = textBox(prim);
-      if (pointInLoop({ kind: 'polyline', vertices: box.map((v) => ({ x: v.x, y: v.y, bulge: 0 })), closed: true }, p)) return 0;
-    }
-  }
+  if (pointInNoteText(resolved, p)) return 0;
   for (const s of pickShapes(resolved.prims)) best = Math.min(best, distanceToShape(s, p));
   if (n.body.kind === 'hatch') {
     const loops = hatchLoops(docEnv(doc), n.body);
