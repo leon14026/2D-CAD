@@ -24,6 +24,14 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-26: Review of #12 (Phase 9)
+
+- Found: the constraint solver stopped quietly after 48 rounds or when it stopped improving,
+  and nothing told the user when constraints conflicted or were not reached. A conflicting
+  pair (radius 3 and radius 4) just left a compromise circle.
+- Fixed: `unmetConstraints` in `src/core/doc/constraints.ts`, and a status message from
+  `src/app/constraint-warning.ts` after any change that leaves one unmet (M9.5).
+
 ### 2026-11-26: Phase 9 gate passed in CI
 
 - Phase gate on #12 is green (Ubuntu runner: 73 browser tests; pan 21.6 ms, zoom 24.7 ms

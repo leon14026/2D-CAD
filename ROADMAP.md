@@ -504,6 +504,9 @@ Implementation notes (for later phases):
   order, Gauss-Seidel style, up to `MAX_SOLVE_ITERS` (48). The stop test is `tolFor(mag, res)` —
   do not pass the previous residual into `tolFor` (an infinite last residual would stop after
   one iteration). The same document always produces the same result.
+  The solver stops quietly when constraints conflict or cannot be reached, so the app asks
+  `unmetConstraints` after every change and shows "N constraints could not be met" (anything
+  further than `CONSTRAINT_MET_TOL`, 1e-6, from true). Added in review of #12.
 - **No extra runtime package.** Blocks, sheets and constraints are TypeScript in `src/core/doc`
   (`blocks.ts`, `sheets.ts`, `constraints.ts`, `layout-commands.ts`) and tools in
   `src/core/tools/layout.ts`. Bound `PointRef`s only: a constraint cannot name a free point.

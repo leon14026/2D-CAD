@@ -124,3 +124,22 @@ test('a block insert is drawn, copied onto a second sheet, and exploded', async 
   expect((await state(page)).inserts).toBe(2);
   expect(errors).toEqual([]);
 });
+
+test('conflicting constraints are reported instead of quietly settling on a compromise', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newDrawing(page);
+  const result = await page.evaluate(async () => {
+    const api = (window as unknown as { __archilite: { runScript: (l: string, s: string) => Promise<{ ok: boolean; error?: string }> } }).__archilite;
+    return api.runScript(
+      'javascript',
+      `const id = cad.circle(0, 0, 2);
+       cad.run('constraint.add', { body: { kind: 'radius', target: id, value: 3 } });
+       cad.run('constraint.add', { body: { kind: 'radius', target: id, value: 4 } });`,
+    );
+  });
+  expect(result.ok).toBe(true);
+  const toast = page.locator('#al-toast');
+  await expect(toast).toContainText('2 constraints could not be met (radius)');
+  await expect(toast).toHaveClass(/is-error/);
+  expect(errors).toEqual([]);
+});

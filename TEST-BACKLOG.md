@@ -285,6 +285,11 @@ as well as `.archilite`.
       `cad.block` it, `cad.insert` two copies, then `cad.sheet` and insert one more. Expect: one
       undo step removes all of it.
 
+- [ ] **M9.5 Conflicting constraints are reported.** Draw a circle. Add a radius constraint of
+      3, then another of 4. Expect: a red message "2 constraints could not be met (radius)" and
+      a circle of radius about 3.5. Undo the second constraint: the message goes away and the
+      radius is 3.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.

@@ -237,6 +237,36 @@ export function maxResidual(doc: Doc): number {
   return max;
 }
 
+/** A constraint further from true than this (drawing units, or a ratio for angles) is "not met". */
+export const CONSTRAINT_MET_TOL = 1e-6;
+
+export interface UnmetConstraint {
+  readonly id: number;
+  readonly kind: ConstraintKind;
+  readonly residual: number;
+}
+
+/**
+ * The constraints on the current sheet that the solver left unsatisfied: conflicting
+ * constraints, ones it could not reach in `MAX_SOLVE_ITERS` rounds, or ones whose geometry
+ * cannot take them. The solver never reports this itself, so the app asks after each change.
+ */
+export function unmetConstraints(doc: Doc): UnmetConstraint[] {
+  const env = docEnv(doc);
+  const out: UnmetConstraint[] = [];
+  for (const c of doc.constraints.values()) {
+    if (!onCurrentSheet(doc, c)) continue;
+    let residual: number;
+    try {
+      residual = residualOf(env, c.body);
+    } catch {
+      residual = Infinity;
+    }
+    if (!(residual <= CONSTRAINT_MET_TOL)) out.push({ id: c.id, kind: c.body.kind, residual });
+  }
+  return out.sort((a, b) => a.id - b.id);
+}
+
 interface Handle {
   readonly id: number;
   readonly key: string;
