@@ -649,17 +649,43 @@ type FlatPiece =
       text: string;
     };
 
+/**
+ * Block explosion repeats a block once per INSERT, so a small file of nested blocks can ask for
+ * millions of objects (ten inserts of a block that holds ten inserts, six levels deep, is a
+ * million lines from about 3 KB of text). Both counts are capped; past either, the file is
+ * refused in plain words rather than hanging the tab or running out of memory.
+ */
+export const MAX_EXPLODED_OBJECTS = 200_000;
+export const MAX_EXPLODED_INSERTS = 200_000;
+
+interface ExplodeBudget {
+  objects: number;
+  inserts: number;
+}
+
+function tooBig(): IoError {
+  return new IoError(
+    `The blocks in this DXF file expand to more than ${MAX_EXPLODED_OBJECTS.toLocaleString('en-US')} objects (or more than ${MAX_EXPLODED_INSERTS.toLocaleString('en-US')} block inserts), which is more than ArchiLite opens. Explode or purge the nested blocks in the program that made it, then export again.`,
+  );
+}
+
 function explodeList(
   entities: readonly DxfEntity[],
   blocks: Map<string, DxfBlock>,
   visiting: Set<string>,
+  budget: ExplodeBudget,
 ): { pieces: FlatPiece[]; skipped: number } {
   const pieces: FlatPiece[] = [];
   let skipped = 0;
   for (const e of entities) {
     if (e.type === 'INSERT') {
+      if (++budget.inserts > MAX_EXPLODED_INSERTS) throw tooBig();
       const key = (lastVal(e.values, 2) ?? '').trim().toLowerCase();
-      if (key === '' || visiting.has(key)) {
+      // A rows-and-columns array of one block (group codes 70 and 71) would need every copy
+      // placed; importing only the first would drop geometry without saying so.
+      const columns = Number(lastVal(e.values, 70) ?? '1');
+      const rows = Number(lastVal(e.values, 71) ?? '1');
+      if (key === '' || visiting.has(key) || columns > 1 || rows > 1) {
         skipped += 1;
         continue;
       }
@@ -670,7 +696,7 @@ function explodeList(
         continue;
       }
       visiting.add(key);
-      const inner = explodeList(block.entities, blocks, visiting);
+      const inner = explodeList(block.entities, blocks, visiting, budget);
       skipped += inner.skipped;
       visiting.delete(key);
       const sx = Math.abs(Number(lastVal(e.values, 41) ?? '1') || 1);
@@ -690,6 +716,7 @@ function explodeList(
     if (e.type === 'TEXT' || e.type === 'MTEXT') {
       const note = textNote(e, 0, 0);
       if (note && note.body.kind === 'text') {
+        if (++budget.objects > MAX_EXPLODED_OBJECTS) throw tooBig();
         pieces.push({
           kind: 'text',
           layer: e.layer,
@@ -709,6 +736,7 @@ function explodeList(
       skipped += 1;
       continue;
     }
+    if (++budget.objects > MAX_EXPLODED_OBJECTS) throw tooBig();
     pieces.push({ kind: 'shape', geom, layer: e.layer, color: e.color, linetype: e.linetype, lineweight: e.lineweight });
   }
   return { pieces, skipped };
@@ -764,7 +792,7 @@ export function importDxf(text: string): DxfImport {
 
   const entities = new Map<number, Entity>();
   const notes = new Map<number, Note>();
-  const exploded = explodeList(parsed.entities, parsed.blocks, new Set());
+  const exploded = explodeList(parsed.entities, parsed.blocks, new Set(), { objects: 0, inserts: 0 });
   let skipped = parsed.skipped + exploded.skipped;
   for (const p of exploded.pieces) {
     const id = nextId++;
