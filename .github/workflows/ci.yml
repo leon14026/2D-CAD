@@ -37,13 +37,15 @@ jobs:
       - name: Licence gate
         run: npm run license:check
 
-      # Phase 6 gate: hatch areas agree with an independent computation. shapely is used only
-      # here, to check the numbers; it is not part of the app.
-      - name: Hatch areas against shapely
+      # Independent oracles: hatch areas (shapely) and exported DXF (ezdxf + shapely).
+      # Both are test tools only; they are not part of the app.
+      - name: Hatch areas and exported DXF against shapely and ezdxf
         run: |
           python3 -m venv "$RUNNER_TEMP/oracle"
-          "$RUNNER_TEMP/oracle/bin/pip" install --quiet shapely==2.2.0
+          "$RUNNER_TEMP/oracle/bin/pip" install --quiet shapely==2.2.0 ezdxf==1.4.3
           "$RUNNER_TEMP/oracle/bin/python" tests/oracle/check_hatch_areas.py
+          EXPORT_DIR="$RUNNER_TEMP/exports" npx vitest run tests/unit/io/emit-oracle.test.ts
+          "$RUNNER_TEMP/oracle/bin/python" tests/oracle/check_exports.py "$RUNNER_TEMP/exports"
 
       - name: Brand guard
         run: npm run brand:check

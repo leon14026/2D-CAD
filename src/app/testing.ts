@@ -4,6 +4,7 @@
  * used by the app itself.
  */
 import { saveDocument } from '../core/doc';
+import { exportDxf, exportPdf, exportSvg } from '../io';
 import { selectInBox, type BoxMode } from '../core/spatial';
 import type { SceneStats } from '../render/scene';
 import type { CanvasView } from '../render/view';
@@ -16,6 +17,9 @@ export interface TestHook {
   state(): { entities: number; selection: number[]; viewport: Viewport; hover: number | null; undo: number; tool: string | null };
   /** The drawing as .archilite text, for checking geometry exactly. */
   saveText(): string;
+  exportDxf(): string;
+  exportSvg(): string;
+  exportPdf(): string;
   /** Selects with a box given in screen pixels, as a drag would. */
   selectBox(x0: number, y0: number, x1: number, y1: number, mode: BoxMode): number[];
   /**
@@ -48,6 +52,9 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
       };
     },
     saveText: () => saveDocument(store.get().session.doc),
+    exportDxf: () => exportDxf(store.get().session.doc),
+    exportSvg: () => exportSvg(store.get().session.doc),
+    exportPdf: () => exportPdf(store.get().session.doc),
     selectBox: (x0, y0, x1, y1, mode) => {
       const vp = store.get().viewport;
       const a = screenToWorld(vp, { x: x0, y: y0 });

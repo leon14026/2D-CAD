@@ -1,8 +1,7 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 5 are merged and live (all five pull requests merged on 2026-11-26). Phase 6
-(annotation) is built and in review as [PR #7](https://github.com/leon14026/2D-CAD/pull/7). Next up:
-Phase 7, import and export (DXF, SVG, PDF, PNG).
+**Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in progress. Next up:
+Phase 8, scripting (JavaScript and Python via Pyodide).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -14,14 +13,65 @@ Phase 7, import and export (DXF, SVG, PDF, PNG).
 | 3. Viewer | Done | [#4](https://github.com/leon14026/2D-CAD/pull/4) | 2026-11-26 |
 | 4. Precision drafting | Done | [#5](https://github.com/leon14026/2D-CAD/pull/5) | 2026-11-26 |
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
-| 6. Annotation | Done, gate passed in CI; awaiting merge | [#7](https://github.com/leon14026/2D-CAD/pull/7) | — |
-| 7. Import and export | Not started | — | — |
+| 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
+| 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
 | 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
+| 10. DWG import (read only) | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 10 (DWG import) planned
+
+- Decision, not code. DWG import is its own phase. It is read only, and it is not next
+  (Phase 8 is next).
+- Method: on-demand `cadkit-wasm` (MIT OR Apache-2.0), pinned when the phase is built.
+  LibreDWG and libdxfrw stay out (GPL). No cloud converter, and no DWG decoder written in
+  this repo. ArchiLite maps model-space lines, circles, arcs, polylines and text the same
+  way DXF import does, and explodes block inserts. The gate and the 3 MB on-demand budget
+  are in `ROADMAP.md`.
+- Until that phase, export DXF from the other program and open that.
+
+### 2026-11-26: Phase 7 (import and export) started
+
+- Phase 6's PR #7 was merged to `main`. This branch starts from that.
+- Built:
+  - **DXF** text R2000 (AC1015): export LINE, CIRCLE, ARC, LWPOLYLINE (with bulges), layers,
+    linetypes; notes as the same primitives the screen draws, plus a HATCH whose boundary is
+    the hatch's loops so areas survive. Import of those types and simple TEXT/MTEXT; unknown
+    objects skipped and counted; binary DXF refused.
+  - **SVG** at 1:1 millimetre size; y converted in JavaScript so a viewer that ignores
+    transforms still measures true sizes. Circles and arcs are cubics so a y-flip cannot
+    reverse sweep.
+  - **PDF** at 1:1 (`72/25.4` pt per millimetre). A 100 mm line is 283.4646 pt. Helvetica
+    (a standard PDF font) so the file stays small; the scale is the gate, not the typeface.
+  - **PNG** from the Canvas 2D painter: paper colour, no grid, rulers or tool rail.
+  - **In the app:** Export next to Save (DXF, SVG, PDF, PNG); Open and drop accept `.dxf`;
+    palette entries; a refused DXF is explained in the toast.
+- Decisions:
+  - No new runtime package. `ezdxf` is CI-only, like `shapely`.
+  - Native `.archilite` stays in `src/core/doc/file.ts`. DXF/SVG/PDF live in `src/io`; PNG
+    in `src/render/png.ts` because it needs a canvas.
+  - Hatch under dimension text is unchanged: exports match the screen (see Phase 6).
+  - Notes do not round-trip as dimensions: they export as exploded line work, text and
+    hatches. Geometry round-trips.
+- Gate (passed in CI, Ubuntu 26.04 runner: 66 browser tests; pan 17.4 ms, zoom 23.5 ms per frame):
+  - **ezdxf + shapely:** 100 mm line at (0,0)–(100,0); bracket outline 5978.539816 mm² and
+    slot 278.539816 mm² with four Ø8 holes; annotate hatch 2400 − 41π. Worst hatch-oracle
+    relative difference still 4.12e-11.
+  - **PDF:** 100 mm line measures 283.4646 pt (unit test and in the browser).
+  - 1,128 unit and property tests; 66 browser tests; 10 approved screenshots (`app-window`
+    refreshed for the Export button and Phase 7 pill). 100% line coverage of `src/core`
+    (branches 99.41%).
+  - Size 103.8 KB of 300 KB. Performance with 20,000 entities, GPU off: pan 7.8 ms, zoom
+    11.8 ms per frame on the workspace; pan 17.4 ms, zoom 23.5 ms on the GitHub runner.
+- Found and fixed while building:
+  - LWPOLYLINE group 42 (bulge) is written on every vertex. Omitting zero bulges shifted
+    later non-zero bulges onto the wrong vertices on import.
+  - PDF has no `arc` operator; dots and circles are cubic Béziers. The file is ASCII so a
+    UTF-8 download keeps xref offsets equal to byte offsets.
 
 ### 2026-11-26: Phase 6 (annotation) complete, PR #7
 

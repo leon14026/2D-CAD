@@ -15,7 +15,9 @@ import {
   type DimStyle,
   type Doc,
 } from '../core/doc';
+import { exportDxf, exportPdf, exportSvg, importDxf, IoError, looksLikeDxf } from '../io';
 import { isSelectable, type SnapKind } from '../core/spatial';
+import { exportPng } from '../render/png';
 import { RULER } from '../render/rulers';
 import type { CanvasView } from '../render/view';
 import { fitRect, panBy, zoomAt } from '../render/viewport';
@@ -212,26 +214,34 @@ export class Actions {
     this.store.set({ viewport: { originX: width / 2, originY: height / 2, pxPerUnit: 4 } });
   }
 
-  /** Opens drawing text. Returns false (and shows why) if the file can't be read. */
+  /** Opens drawing text (.archilite or DXF). Returns false (and shows why) if the file can't be read. */
   openText(text: string, fileName: string | null): boolean {
-    let doc: Doc;
+    const name = fileName ?? 'This file';
+    const fail = (detail: string): false => {
+      this.store.set({ message: { kind: 'error', text: `${name} could not be opened.`, detail } });
+      return false;
+    };
     try {
-      doc = loadDocument(text);
-    } catch (err) {
-      if (err instanceof FileFormatError) {
+      if (looksLikeDxf(text) || name.toLowerCase().endsWith('.dxf')) {
+        const { doc, skipped } = importDxf(text);
+        this.show(doc, fileName);
         this.store.set({
           message: {
-            kind: 'error',
-            text: `${fileName ?? 'This file'} could not be opened.`,
-            detail: err.message,
+            kind: 'info',
+            text:
+              skipped === 0
+                ? `Opened ${name}`
+                : `Opened ${name}. ${skipped === 1 ? 'One object' : `${skipped} objects`} of a kind ArchiLite does not draw ${skipped === 1 ? 'was' : 'were'} left out.`,
           },
         });
-        return false;
+        return true;
       }
+      this.show(loadDocument(text), fileName);
+      return true;
+    } catch (err) {
+      if (err instanceof FileFormatError || err instanceof IoError) return fail(err.message);
       throw err;
     }
-    this.show(doc, fileName);
-    return true;
   }
 
   async openFile(file: File): Promise<void> {
@@ -252,15 +262,40 @@ export class Actions {
   /** Downloads the drawing as an .archilite file. Nothing is uploaded anywhere. */
   save(): void {
     const s = this.store.get();
-    const name = s.fileName ?? `${slug(s.session.doc.settings.title)}${FILE_EXTENSION}`;
-    const blob = new Blob([saveDocument(s.session.doc)], { type: 'application/json' });
+    const name = nativeName(s.fileName, s.session.doc.settings.title);
+    this.download(name, new Blob([saveDocument(s.session.doc)], { type: 'application/json' }));
+    this.store.set({ savedDoc: s.session.doc, fileName: name, message: { kind: 'info', text: `Saved ${name}` } });
+  }
+
+  exportDxf(): void {
+    const doc = this.store.get().session.doc;
+    this.download(`${slug(doc.settings.title)}.dxf`, new Blob([exportDxf(doc)], { type: 'application/dxf' }), `Exported ${slug(doc.settings.title)}.dxf`);
+  }
+
+  exportSvg(): void {
+    const doc = this.store.get().session.doc;
+    this.download(`${slug(doc.settings.title)}.svg`, new Blob([exportSvg(doc)], { type: 'image/svg+xml' }), `Exported ${slug(doc.settings.title)}.svg`);
+  }
+
+  exportPdf(): void {
+    const doc = this.store.get().session.doc;
+    this.download(`${slug(doc.settings.title)}.pdf`, new Blob([exportPdf(doc)], { type: 'application/pdf' }), `Exported ${slug(doc.settings.title)}.pdf`);
+  }
+
+  async exportPng(): Promise<void> {
+    const doc = this.store.get().session.doc;
+    const blob = await exportPng(doc);
+    this.download(`${slug(doc.settings.title)}.png`, blob, `Exported ${slug(doc.settings.title)}.png`);
+  }
+
+  private download(name: string, blob: Blob, message?: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    this.store.set({ savedDoc: s.session.doc, fileName: name, message: { kind: 'info', text: `Saved ${name}` } });
+    if (message) this.store.set({ message: { kind: 'info', text: message } });
   }
 
   layerName(id: number): string {
@@ -275,4 +310,9 @@ export function slug(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return s || 'drawing';
+}
+
+function nativeName(fileName: string | null, title: string): string {
+  if (fileName && fileName.toLowerCase().endsWith(FILE_EXTENSION)) return fileName;
+  return `${slug(title)}${FILE_EXTENSION}`;
 }

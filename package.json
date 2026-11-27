@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "oracle:check": "python3 tests/oracle/check_hatch_areas.py",
+    "oracle:check": "python3 tests/oracle/check_hatch_areas.py && npx vitest run tests/unit/io/emit-oracle.test.ts && python3 tests/oracle/check_exports.py",
     "license:check": "node scripts/license-gate.mjs",
     "brand:check": "node scripts/brand-guard.mjs",
     "size:check": "node scripts/size-budget.mjs",

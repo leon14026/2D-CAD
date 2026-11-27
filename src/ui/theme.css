@@ -215,6 +215,42 @@ kbd {
   justify-content: center;
 }
 
+.al-menu-wrap {
+  position: relative;
+}
+
+.al-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 188px;
+  padding: 4px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: var(--al-chrome);
+  box-shadow: 0 6px 18px rgba(29, 42, 51, 0.14);
+  z-index: 20;
+}
+
+.al-menu-item {
+  display: flex;
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.al-menu-item:hover,
+.al-menu-item:focus-visible {
+  background: var(--al-blue-soft);
+}
+
 .al-icon {
   width: 16px;
   height: 16px;

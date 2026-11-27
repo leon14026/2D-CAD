@@ -34,11 +34,12 @@ no dedicated graphics card.
 
 | Budget | Limit | Enforced from |
 |---|---|---|
-| App download (JS + CSS + HTML, gzipped, excluding Pyodide) | ≤ 300 KB | Phase 0 |
+| App download (JS + CSS + HTML, gzipped, excluding Pyodide and the DWG decoder) | ≤ 300 KB | Phase 0 |
 | Runtime dependencies shipped to users | 0 until a phase justifies one; each must pass the strict allowlist | Phase 0 |
 | Pan/zoom on a 20,000-entity drawing, Chromium with GPU disabled | ≥ 30 fps | Phase 3 |
 | Cold start to interactive | ≤ 2 s on a typical laptop | Phase 3 |
 | Pyodide | loaded only on demand; never part of the base budget | Phase 8 |
+| DWG decoder | loaded only when a `.dwg` is opened; ≤ 3 MB transferred; never part of the base budget | Phase 10 |
 
 ## Accuracy model
 
@@ -58,8 +59,8 @@ no dedicated graphics card.
 ```text
 src/
   core/      geometry kernel, document model, commands  — no DOM; runs in Node, browser or a worker
-  io/        native JSON format, DXF, SVG, PDF, PNG
-  render/    Canvas 2D renderer, viewport transform, spatial index
+  io/        DXF, SVG, PDF (native .archilite stays in core/doc)
+  render/    Canvas 2D renderer, viewport transform, spatial index, PNG export
   ui/        ArchiLite's own interface and design tokens
   script/    JavaScript API and the Pyodide bridge (same commands as the UI)
   app/       wiring, brand constants, entry point
@@ -86,8 +87,9 @@ command with typed parameters, so the UI, keyboard, scripts and tests all go thr
 - **Fonts:** the UI uses B612 (OFL-1.1), shipped as WOFF2 with its licence text, listed in
   `ATTRIBUTION.md` and `NOTICE`. Any other font must be OFL-1.1 or more permissive and listed the
   same way. Code-like text (file contents, key names) uses the system's monospace font.
-- **Interoperability:** ArchiLite reads and writes DXF, a publicly documented format. DWG is out of
-  scope.
+- **Interoperability:** ArchiLite reads and writes DXF, a publicly documented format. DWG import
+  is Phase 10: read only, on demand, through a permissive decoder. DWG export stays out of scope.
+  LibreDWG stays forbidden.
 - **Name:** before any public launch beyond GitHub, run a trademark search for "ArchiLite" in
   classes 9 and 42 on the Canadian (CIPO) and US (USPTO) registers.
 
@@ -439,11 +441,24 @@ Implementation notes (for later phases):
 Builds: DXF import and export, SVG, PDF at true scale, PNG.
 
 Gate:
-- [ ] CI Python oracle (`ezdxf` + `shapely`) verifies lengths, areas and positions of every
+- [x] CI Python oracle (`ezdxf` + `shapely`) verifies lengths, areas and positions of every
       exported test drawing.
-- [ ] A 100 mm line in a 1:1 PDF measures 283.4646 pt.
+- [x] A 100 mm line in a 1:1 PDF measures 283.4646 pt.
 - [ ] Manual: open an export in LibreCAD and in Onshape or SolidWorks, measure 5 features, agree to
       0.001 mm.
+
+Implementation notes (for later phases):
+- **`src/io`** holds DXF, SVG and PDF. Native `.archilite` stays in `src/core/doc/file.ts`. PNG
+  uses the Canvas 2D painter (`src/render/png.ts`) because it needs a canvas. No new runtime
+  package: DXF, SVG and PDF are written here. `ezdxf` is CI-only, like `shapely`.
+- **DXF** is the R2000 (AC1015) text form. Geometry is LINE, CIRCLE, ARC and LWPOLYLINE (with
+  bulges). Notes export as the same primitives the screen draws (lines, arrows, text) plus a
+  HATCH whose boundary is the hatch's loops, so areas survive. Import reads those entity types
+  and simple TEXT/MTEXT; anything else is skipped and counted. Binary DXF is refused.
+- **SVG and PDF** are 1:1. One millimetre on the drawing is one millimetre on the page. PDF user
+  space is scaled by `72/25.4` pt per millimetre, so a 100 mm line is 283.4646… pt. PDF text uses
+  Helvetica (a standard PDF font) so the file stays small; the scale is the gate, not the typeface.
+- **Hatch under dimension text** is unchanged: exports match the screen (see Phase 6).
 
 ### Phase 8 — Scripting (JavaScript and Python via Pyodide)
 
@@ -463,6 +478,53 @@ Gate:
 - [ ] Constraints re-solve to the same result after every edit.
 - [ ] A real part drawing is produced start to finish in ArchiLite.
 
+### Phase 10 — DWG import (read only)
+
+Builds: open a `.dwg` into the same kind of document DXF import already produces. No DWG writer.
+
+This phase does not start until Phase 7's gate has passed in CI. It does not have to wait for
+Phase 8 or 9, but it is not next: Phase 8 is next.
+
+Method:
+
+- **On-demand `cadkit-wasm`** (MIT OR Apache-2.0, the same terms as ArchiLite), version pinned
+  when the phase is built. It reads DWG from AC1014 (R14) through AC1032 (2018), which is what
+  current programs still write, and it does not write DWG. Its own rules are clean-room: no GPL
+  CAD code and no vendor SDK. It stays a runtime dependency (the licence gate checks it). It is
+  not copied into `src/`.
+- **Loaded only for a DWG.** `openFile` looks at the first six bytes. `AC10` means DWG, and only
+  then does the page fetch the decoder. A `.dxf` or `.archilite` never downloads it. The base
+  300 KB budget does not include it. Its own budget is ≤ 3 MB transferred (the package is about
+  2.6 MB of WebAssembly today). `scripts/size-budget.mjs` excludes that chunk the way it will
+  exclude Pyodide.
+- **ArchiLite still owns the document.** The decoder's model-space entities are mapped with the
+  same rules as DXF import: lines, circles, arcs, polylines with bulges, and simple text become
+  entities and text notes. Layers, units, colour, linetype and lineweight follow that mapping.
+  Block inserts in model space are exploded into those entities, so a drawing that is only
+  inserts is not empty. There is no block editing here (that is Phase 9). Paper layouts, hatches,
+  dimensions, splines, ellipses, solids, images and proxies are skipped and counted. The toast
+  says how many. Encrypted files, and versions outside AC1014–AC1032, are refused in plain words.
+- **Not the alternatives.** LibreDWG is GPL-3.0 and libdxfrw is GPL; either would fail the
+  licence gate. A vendor SDK is not our licence and is not a static page. A cloud converter
+  would send the drawing off the machine. A decoder written in this repo would reimplement a
+  paged, checksummed, LZ77-compressed container (Reed-Solomon as well on the 2007 generation);
+  a wrong bit is a wrong length, and that is the failure this phase is not allowed to ship.
+  Smaller MIT readers exist, but they do not publish a provenance record we can check, so they
+  are not the plan. If `cadkit-wasm` fails the licence gate, the 3 MB budget, or a geometry
+  fixture, the phase stops. It does not switch to a GPL library.
+
+Gate:
+
+- [ ] Committed DWG fixtures, made by another program and reviewed as a diff, for a 100 mm line,
+      a circle, an arc and a closed polyline with a bulge, in AC1015 and in AC1027 or AC1032.
+      Import matches the hand-calculated geometry to 1e-6 mm. CI does not install a GPL tool to
+      do this.
+- [ ] The base download stays ≤ 300 KB. Opening a DWG is what fetches the decoder, and that
+      fetch is ≤ 3 MB. Opening the example does not fetch it.
+- [ ] Manual: open a DWG from LibreCAD or from Onshape or SolidWorks, measure 5 features, agree
+      to 0.001 mm (`TEST-BACKLOG.md`).
+
 ## Out of scope for v1
 
-DWG, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration.
+DWG export, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration.
+DWG import is Phase 10, above.

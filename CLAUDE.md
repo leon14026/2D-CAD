@@ -18,7 +18,8 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
 2. **No dedicated GPU.** Canvas 2D only. Never use WebGL or WebGPU. Browser tests run in Chromium with
    `--disable-gpu --disable-software-rasterizer`.
 3. **Lightweight.** ≤ 300 KB gzipped (enforced by `npm run size:check`). Zero runtime dependencies unless a
-   phase justifies one and it passes the strict licence allowlist. Pyodide (Phase 8) loads only on demand.
+   phase justifies one and it passes the strict licence allowlist. Pyodide (Phase 8) and the DWG decoder
+   (Phase 10, `cadkit-wasm`) load only on demand and are outside that 300 KB.
 4. **Original design.** ArchiLite's own name, palette, icons and layout. Command palette and cursor-side
    coordinate entry, not a ribbon or bottom command line. Do not imitate AutoCAD's look.
 5. **Clean licensing.** MIT OR Apache-2.0. Never add: GPL/AGPL/LGPL code; Autodesk names in the product
@@ -74,7 +75,7 @@ npm run test:coverage     # unit + property tests; fails if src/core coverage < 
 npm test                  # same tests without coverage
 npm run license:check     # licence gate (scripts/license-gate.mjs)
 npm run brand:check       # brand guard (scripts/brand-guard.mjs)
-npm run oracle:check      # hatch areas against shapely (python3 with shapely; Phase 6)
+npm run oracle:check      # hatch areas against shapely; exported DXF against ezdxf (Phase 7)
 npm run build             # production build to dist/
 npm run size:check        # 300 KB gzipped budget
 npm run test:e2e          # Playwright, Chromium with GPU disabled; serves dist/, so run
@@ -94,8 +95,9 @@ src/core/      pure TypeScript: no DOM, no imports from outside src/core, no pac
   spatial/     R-tree index, window/crossing/pick selection (Phase 3), snaps (Phase 4)
   tools/       interactive tools as state machines, typed input, tracking, driver (Phase 4);
                modify tools in modify.ts (Phase 5), annotation tools in annotate.ts (Phase 6)
+src/io/        DXF import/export, SVG, PDF (Phase 7); no runtime packages
 src/render/    Canvas 2D: scene.ts (entities), notes.ts (annotations), view.ts (canvases), rulers,
-               grid, viewport maths
+               grid, viewport maths, png.ts (PNG export)
 src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, dom.ts (el, icons),
                panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor)
 src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
@@ -105,9 +107,10 @@ src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars,
 src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
 public/        static files copied to the site as-is (examples/bracket.archilite)
 docs/          file-format.md: the .archilite format, kept in step with src/core/doc/file.ts
-tests/unit/    Vitest; tests/unit/core mirrors src/core
+tests/unit/    Vitest; tests/unit/core mirrors src/core; tests/unit/io covers DXF/SVG/PDF
 tests/e2e/     Playwright browser tests
-tests/oracle/  independent checks in Python (hatch areas against shapely), run in CI
+tests/oracle/  independent checks in Python (hatch areas against shapely; exported DXF against
+               ezdxf + shapely), run in CI
 scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc types)
 ```
 
@@ -181,8 +184,9 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
   `.filter`, because filtering made one suite ten times slower.
 - Coverage thresholds live in `vite.config.ts`. Do not lower them; add tests instead.
 - Independent oracles are Python scripts in `tests/oracle/` that read committed fixtures and check
-  the numbers with a different implementation (`shapely`). Their packages are test tools only and
-  never ship. Fixtures are refreshed only with a look at the diff.
+  the numbers with a different implementation (`shapely` for hatch areas; `ezdxf` + `shapely` for
+  exported DXF). Their packages are test tools only and never ship. Fixtures are refreshed only
+  with a look at the diff.
 - Screenshot clips start 2 px inside the ruler band (`drawingClip`): the rulers' tick marks
   overshoot it by a fraction of a pixel and caused a flake. Run a new screenshot test with
   `--repeat-each=5` before committing its baseline.

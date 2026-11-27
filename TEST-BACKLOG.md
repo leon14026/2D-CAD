@@ -223,12 +223,39 @@ dimension style; select a dimension, text or hatch to see and edit its fields.
       visible (second column if the window is short)? Does anything sit under the rail when you
       press F to fit?
 
+### Phase 7: import and export
+
+On the live site once this phase's PR is merged. Export is next to Save; Open and drop accept DXF
+as well as `.archilite`.
+
+- [ ] **M7.1 DXF in LibreCAD.** Load the example, Export as DXF, open the file in LibreCAD.
+      Measure these five features (target: agree to 0.001 mm):
+      1. Overall plate 100 × 60 mm.
+      2. Corner radius 5 mm.
+      3. Hole Ø 8 mm.
+      4. Slot length 30 mm (between the centres of the round ends: 20 mm straight + two 5 mm radii).
+      5. Hole inset: centre 10 mm from the two nearest edges.
+- [ ] **M7.2 DXF in Onshape or SolidWorks.** Repeat M7.1 in Onshape or SolidWorks with the same
+      file. Note anything that fails to appear (hatches, text, centre lines).
+- [ ] **M7.3 Printed 1:1 PDF.** Start a new drawing. Press L, type `0,0` Enter, `100,0` Enter, Esc.
+      Export as PDF. Print at 100% (no "fit to page"). Measure the line with a ruler: it should be
+      100 mm. If you cannot print, open the PDF, set the page scale to 100% and check that the
+      page's MediaBox is 283.46 pt per 100 mm of drawing plus margin.
+- [ ] **M7.4 SVG in the browser.** Export the example as SVG and open the file. The plate should
+      look like the drawing, y up, holes round not oval.
+- [ ] **M7.5 PNG.** Export as PNG. The drawing should fill the image on paper colour, without the
+      rulers or the tool rail.
+- [ ] **M7.6 Open a DXF from elsewhere.** If you have a simple DXF from LibreCAD or another
+      program (lines, circles, a polyline), Open it. Do the lengths in the selection panel match
+      the other program? Note anything dropped (the toast will say how many objects were left out).
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 7:** open exported DXF files in LibreCAD and in Onshape or SolidWorks and measure 5
-  features (target: 0.001 mm agreement). Print a 1:1 PDF and measure a 100 mm line with a ruler.
 - **Phase 8:** run the example Python scripts on the work laptop. Check that the first Python load
   is acceptable and later loads are fast.
 - **Phase 9:** draw a complete real part drawing start to finish in ArchiLite.
+- **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
+  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
+  paper space). Until this phase, use DXF.
