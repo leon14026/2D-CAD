@@ -1,9 +1,11 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live, with a follow-up on DXF import ([#13](https://github.com/leon14026/2D-CAD/pull/13)).
-A second follow-up explodes DXF block inserts ([#15](https://github.com/leon14026/2D-CAD/pull/15), in review).
-Phase 10 (DWG) is planned, and Phase 11 (phone browser, [#11](https://github.com/leon14026/2D-CAD/pull/11)) is planned.
-Phase 10 and Phase 11 do not depend on each other.
+**Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
+and [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT) are on `main`.
+Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
+([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 12 (live DXF dimensions)
+is planned in [#16](https://github.com/leon14026/2D-CAD/pull/16) and does not wait on
+Phase 10 or 11.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -21,10 +23,30 @@ Phase 10 and Phase 11 do not depend on each other.
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
+| 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: DXF INSERT explode merged
+
+- PR [#15](https://github.com/leon14026/2D-CAD/pull/15) merged to `main`. Kitchen and bath
+  fixtures from DXF `INSERT` explode on import. Dimensions and hatches stay skipped.
+
+### 2026-11-27: Phase 11 plan merged
+
+- PR [#11](https://github.com/leon14026/2D-CAD/pull/11) merged to `main`. Docs only; no phone
+  layout yet. Phase 10 (DWG) and Phase 11 (phone) still do not depend on each other.
+
+### 2026-11-26: Phase 12 (live DXF dimensions) planned
+
+- Decision, not code. Recorded in PR [#16](https://github.com/leon14026/2D-CAD/pull/16).
+  Option 2 from the floorplan review: a DXF `DIMENSION` becomes an
+  ArchiLite note that stores where to measure, never the other program's number. Unbound
+  defpoints, text overrides, and ordinate dims stay skipped. Hatches stay skipped.
+- Independent of Phase 10 (DWG) and Phase 11 (phone). DWG import will use the same mapper
+  once this phase has merged. Needs Phase 7, and INSERT explode so fixture geometry can bind.
 
 ### 2026-11-26: Review of #15 (DXF INSERT explode)
 

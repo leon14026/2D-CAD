@@ -303,10 +303,15 @@ as well as `.archilite`.
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions,
-  paper space). Until this phase, use DXF. This can wait until after the phone work.
+  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions
+  until Phase 12, paper space). Until this phase, use DXF. This can wait until after the phone
+  work.
 - **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
   Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
   `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
   where the save went (Files, the share sheet, or a download). Phase 10 is not required for
   this.
+- **Phase 12:** open the floorplan DXF. Treat units as inches. Expect: original wall
+  dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
+  walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
+  was overtyped in the other program is still left out. Hatches are still left out.

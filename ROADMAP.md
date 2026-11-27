@@ -457,11 +457,11 @@ Implementation notes (for later phases):
   and simple TEXT/MTEXT (`%%c`/`%%d`/`%%p` become Ø/°/±; `%%u`/`%%o` toggles are dropped).
   INSERT is exploded into those same types (nested inserts included; layer 0 takes the
   insert's layer). Non-uniform X/Y scale, rows-and-columns INSERT arrays, missing blocks,
-  DIMENSION, HATCH and the rest are skipped and counted. Explosion stops at 200,000 objects or
-  200,000 inserts and refuses the file in plain words (a 3 KB file of nested blocks can ask
-  for a million lines). Binary DXF is refused. After open, the status bar unit label
-  cycles the name without scaling (a millimetre-tagged inch drawing becomes inches);
-  Ctrl+K also has "Scale the drawing to …".
+  DIMENSION, HATCH and the rest are skipped and counted (DIMENSION becomes a live note in
+  Phase 12). Explosion stops at 200,000 objects or 200,000 inserts and refuses the file in
+  plain words (a 3 KB file of nested blocks can ask for a million lines). Binary DXF is
+  refused. After open, the status bar unit label cycles the name without scaling (a
+  millimetre-tagged inch drawing becomes inches); Ctrl+K also has "Scale the drawing to …".
 - **SVG and PDF** are 1:1. One millimetre on the drawing is one millimetre on the page. PDF user
   space is scaled by `72/25.4` pt per millimetre, so a 100 mm line is 283.4646… pt. PDF text uses
   Helvetica (a standard PDF font) so the file stays small; the scale is the gate, not the typeface.
@@ -543,8 +543,9 @@ Method:
   same rules as DXF import: lines, circles, arcs, polylines with bulges, and simple text become
   entities and text notes. Layers, units, colour, linetype and lineweight follow that mapping.
   Block inserts in model space are exploded into those entities, so a drawing that is only
-  inserts is not empty. There is no block editing here (that is Phase 9). Paper layouts, hatches,
-  dimensions, splines, ellipses, solids, images and proxies are skipped and counted. The toast
+  inserts is not empty. There is no block editing here (that is Phase 9). Paper layouts,
+  hatches, splines, ellipses, solids, images and proxies are skipped and counted. Dimensions
+  use the Phase 12 mapper when that phase has merged, and are skipped until then. The toast
   says how many. Encrypted files, and versions outside AC1014–AC1032, are refused in plain words.
 - **Not the alternatives.** LibreDWG is GPL-3.0 and libdxfrw is GPL; either would fail the
   licence gate. A vendor SDK is not our licence and is not a static page. A cloud converter
@@ -573,7 +574,7 @@ painter. No second app, no install step, no store listing.
 
 This phase does not use anything from Phase 9 or Phase 10. It can be built as soon as Phase 8
 has merged, and Phase 10 can be built before it, after it, or left for later. A phone build
-without DWG is complete.
+without DWG or live DXF dimensions is complete.
 
 What a phone gets today: below 900px the layer and selection panels are removed
 (`theme.css`) and there is no control that brings them back. A one-finger drag on empty
@@ -622,7 +623,49 @@ Gate:
       read 100.000 in the selection sheet, save, and open that file again
       (`TEST-BACKLOG.md`).
 
+### Phase 12 — Live DXF dimensions
+
+Builds: DXF `DIMENSION` becomes an ArchiLite dimension note (where to measure, never the
+number). Hatches stay skipped.
+
+This phase does not start until Phase 7's gate has passed in CI. It does not wait for
+Phase 9, Phase 10, or Phase 11. INSERT explode (#15) should already be in, so defpoints can
+bind to exploded fixture geometry as well as walls. DWG import (Phase 10) uses the same
+mapper once this phase has merged.
+
+Method:
+
+- **Bind, do not copy the number.** A DXF `DIMENSION` has defpoints (groups 13/14, and 10
+  for the dimension line). Each defpoint is bound with the existing `refAt` to an end, mid,
+  centre or vertex on imported geometry, using `tolFor`. Both ends must bind. The note is
+  `linear`, `aligned`, `radius`, `diameter` or `angle` from the DXF dim type (group 70).
+  The displayed length is resolved from the geometry every time, like any ArchiLite
+  dimension. Group 42 (the stored measurement) and group 1 (the text, including `<>`) are
+  never copied into the document.
+- **Skip rather than fake it.** A defpoint that is not on a named point, an ordinate
+  dimension (no ArchiLite kind), or a dimension whose text is an override (group 1 set and
+  not `<>`) is skipped and counted. Do not fall back to a free `PointRef`: that would
+  freeze one end. Do not explode the anonymous `*D` block into lines and text: that would
+  draw a dead number next to the live one.
+- **ArchiLite look.** The note uses the current dimension style (ISO by default). Do not
+  import another program's dim style, arrows or fonts. Text placement `at` comes from the
+  DXF dimension-line point.
+- **Hatches stay skipped.** A DXF `HATCH` is a finished fill. Mapping its loops onto
+  ArchiLite hatch notes is a later stretch, not this phase.
+
+Gate:
+
+- [ ] A committed DXF fixture: a 100 mm horizontal line and a linear `DIMENSION` between
+      its ends. Import is one entity and one linear note; `resolveNotes` reads 100; the
+      saved document has no stored length. Moving an end to 140 mm makes the note read 140.
+      A dimension whose text is `OVER` is skipped. Hand-calculated to 1e-9. The floorplan
+      itself is not committed.
+- [ ] Manual: open the floorplan DXF, treat units as inches, pick an imported garage
+      dimension (254 or 250), move the wall, and watch the number change (`TEST-BACKLOG.md`).
+      Overridden text and hatches are still left out.
+
 ## Out of scope for v1
 
 DWG export, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration,
-a native phone app. DWG import is Phase 10. The phone browser is Phase 11.
+a native phone app. DWG import is Phase 10. The phone browser is Phase 11. Live DXF dimensions
+are Phase 12. Frozen DXF dimension graphics (exploded `*D` blocks) stay out.
