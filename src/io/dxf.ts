@@ -6,7 +6,7 @@
  * draws. Import reads those entity types back; TEXT/MTEXT drop %% underline
  * toggles and turn %%c / %%d / %%p into Ø / ° / ±. MTEXT alignment, font, height
  * and paragraph commands (`\A1;`, `\F…;`, `\P`) are dropped or turned into
- * newlines; they are not shown as text. Block INSERT is exploded into those
+ * newlines; they are not shown as text. `\U+XXXX` becomes that character. Block INSERT is exploded into those
  * same types (nested inserts included). Anything else is skipped and counted.
  *
  * The writer targets the R2000 (AC1015) text form. Binary DXF is refused.
@@ -612,6 +612,14 @@ function decodeMtextMarkup(text: string): string {
     if (n === 'P' || n === 'X') {
       out += '\n';
       i += 2;
+      continue;
+    }
+    if (n === 'U' && text[i + 2] === '+' && /^[0-9a-fA-F]{4}$/.test(text.slice(i + 3, i + 7))) {
+      // \U+00B1: a character by its code. It has no `;`, so it must not fall into the
+      // generic command branch below, which would swallow text up to the next `;`.
+      const code = parseInt(text.slice(i + 3, i + 7), 16);
+      if (code >= 32) out += String.fromCodePoint(code);
+      i += 7;
       continue;
     }
     const lower = n.toLowerCase();

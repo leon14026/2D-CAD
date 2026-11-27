@@ -293,6 +293,20 @@ describe('DXF import of a minimal file', () => {
     expect(texts).toEqual(['GREAT ROOM', 'Ø10°', '±0.1%', 'A%%z%%']);
   });
 
+  it('turns MTEXT \\U+XXXX escapes into characters without eating the text after them', () => {
+    const dxf = [
+      '0', 'SECTION', '2', 'ENTITIES',
+      '0', 'MTEXT', '8', '0', '10', '0', '20', '0', '40', '5',
+      '1', 'R10 \\U+00B10.5; DIA \\U+2205 12 \\U+0007 ok',
+      '0', 'ENDSEC', '0', 'EOF', '',
+    ].join('\n');
+    const texts = [...importDxf(dxf).doc.notes.values()]
+      .map((n) => n.body)
+      .filter((b) => b.kind === 'text')
+      .map((b) => (b.kind === 'text' ? b.text : ''));
+    expect(texts).toEqual(['R10 ±0.5; DIA ∅ 12  ok']);
+  });
+
   it('strips MTEXT alignment, font and paragraph commands', () => {
     const dxf = [
       '0',
