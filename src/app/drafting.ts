@@ -25,6 +25,7 @@ import { screenToWorld, type Point } from '../render/viewport';
 import type { CursorEntry } from '../ui/entry';
 import { formatCoordinate } from '../ui/format';
 import { PICK_RADIUS } from './interaction';
+import { isPhone } from './phone';
 import type { AppState, Store } from './store';
 
 /** How close (CSS pixels) the cursor must be to a snap point. */
@@ -80,13 +81,18 @@ export class DraftingController {
   start(id: ToolId): void {
     const s = this.store.get();
     this.entry.clear();
-    this.store.set({ tool: startTool(this.drafting(s), id, this.selection(s)).active, toolError: null, hover: null });
+    this.store.set({
+      tool: startTool(this.drafting(s), id, this.selection(s)).active,
+      toolError: null,
+      hover: null,
+      boxSelect: false,
+    });
   }
 
   stop(): void {
     if (!this.active) return;
     this.entry.clear();
-    this.store.set({ tool: null, toolError: null });
+    this.store.set({ tool: null, toolError: null, boxSelect: false });
   }
 
   /** Where the next point goes if the cursor is at `p`: snapped, tracked or as it is. */
@@ -143,7 +149,9 @@ export class DraftingController {
     } else {
       this.view.setDraft(null);
     }
-    this.entry.show({ tool: TOOLS[s.tool.id].label, prompt, at: this.cursor, readout, error: s.toolError });
+    const at =
+      this.cursor && isPhone() ? { x: this.cursor.x, y: this.cursor.y - 40 } : this.cursor;
+    this.entry.show({ tool: TOOLS[s.tool.id].label, prompt, at, readout, error: s.toolError });
     return resolved?.point ?? null;
   }
 

@@ -34,12 +34,20 @@ export class CursorEntry {
     this.prompt = el('span', { className: 'al-entry-prompt' });
     this.input = el('input', {
       className: 'al-entry-input',
-      attrs: { type: 'text', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Type a point or a number' },
+      attrs: { type: 'text', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Type a point or a number', inputmode: 'decimal' },
     });
     this.readout = el('div', { className: 'al-entry-readout' });
     this.error = el('div', { className: 'al-entry-error', attrs: { role: 'alert' } });
     this.keys = el('div', { className: 'al-entry-keys' });
     root.append(el('div', { className: 'al-entry-head' }, this.head, this.prompt), this.input, this.readout, this.error, this.keys);
+    const vv = window.visualViewport;
+    if (vv) {
+      const onVv = () => {
+        if (!this.root.hidden) this.place();
+      };
+      vv.addEventListener('resize', onVv);
+      vv.addEventListener('scroll', onVv);
+    }
   }
 
   /** True while the user is typing into the box. */
@@ -88,11 +96,30 @@ export class CursorEntry {
     this.place();
   }
 
-  /** Keeps the box beside the cursor and inside the drawing area. */
+  /** Keeps the box beside the cursor and inside the drawing area (or the visual viewport on a phone). */
   private place(): void {
-    const { x, y } = this.last;
     const w = this.root.offsetWidth;
     const h = this.root.offsetHeight;
+    const phone = document.body.classList.contains('al-phone');
+    if (phone) {
+      const stage = this.root.parentElement?.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const viewLeft = vv?.offsetLeft ?? 0;
+      const viewTop = vv?.offsetTop ?? 0;
+      const viewW = vv?.width ?? window.innerWidth;
+      const viewH = vv?.height ?? window.innerHeight;
+      const absX = (stage?.left ?? 0) + this.last.x;
+      const absY = (stage?.top ?? 0) + this.last.y;
+      let left = absX + OFFSET;
+      let top = absY + OFFSET;
+      if (left + w > viewLeft + viewW - 8) left = absX - OFFSET - w;
+      if (top + h > viewTop + viewH - 8) top = absY - OFFSET - h;
+      left = Math.min(Math.max(viewLeft + 8, left), viewLeft + viewW - w - 8);
+      top = Math.min(Math.max(viewTop + 8, top), viewTop + viewH - h - 8);
+      this.root.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+      return;
+    }
+    const { x, y } = this.last;
     const parent = this.root.parentElement;
     const maxX = (parent?.clientWidth ?? Infinity) - 8;
     const maxY = (parent?.clientHeight ?? Infinity) - 8;

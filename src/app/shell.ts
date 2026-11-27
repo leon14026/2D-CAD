@@ -14,6 +14,7 @@ import { ToolRail } from '../ui/rail';
 import type { Actions } from './actions';
 import type { DraftingController } from './drafting';
 import { isTyping } from './interaction';
+import { isPhone } from './phone';
 import { isDirty, type AppState, type Store } from './store';
 import { ANNOTATE_BUTTONS, DRAW_BUTTONS, LAYOUT_BUTTONS, MODIFY_BUTTONS, SNAP_NAMES, TOOL_BUTTONS } from './tools';
 
@@ -42,6 +43,7 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     { label: 'Zoom in', keys: '+', run: () => actions.zoom(1.25) },
     { label: 'Zoom out', keys: '−', run: () => actions.zoom(0.8) },
     { label: 'Select all', keys: 'Ctrl A', run: () => actions.selectAll() },
+    { label: 'Select with a box', run: () => actions.beginBoxSelect() },
     { label: 'Clear the selection', keys: 'Esc', run: () => actions.clearSelection(), enabled: () => s().selection.size > 0 },
     { label: 'Undo', keys: 'Ctrl Z', run: () => actions.undo(), enabled: () => canUndo(s().session) },
     { label: 'Redo', keys: 'Ctrl Y', run: () => actions.redo(), enabled: () => canRedo(s().session) },
@@ -63,7 +65,7 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
       },
     ]),
     { label: 'Open a drawing…', keys: 'Ctrl O', run: () => requireElement('#al-file', HTMLInputElement).click() },
-    { label: 'Save the drawing', keys: 'Ctrl S', run: () => actions.save() },
+    { label: 'Save the drawing', keys: 'Ctrl S', run: () => void actions.save() },
     { label: 'Export as DXF', run: () => actions.exportDxf() },
     { label: 'Export as SVG', run: () => actions.exportSvg() },
     { label: 'Export as PDF (1:1)', run: () => actions.exportPdf() },
@@ -158,7 +160,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   requireElement('#al-history', HTMLElement).append(undoButton, redoButton);
   requireElement('#al-file-actions', HTMLElement).append(
     el('button', { className: 'al-button', attrs: { type: 'button' }, on: { click: () => fileInput.click() } }, icon('open'), 'Open'),
-    el('button', { className: 'al-button al-button-primary', attrs: { type: 'button' }, on: { click: () => actions.save() } }, icon('save'), 'Save'),
+    el('button', { className: 'al-button al-button-primary', attrs: { type: 'button' }, on: { click: () => void actions.save() } }, icon('save'), 'Save'),
     exportMenu(actions),
     el(
       'button',
@@ -221,6 +223,12 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   // Messages.
   const toast = requireElement('#al-toast', HTMLElement);
   let toastTimer = 0;
+  const sheetBackdrop = el('div', {
+    className: 'al-sheet-backdrop',
+    attrs: { hidden: '' },
+    on: { click: () => actions.closeSheets() },
+  });
+  document.body.append(sheetBackdrop);
 
   const render = (s: AppState, p: AppState | null) => {
     const doc = s.session.doc;
@@ -260,6 +268,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     document.body.classList.toggle('al-hide-left', !s.showLayers);
     document.body.classList.toggle('al-hide-right', !s.showSelection);
     document.body.classList.toggle('al-show-script', s.showScript);
+    sheetBackdrop.hidden = !(isPhone() && (s.showLayers || s.showSelection || s.showScript));
     const scriptToggle = document.getElementById('al-script-toggle');
     if (scriptToggle) {
       scriptToggle.setAttribute('aria-pressed', String(s.showScript));
@@ -308,7 +317,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     if (mod && key === 'z' && !e.shiftKey) return run(() => actions.undo());
     if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) return run(() => actions.redo());
     if (mod && key === 'a') return run(() => actions.selectAll());
-    if (mod && key === 's') return run(() => actions.save());
+    if (mod && key === 's') return run(() => void actions.save());
     if (mod && key === 'o') return run(() => fileInput.click());
     if (mod || e.altKey) return;
     if (e.shiftKey && key === 's') return run(() => actions.toggleSnaps());
@@ -316,7 +325,12 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     if (e.shiftKey && key === 't') return run(() => actions.togglePolar());
     const tool = e.shiftKey ? undefined : TOOL_BUTTONS.find((b) => b.key === key);
     if (tool) return run(() => drafting.start(tool.id));
-    if (key === 'escape') return run(() => actions.clearSelection());
+    if (key === 'escape') {
+      return run(() => {
+        if (store.get().boxSelect) store.set({ boxSelect: false });
+        actions.clearSelection();
+      });
+    }
     if (key === 'delete' || key === 'backspace') return run(() => actions.deleteSelection());
     if (key === 'f') return run(() => actions.fit());
     if (key === 'g') return run(() => actions.toggleGrid());

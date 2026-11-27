@@ -4,6 +4,7 @@ import { buildInfo } from './app/build-info';
 import { DraftingController } from './app/drafting';
 import { watchConstraints } from './app/constraint-warning';
 import { attachInteraction } from './app/interaction';
+import { watchPhone } from './app/phone';
 import { mountShell } from './app/shell';
 import { initialState, Store } from './app/store';
 import { installTestHook } from './app/testing';
@@ -33,6 +34,13 @@ mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store, {
 });
 mountScriptPanel(requireElement('#al-script-panel', HTMLElement), store, actions);
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);
+watchPhone((phone) => {
+  store.set(
+    phone
+      ? { showLayers: false, showSelection: false, showScript: false }
+      : { showLayers: true, showSelection: true },
+  );
+});
 attachInteraction(store, view, drafting, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });
 installTestHook(store, view, actions);
 // Last on purpose: it sets a message from inside a listener, and listeners after it would see the

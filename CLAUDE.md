@@ -107,9 +107,10 @@ src/ui/        design system: theme.css tokens, palette.ts colours, fonts.css, d
                panels, command palette, rail.ts (tool rail), entry.ts (box beside the cursor),
                script-panel.ts
 src/app/       store.ts (state), actions.ts (every user action), shell.ts (bars, shortcuts,
-               palette list), interaction.ts (mouse), drafting.ts (tools on screen: snaps,
-               tracking, keys), tools.ts (tool names, icons, keys), testing.ts (?test hook),
-               python.ts (loads Pyodide from ./pyodide/ on demand);
+               palette list), interaction.ts (mouse and touch), drafting.ts (tools on screen:
+               snaps, tracking, keys), tools.ts (tool names, icons, keys), testing.ts (?test hook),
+               python.ts (loads Pyodide from ./pyodide/ on demand), phone.ts (`body.al-phone` at
+               700px), save.ts (picker / share / download);
                brand.ts holds the product name (the only place it is defined)
 src/inspect/   file inspector page (inspect.html): owner's tool for checking .archilite files
 public/        static files copied to the site as-is (examples/bracket.archilite)
@@ -173,9 +174,9 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Icons are ArchiLite's own line drawings in `src/ui/dom.ts` (16 × 16, 1.6 stroke).
 - The steel rulers are the one bold element. Keep everything else quiet.
 - Look at screenshots of any visual change before committing it.
-- Below 900px the side panels are hidden and cannot be opened. That is the desk layout
-  squeezed, not the phone layout. Phase 11 (700px and under) is the plan for a phone browser:
-  same page, tool strip, sheets, two-finger pan and pinch. Do not invent a second app for it.
+- Below 900px the side panels are hidden. That is the desk layout squeezed. At 700px and under,
+  `body.al-phone` switches to the phone layout: bottom tool strip, layers/selection/script as
+  sheets, one-finger pan, two-finger pan and pinch. Do not invent a second app for it.
 
 ## Performance rules
 

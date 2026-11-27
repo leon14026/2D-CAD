@@ -21,13 +21,20 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 8. Scripting (JavaScript, Python via Pyodide) | Done | [#9](https://github.com/leon14026/2D-CAD/pull/9) | 2026-11-26 |
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
-| 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
+| 11. Phone browser | In progress | this PR | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
 | 13. Driving dimensions and editing constrained drawings | Planned | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 11 (phone browser) started
+
+- Same site at 700px and under: bottom tool strip, sheets, one-finger pan, two-finger pinch.
+  Independent of Phase 10, 12 and 13; branched from `main`.
+- Local gate: 1,214 unit tests, 80 browser tests (including 390×844 phone), 125.6 KB gzipped.
+  20,000-entity pan 8.4 ms avg (119 fps), zoom 12.3 ms avg (82 fps).
 
 ### 2026-11-27: Phase 13 planned
 
