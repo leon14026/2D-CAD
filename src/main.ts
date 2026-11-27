@@ -10,6 +10,7 @@ import { CanvasView } from './render/view';
 import { requireElement } from './ui/dom';
 import { CursorEntry } from './ui/entry';
 import { mountLayersPanel, mountSelectionPanel } from './ui/panels';
+import { mountScriptPanel } from './ui/script-panel';
 
 const stage = requireElement('#al-stage', HTMLElement);
 const rect = stage.getBoundingClientRect();
@@ -29,6 +30,7 @@ mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store, {
   useDimStyle: (name) => actions.useDimStyle(name),
   saveDimStyle: (style) => actions.saveDimStyle(style),
 });
+mountScriptPanel(requireElement('#al-script-panel', HTMLElement), store, actions);
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);
 attachInteraction(store, view, drafting, { x: requireElement('#al-coord-x', HTMLElement), y: requireElement('#al-coord-y', HTMLElement) });
 installTestHook(store, view, actions);

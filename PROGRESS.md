@@ -1,7 +1,7 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in progress. Next up:
-Phase 8, scripting (JavaScript and Python via Pyodide).
+**Now:** Phases 1 to 6 are merged and live. Phase 7 (import and export) is in review (#8).
+Phase 8 (scripting) is in review (#9) on top of that branch. Next up: Phase 9 (stretch).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -15,13 +15,42 @@ Phase 8, scripting (JavaScript and Python via Pyodide).
 | 5. Modify tools | Done | [#6](https://github.com/leon14026/2D-CAD/pull/6) | 2026-11-26 |
 | 6. Annotation | Done | [#7](https://github.com/leon14026/2D-CAD/pull/7) | 2026-11-26 |
 | 7. Import and export | In progress | [#8](https://github.com/leon14026/2D-CAD/pull/8) | — |
-| 8. Scripting (JavaScript, Python via Pyodide) | Not started | — | — |
+| 8. Scripting (JavaScript, Python via Pyodide) | In progress | [#9](https://github.com/leon14026/2D-CAD/pull/9) | — |
 | 9. Blocks, sheets, constraints (stretch) | Not started | — | — |
 | 10. DWG import (read only) | Not started | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-26: Phase 8 (scripting) started
+
+- Phase 7's PR #8 is still open, so this branch starts from
+  `cursor/phase-7-import-export-487f`. Merge #8 first. This phase is PR #9.
+- Built:
+  - **`cad` API** over the command registry: line, circle, arc (degrees), rect, polyline
+    (DXF bulges), layer, polar, title, run, print. A script is one undo step.
+  - **Script panel** (Script button, backtick, command palette). JavaScript is the default;
+    Python loads Pyodide from `./pyodide/` on this origin the first time a Python script runs.
+  - **Examples:** bolt circle, flange, slot pattern, each in JavaScript and Python.
+- Decisions:
+  - Pyodide 0.29.5 (MPL-2.0), unmodified, copied at build time. Not imported into the main
+    bundle. `ws` comes with the npm package for Node tests; the page never loads it.
+  - Scripts get a best-effort network guard, not a sandbox: JS shadows `fetch`/XHR/WebSocket/
+    Worker; Python gets a guarded `js` module and refusing HTTP modules for the length of one
+    run, then the real ones are put back (the first version overwrote the page's `fetch`, so
+    "Load the example" failed after any Python run). Scripts run with the page's own access and
+    can get past the JS guard; the script panel says so.
+- Gate (passed in CI, Ubuntu runner: 70 browser tests; pan 10.3 ms, zoom 15.1 ms per frame):
+  - JS and Python examples write identical `.archilite` files (`saveDocument`).
+  - JS `fetch` and Python `js.fetch` / `urllib` are refused (best effort); the drawing is
+    unchanged, and the page's own `fetch` still works after a Python run.
+  - Opening the app, and opening the script panel on JavaScript, does not request
+    `/pyodide/`. Size 111.9 KB of 300 KB (Pyodide is 12 MB under `dist/pyodide/`, excluded).
+  - 1,142 unit tests; 70 browser tests; `app-window` refreshed for the Script button and
+    Phase 8 pill (`--repeat-each=5`). 100% line coverage of `src/core` (branches 99.41%).
+  - Performance with 20,000 entities, GPU off: pan 7.5 ms, zoom 11.5 ms per frame on the
+    workspace; pan 10.3 ms, zoom 15.1 ms on the GitHub runner.
 
 ### 2026-11-26: Phase 10 (DWG import) planned
 

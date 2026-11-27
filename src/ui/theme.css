@@ -35,6 +35,7 @@
   --al-status-h: 28px;
   --al-left-w: 232px;
   --al-right-w: 272px;
+  --al-script-h: 260px;
   --al-radius: 4px;
   color-scheme: light;
 }
@@ -74,6 +75,15 @@ body.al-hide-right {
 body.al-hide-left .al-side-left,
 body.al-hide-right .al-side-right {
   display: none;
+}
+
+body.al-show-script {
+  grid-template-rows: var(--al-bar-h) minmax(0, 1fr) var(--al-script-h) var(--al-status-h);
+  grid-template-areas:
+    'bar bar bar'
+    'left stage right'
+    'script script script'
+    'status status status';
 }
 
 @media (max-width: 900px) {
@@ -291,6 +301,78 @@ kbd {
 .al-side-right {
   grid-area: right;
   border-left: 1px solid var(--al-rule);
+}
+
+/* ---------- script panel ---------- */
+
+.al-script {
+  grid-area: script;
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-top: 1px solid var(--al-rule);
+  background: var(--al-chrome);
+}
+
+body.al-show-script .al-script {
+  display: flex;
+}
+
+.al-script-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--al-rule);
+}
+
+.al-script-toolbar h2 {
+  margin: 0;
+  font-size: var(--al-text);
+  font-weight: 700;
+}
+
+.al-script-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--al-rule);
+  border-radius: var(--al-radius);
+  background: var(--al-chrome);
+}
+
+.al-script-toolbar .al-button {
+  margin-left: auto;
+}
+
+.al-script-note {
+  margin: 0;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--al-rule);
+  color: var(--al-ink-muted);
+  font-size: var(--al-text-small);
+}
+
+.al-script-editor {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 12px;
+  border: 0;
+  resize: none;
+  background: var(--al-film);
+  font: var(--al-text) / 1.45 var(--al-font-mono);
+}
+
+.al-script-log {
+  margin: 0;
+  padding: 6px 12px;
+  max-height: 48px;
+  overflow: auto;
+  border-top: 1px solid var(--al-rule);
+  color: var(--al-ink-muted);
+  font: var(--al-text-small) / 1.4 var(--al-font-mono);
+  white-space: pre-wrap;
 }
 
 .al-panel-head {

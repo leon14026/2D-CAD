@@ -9,6 +9,7 @@ import { selectInBox, type BoxMode } from '../core/spatial';
 import type { SceneStats } from '../render/scene';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Viewport } from '../render/viewport';
+import type { ScriptLanguage } from '../script';
 import type { Actions } from './actions';
 import type { Store } from './store';
 
@@ -30,6 +31,11 @@ export interface TestHook {
   lastDrawn(): number;
   /** The last frame's scene statistics: entities drawn, strokes, and milliseconds spent in JavaScript. */
   sceneStats(): SceneStats | null;
+  toggleScriptPanel(): void;
+  runScript(
+    language: ScriptLanguage,
+    source: string,
+  ): Promise<{ ok: boolean; log: string[]; error?: string; entities: number; undo: number }>;
 }
 
 export function installTestHook(store: Store, view: CanvasView, actions: Actions): void {
@@ -81,6 +87,17 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
     },
     lastDrawn: () => view.lastStats?.drawn ?? 0,
     sceneStats: () => view.lastStats,
+    toggleScriptPanel: () => actions.toggleScriptPanel(),
+    runScript: async (language, source) => {
+      const result = await actions.runScript(language, source);
+      view.renderNow();
+      const s = store.get();
+      return {
+        ...result,
+        entities: s.session.doc.entities.size,
+        undo: s.session.undoStack.length,
+      };
+    },
   };
   (window as unknown as { __archilite: TestHook }).__archilite = hook;
 }

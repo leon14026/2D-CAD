@@ -25,6 +25,7 @@ export interface AppState {
   readonly lineweights: boolean;
   readonly showLayers: boolean;
   readonly showSelection: boolean;
+  readonly showScript: boolean;
   readonly message: Message | null;
   /** The drawing or editing tool in use, or null when selecting. */
   readonly tool: ActiveTool | null;
@@ -95,6 +96,7 @@ export function initialState(viewport: Viewport): AppState {
     lineweights: true,
     showLayers: true,
     showSelection: true,
+    showScript: false,
     message: null,
     tool: null,
     toolMemory: DEFAULT_MEMORY,
