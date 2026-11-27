@@ -248,6 +248,14 @@ as well as `.archilite`.
 - [ ] **M7.6 Open a DXF from elsewhere.** If you have a simple DXF from LibreCAD or another
       program (lines, circles, a polyline), Open it. Do the lengths in the selection panel match
       the other program? Note anything dropped (the toast will say how many objects were left out).
+- [ ] **M7.7 Floorplan text, units and layer names.** Open a floorplan DXF that uses
+      `%%u` room labels (GREAT ROOM, W.I.C.). Expect: those names without the `%%u`. If the
+      status bar says mm but the rooms are in feet-and-inches, click the unit (or Ctrl+K
+      "Treat drawing units as inches") so a 672 wall reads as inches, not millimetres — the
+      numbers stay put. Hover a long xref layer name; the tooltip is the full name. A new
+      linear dimension on a wall should measure the geometry you picked. Original CAD
+      dimensions, hatches and block inserts (fixtures) are still left out; the toast says
+      how many.
 
 ### Phase 8: scripting
 

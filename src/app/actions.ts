@@ -16,6 +16,7 @@ import {
   type DimStyle,
   type Doc,
 } from '../core/doc';
+import { LENGTH_UNITS, type LengthUnit } from '../core/geom';
 import { applyJavaScript, applyPython, type ScriptLanguage } from '../script';
 import { exportDxf, exportPdf, exportSvg, importDxf, IoError, looksLikeDxf } from '../io';
 import { ensurePython } from './python';
@@ -144,6 +145,22 @@ export class Actions {
 
   setPolarStep(degrees: number): void {
     this.store.set({ polarOn: true, polarStep: degrees });
+  }
+
+  /**
+   * `convert` false keeps the numbers and only changes the label (a 100 mm line becomes
+   * 100 in). `convert` true keeps real sizes (100 mm becomes 3.937 in).
+   */
+  setUnits(units: LengthUnit, convert: boolean): void {
+    this.run('doc.setUnits', { units, convert });
+  }
+
+  /** Relabels drawing units to the next unit in the list. Numbers do not change. */
+  cycleUnits(): void {
+    const from = this.store.get().session.doc.settings.units;
+    const i = LENGTH_UNITS.indexOf(from);
+    const next = LENGTH_UNITS[(i + 1) % LENGTH_UNITS.length] as LengthUnit;
+    this.setUnits(next, false);
   }
 
   // ---------- selection ----------

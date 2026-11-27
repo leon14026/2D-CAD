@@ -45,6 +45,7 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Annotate | Last-but-one group on the tool rail, or D linear dimension, X text, H hatch; select a dimension, text or hatch to edit it in the selection panel |
 | Blocks and constraints | Layout group on the tool rail: block, insert, coincident, horizontal, vertical, distance; more constraints in Ctrl+K |
 | Switch sheet | Sheet name in the status bar, or Ctrl+K then "Add a sheet" / "Switch to sheet …" |
+| Change units | Click mm/in in the status bar to relabel without scaling, or Ctrl+K "Treat drawing units as …" / "Scale the drawing to …" |
 | Delete | Delete key or the selection panel; Ctrl+Z brings it back |
 | Panels, grid, lineweights | `[`, `]`, G, W |
 | Run a script | Script button, backtick, or Ctrl+K then "script". JavaScript is local; the first Python run downloads Pyodide from this site |

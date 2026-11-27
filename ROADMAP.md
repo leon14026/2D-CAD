@@ -454,7 +454,10 @@ Implementation notes (for later phases):
 - **DXF** is the R2000 (AC1015) text form. Geometry is LINE, CIRCLE, ARC and LWPOLYLINE (with
   bulges). Notes export as the same primitives the screen draws (lines, arrows, text) plus a
   HATCH whose boundary is the hatch's loops, so areas survive. Import reads those entity types
-  and simple TEXT/MTEXT; anything else is skipped and counted. Binary DXF is refused.
+  and simple TEXT/MTEXT (`%%c`/`%%d`/`%%p` become Ø/°/±; `%%u`/`%%o` toggles are dropped);
+  anything else is skipped and counted. Binary DXF is refused. After open, the status bar
+  unit label cycles the name without scaling (a millimetre-tagged inch drawing becomes
+  inches); Ctrl+K also has "Scale the drawing to …".
 - **SVG and PDF** are 1:1. One millimetre on the drawing is one millimetre on the page. PDF user
   space is scaled by `72/25.4` pt per millimetre, so a 100 mm line is 283.4646… pt. PDF text uses
   Helvetica (a standard PDF font) so the file stays small; the scale is the gate, not the typeface.

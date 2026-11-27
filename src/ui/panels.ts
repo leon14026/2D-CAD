@@ -90,7 +90,10 @@ export function mountLayersPanel(root: HTMLElement, store: Store, actions: Actio
           el('button', {
             className: 'al-layer-name',
             text: l.name,
-            attrs: { type: 'button', title: current ? 'Current layer: new lines go here' : 'Make this the current layer' },
+            attrs: {
+              type: 'button',
+              title: current ? `${l.name} (current layer: new lines go here)` : l.name,
+            },
             on: { click: () => actions.setCurrentLayer(l.id) },
           }),
           el('span', { className: 'al-layer-count', text: String(perLayer.get(l.id) ?? 0) }),

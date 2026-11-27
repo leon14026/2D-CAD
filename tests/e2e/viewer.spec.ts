@@ -21,6 +21,11 @@ test('the example opens fitted, with its layers listed', async ({ page }) => {
   await expect(layers.nth(0)).toContainText('Outline1');
   await expect(layers.nth(1)).toContainText('Holes5');
   await expect(layers.nth(2)).toContainText('Centre lines10');
+  await expect(page.getByRole('button', { name: 'Outline', exact: true })).toHaveAttribute(
+    'title',
+    'Outline (current layer: new lines go here)',
+  );
+  await expect(page.getByRole('button', { name: 'Holes', exact: true })).toHaveAttribute('title', 'Holes');
   // The whole 100 × 60 plate is on screen.
   const corner = await toPage(page, 100, 60);
   const origin = await toPage(page, 0, 0);
@@ -207,6 +212,33 @@ test('panels can be hidden and shown', async ({ page }) => {
   await page.keyboard.press(']');
   await expect(page.locator('#al-layers-panel')).toBeVisible();
   await expect(page.locator('#al-selection-panel')).toBeVisible();
+});
+
+test('the status bar and palette can relabel units without scaling', async ({ page }) => {
+  await page.goto('./?test');
+  await page.keyboard.press('l');
+  await page.keyboard.type('0,0');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('100,0');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('f');
+  await clickWorld(page, 50, 0);
+  await expect(page.locator('#al-units')).toHaveText('mm');
+  await expect(page.locator('#al-selection-panel')).toContainText('100.000');
+  await page.locator('#al-units').click();
+  await expect(page.locator('#al-units')).toHaveText('cm');
+  await expect(page.locator('#al-selection-panel')).toContainText('100.000');
+  await page.keyboard.press('Control+k');
+  await page.keyboard.type('Treat drawing units as inches');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#al-units')).toHaveText('in');
+  await expect(page.locator('#al-selection-panel')).toContainText('100.000');
+  await page.keyboard.press('Control+k');
+  await page.keyboard.type('Scale the drawing to millimetres');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#al-units')).toHaveText('mm');
+  await expect(page.locator('#al-selection-panel')).toContainText('2540.000');
 });
 
 test('the large test drawing loads from the command palette', async ({ page }) => {
