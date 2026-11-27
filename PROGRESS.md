@@ -1,8 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
-(text codes and units), [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT),
-and [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
+**Now:** Phase 10 (DWG import, read only) is in progress. Phases 1 to 9 are merged and live.
+DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13) (text codes and units),
+[#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT), and
+[#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
 The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 ([#11](https://github.com/leon14026/2D-CAD/pull/11), [#16](https://github.com/leon14026/2D-CAD/pull/16)).
 
@@ -20,7 +21,7 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 7. Import and export | Done | [#8](https://github.com/leon14026/2D-CAD/pull/8) | 2026-11-26 |
 | 8. Scripting (JavaScript, Python via Pyodide) | Done | [#9](https://github.com/leon14026/2D-CAD/pull/9) | 2026-11-26 |
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
-| 10. DWG import (read only) | Not started | — | — |
+| 10. DWG import (read only) | In review | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
 | 13. Driving dimensions and editing constrained drawings | Planned | — | — |
@@ -28,6 +29,16 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 10 (DWG import) started
+
+- Branch `cursor/phase-10-dwg-487f` from `main`. Read-only DWG import through on-demand
+  `cadkit-wasm` 0.5.4 (MIT OR Apache-2.0). Mapping reuses DXF import after exploding inserts.
+  Paper layouts, hatches, splines, ellipses, solids, images, proxies and dimensions are skipped
+  and counted. Encrypted files and versions outside AC1014–AC1032 are refused in plain words.
+- Fixtures: AC1015 and AC1027 of a 100 mm line, a circle, an arc and a closed polyline with a
+  bulge, import to 1e-6 mm. The decoder is not in the 300 KB base budget (own 3 MB gzipped
+  transfer cap). Opening the example does not fetch it.
 
 ### 2026-11-27: Phase 13 planned
 

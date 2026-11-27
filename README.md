@@ -12,15 +12,17 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 - **Blocks, sheets and constraints.** Reusable blocks, extra paper sheets, and constraints that
   re-solve after every edit (Phase 9).
-- **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
-  open one. Until then, export DXF from the other program and open that.
+- **DWG, read only.** Open a `.dwg` the same way as a DXF. The decoder loads only then, from
+  this site, and stays off the 300 KB budget. Paper layouts, hatches, splines, ellipses,
+  solids, images, proxies and dimensions are left out (the toast says how many). There is no
+  DWG export.
 - **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
   browser. It does not need DWG, so it can land before or after Phase 10.
 - **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
   measurements (where to measure, never the stored number). Until then they are skipped.
 
-**Status:** Phases 1 to 9 are built and merged; Phase 9 adds blocks, sheets and constraints on top
-of scripting and import/export. Phase 11 (phone browser) is planned and does not wait on
+**Status:** Phases 1 to 10 are built; Phase 10 adds read-only DWG import on top of blocks,
+sheets, constraints and scripting. Phase 11 (phone browser) is planned and does not wait on
 Phase 10. Phase 12 (live DXF dimensions) is planned and does not wait on Phase 10 or 11. Phase 13
 (driving dimensions and editing constrained drawings) is planned and does not wait on any of
 them. See
@@ -37,7 +39,7 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | To | Do this |
 |---|---|
 | Find any command | Ctrl+K, then type |
-| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite or DXF) |
+| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite, DXF or DWG) |
 | Export | Export button, or Ctrl+K then "Export as DXF / SVG / PDF / PNG" |
 | Zoom | Mouse wheel or pinch (about the cursor); F fits the drawing |
 | Pan | Middle-drag, or hold Space and drag; arrow keys |

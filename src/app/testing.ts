@@ -15,6 +15,8 @@ import type { Store } from './store';
 
 export interface TestHook {
   openText(text: string): boolean;
+  /** Opens bytes as a named file (DWG, DXF or ArchiLite). */
+  openFile(bytes: ArrayBuffer | number[], name: string): Promise<boolean>;
   state(): {
     entities: number;
     selection: number[];
@@ -53,6 +55,12 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
   const hook: TestHook = {
     openText: (text) => {
       const ok = actions.openText(text, 'test.archilite');
+      view.renderNow();
+      return ok;
+    },
+    openFile: async (bytes, name) => {
+      const buffer = bytes instanceof ArrayBuffer ? bytes : new Uint8Array(bytes).buffer;
+      const ok = await actions.openFile(new File([buffer], name));
       view.renderNow();
       return ok;
     },

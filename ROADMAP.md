@@ -559,14 +559,32 @@ Method:
 
 Gate:
 
-- [ ] Committed DWG fixtures, made by another program and reviewed as a diff, for a 100 mm line,
+- [x] Committed DWG fixtures, made by another program and reviewed as a diff, for a 100 mm line,
       a circle, an arc and a closed polyline with a bulge, in AC1015 and in AC1027 or AC1032.
       Import matches the hand-calculated geometry to 1e-6 mm. CI does not install a GPL tool to
       do this.
-- [ ] The base download stays ≤ 300 KB. Opening a DWG is what fetches the decoder, and that
+- [x] The base download stays ≤ 300 KB. Opening a DWG is what fetches the decoder, and that
       fetch is ≤ 3 MB. Opening the example does not fetch it.
 - [ ] Manual: open a DWG from LibreCAD or from Onshape or SolidWorks, measure 5 features, agree
       to 0.001 mm (`TEST-BACKLOG.md`).
+
+Implementation notes (for later phases):
+
+- **Decoder.** `cadkit-wasm` 0.5.4, pinned exact, MIT OR Apache-2.0. Copied to `dist/cadkit/`
+  the way Pyodide is copied to `dist/pyodide/`. `src/app/cadkit.ts` loads it only when the
+  first six bytes of an opened file are `AC10`. Node tests use `cadkit-wasm/node`.
+- **Mapping.** Header checks (version AC1014–AC1032, R2004+ encryption bit at `0x18`) run
+  before the wasm is fetched (`assertDwgHeader`). Then `explodeInserts()` (no arguments in
+  0.5.4), skip counts from the
+  decoder JSON (paper layouts plus kinds the DXF mapper does not draw), `toDxf('r2000')`,
+  then `importDxf`. cadkit's DXF export omits hatch and spline, so JSON is the skip source.
+- **Fixtures.** `tests/fixtures/dwg/shapes-ac1015.dwg` from LibreDWG `dwgwrite --as r2000`.
+  LibreDWG and libdxfrw r2013/AC1027 encodes from DXF were not cadkit-readable (page map /
+  CRC). `shapes-ac1027.dwg` was made locally by adding the four shapes to a genuine AC1027
+  drawing and writing it back. CI never runs a GPL tool. A rewritten 2013 file may report
+  `dwg.crc_mismatch`; import still matches 1e-6 mm.
+- **Not GPL.** If this decoder fails a gate, the phase stops. It does not switch to
+  LibreDWG or libdxfrw.
 
 ### Phase 11 — Phone browser
 

@@ -181,7 +181,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
   const empty = requireElement('#al-empty', HTMLElement);
   empty.append(
     el('h2', { text: 'Open a drawing to start' }),
-    el('p', { text: 'Open an ArchiLite or DXF file, drop one here, or look around the example bracket.' }),
+    el('p', { text: 'Open an ArchiLite, DXF or DWG file, drop one here, or look around the example bracket.' }),
     el(
       'div',
       { className: 'al-group' },

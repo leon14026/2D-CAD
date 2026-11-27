@@ -299,14 +299,23 @@ as well as `.archilite`.
       a circle of radius about 3.5. Undo the second constraint: the message goes away and the
       radius is 3.
 
+### Phase 10: DWG import (read only)
+
+- [ ] **M10.1 A DWG from another program.** On the work laptop, export a simple drawing from
+      LibreCAD (or Onshape or SolidWorks) as DWG, 2013 or 2018 if you can choose. Include a
+      known length, a circle, an arc and a closed polyline. Open it in ArchiLite. Expect: the
+      four shapes are there. Measure the same five features as M7.1 in the selection panel;
+      they should agree with the other program to 0.001 mm. Note what the toast says was left
+      out (hatches, dimensions until Phase 12, paper space). Opening the example first should
+      not download the decoder; opening this file should.
+- [ ] **M10.2 Encrypted or old DWG.** If you have a password-protected DWG, Open it. Expect: a
+      plain-words refusal about encryption, and an empty drawing. A very old DWG (R12 / AC1009)
+      should name the version and refuse without fetching the decoder.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions
-  until Phase 12, paper space). Until this phase, use DXF. This can wait until after the phone
-  work.
 - **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
   Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
   `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
