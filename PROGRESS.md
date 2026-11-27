@@ -1,11 +1,11 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live, with a follow-up on DXF import ([#13](https://github.com/leon14026/2D-CAD/pull/13)).
-A second follow-up explodes DXF block inserts ([#15](https://github.com/leon14026/2D-CAD/pull/15), in review).
+**Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
+and [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT) are on `main`.
 Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
 ([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 12 (live DXF dimensions)
 is planned in [#16](https://github.com/leon14026/2D-CAD/pull/16) and does not wait on
-Phase 10 or 11. Merge #15 first.
+Phase 10 or 11.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -28,6 +28,11 @@ Phase 10 or 11. Merge #15 first.
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: DXF INSERT explode merged
+
+- PR [#15](https://github.com/leon14026/2D-CAD/pull/15) merged to `main`. Kitchen and bath
+  fixtures from DXF `INSERT` explode on import. Dimensions and hatches stay skipped.
 
 ### 2026-11-27: Phase 11 plan merged
 
