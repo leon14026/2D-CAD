@@ -23,10 +23,21 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
+| 13. Driving dimensions and editing constrained drawings | Planned | — | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 13 planned
+
+- Owner report: a dimension should also constrain, its number should be editable, and
+  constrained things cannot be edited. All three reproduced at the engine level (see Phase 13
+  in `ROADMAP.md`): placing a dimension adds no constraint, there is no command to change a
+  constraint's value, and editing constrained geometry is silently bent (a length-10 line
+  scaled by 2 is moved, a fixed-start line moved by (5, 3) becomes a stretch, a joined L bends to
+  x 12.4 instead of 14).
+- Plan only: no app code. Phase 13 does not wait for Phase 10, 11 or 12.
 
 ### 2026-11-27: MTEXT markup follow-up merged
 
