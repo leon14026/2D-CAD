@@ -14,9 +14,12 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   re-solve after every edit (Phase 9).
 - **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
   open one. Until then, export DXF from the other program and open that.
+- **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
+  browser. It does not need DWG, so it can land before or after Phase 10.
 
-**Status:** Phase 9 (blocks, sheets, constraints) built on top of Phase 8's scripting and
-Phase 7's import and export. See
+**Status:** Phases 1 to 9 are built and merged; Phase 9 adds blocks, sheets and constraints on top
+of scripting and import/export. Phase 11 (phone browser) is planned and does not wait on
+Phase 10. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
