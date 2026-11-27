@@ -316,3 +316,10 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
   dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
   walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
   was overtyped in the other program is still left out. Hatches are still left out.
+- **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
+  length (a constraint appears in the selection panel). Double-click the dimension, type 120,
+  press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal
+  and vertical, and move the vertical leg: the horizontal leg follows. Try to move a fixed
+  point: expect a plain-words refusal that names the constraint and changes nothing. Toggle
+  "Show constraints" and check the marks sit next to what they hold. Place a reference
+  dimension and check it reads in brackets and does not hold anything.

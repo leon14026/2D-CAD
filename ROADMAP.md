@@ -665,6 +665,101 @@ Gate:
       dimension (254 or 250), move the wall, and watch the number change (`TEST-BACKLOG.md`).
       Overridden text and hatches are still left out.
 
+### Phase 13 — Driving dimensions and editing constrained drawings
+
+Builds: a dimension you place also holds the drawing to that number, you can type a new number
+to resize the part, constraints can be seen and edited, and editing constrained geometry
+either works or is refused in plain words instead of quietly bending the drawing.
+
+This phase needs Phase 6 (dimensions) and Phase 9 (constraints), both merged. It does not wait
+for Phase 10, 11 or 12 and can be built before them.
+
+What is wrong today (found and reproduced 2026-11-26; each is a gate check below):
+
+1. **A dimension holds nothing.** Placing a dimension adds no constraint. A dimension is a
+   read-only measurement, and there is no way to type a new number into it.
+2. **Constraints cannot be seen or edited.** The only commands are `constraint.add`,
+   `constraint.delete` and `constraint.solve`. Nothing draws a constraint, the selection panel
+   does not list them, and changing a value means deleting the constraint and adding it again.
+3. **Editing constrained geometry misbehaves without a word.** A line with a length constraint
+   of 10, scaled by 2, stays 10 long but jumps to x 5 to 15 (the edit is ignored and the line is
+   moved). A line with a fixed start, moved by (5, 3), turns into a stretch from (0, 0) to
+   (15, 3). Moving the vertical leg of a joined L (horizontal and vertical constraints) by 4
+   bends both legs to a compromise (the horizontal leg ends at x 12.4, not 14). The solver
+   settles on whatever it reaches and nothing tells the user.
+
+Method:
+
+- **Driving dimensions.** Placing a linear, aligned, radius, diameter or angle dimension also
+  adds the matching constraint (`distance`, `radius`, `angle`; see the horizontal and vertical
+  note below) at the value that is measured right now, so placing one never moves anything.
+  The dimension note still stores only where to measure, never the number (Phase 6 rule). The
+  number lives in the constraint. The two are linked by id, so deleting one asks about the
+  other, and both go in the same undo step.
+- **Reference dimensions.** A dimension can be marked "reference": it measures only, adds no
+  constraint, and is drawn in brackets, for example (100). The dimension tools get a
+  driving/reference switch, driving by default. Dimensions imported from DXF (Phase 12) are
+  reference until the user switches them.
+- **Typing a new number.** Double-click a driving dimension, or pick it and use its row in the
+  selection panel, to get the entry box beside the cursor (`src/ui/entry.ts`). Enter sets the
+  value (`constraint.setValue`, a new command) and the drawing re-solves in the same undo step.
+  The existing Distance, Radius, Length and Angle constraint tools keep asking for a typed value.
+- **Horizontal and vertical distances.** A horizontal or vertical linear dimension measures the
+  x or y gap, which `distance` (straight-line length) cannot hold. `distance` gets an `axis`
+  (`any`, `x` or `y`; omitted means `any`). This changes the file format, so `FILE_VERSION`
+  becomes 4, `docs/file-format.md` and the example are updated, and version 3 files still open
+  unchanged.
+- **See and edit constraints.** Constraints are drawn as small hairline marks beside what they
+  hold, with a "Show constraints" switch (key and palette entry). They are marks, not
+  geometry: snaps and the modify commands ignore them, like notes. A mark can be picked. The
+  selection panel lists the constraints on the picked objects, each with its kind, its value
+  (editable) and a Delete button. A `fix` constraint shows its point and can be edited too.
+- **Editing constrained geometry.** What the user drags or moves is what they asked for. The
+  solver is given the points the user just placed as temporary pins and moves the rest to keep
+  the constraints. Then, one of two outcomes, never a third:
+  - every constraint can be met: the change is committed, with the rest of the drawing
+    following (in the joined L above, the horizontal leg follows to x 14); or
+  - one cannot be met (a fixed point moved, a length stretched): the change is refused,
+    nothing changes, and the message names the constraint in plain words ("The start of this
+    line is fixed (constraint 4). Change or delete that constraint first.").
+  This covers grips, move, rotate, scale and stretch. A user edit never leaves a compromise
+  shape. (The 1e-6 "could not be met" warning from Phase 9 stays for the cases where a
+  constraint was never reachable, such as ones loaded from a file.)
+- **Same rules as before.** Constraints still apply in id order and the same document gives the
+  same result. Use `tolFor`; no new epsilons. Commands are named, undoable and reachable from
+  scripts (`cad.setConstraint`). Marks use hairlines and keep the frame budget (run the
+  performance gate and quote it in the PR).
+
+Not in this phase: degrees-of-freedom counting or colouring ("fully constrained"), values
+written as equations (for example width = 2 × height), and auto-applied geometric constraints
+while drawing (horizontal, coincident). Each is a later stretch.
+
+Gate:
+
+- [ ] A 100 mm line with a driving aligned dimension: placing it adds exactly one constraint of
+      100 and no coordinate changes (compared to 1e-9). A reference dimension adds none and
+      draws as (100).
+- [ ] `constraint.setValue` to 120 leaves the line exactly 120 long (1e-9) and moves what is
+      attached to it. On the constrained plate in `tests/unit/core/doc/constrained-plate.ts`,
+      widening 80 to 100 moves the right edge and the holes that are constrained to it.
+      Hand-calculated values.
+- [ ] A value the other constraints forbid (radius 3 and radius 4 on one circle) is refused,
+      the document is unchanged, and the message names the constraint.
+- [ ] The three misbehaviours above are fixed, with hand-calculated results: scaling the
+      length-10 line by 2 is refused and the line is unchanged; moving the fixed-start line is
+      refused and the line is unchanged; moving the vertical leg of the joined L by 4 gives a
+      horizontal leg from (0, 0) to (14, 0) and a vertical leg from (14, 0) to (14, 10).
+- [ ] Property test (fast-check, `PROPERTY_PARAMS`): a random constrained rectangle given a new
+      width has that width to `tolFor`, every constraint is met, and undo restores the
+      original exactly.
+- [ ] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
+      opens unchanged. Coverage stays 100% on `src/core`.
+- [ ] Browser (Chromium, GPU off, no console errors): place a dimension, double-click it, type
+      120, Enter, and the part resizes; Ctrl+Z restores it in one step. Constraint marks show
+      and hide. Picking a constraint in the panel highlights what it holds. A screenshot
+      baseline of the marks. The performance gate still passes.
+- [ ] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+
 ## Out of scope for v1
 
 DWG export, 3D, AutoLISP compatibility, full ISO/ASME certification, real-time collaboration,
