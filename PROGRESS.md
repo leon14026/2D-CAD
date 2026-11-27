@@ -2,10 +2,9 @@
 
 **Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
 and [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT) are on `main`.
-Phase 10 (DWG) is planned. The Phase 11 phone plan is on `main`
-([#11](https://github.com/leon14026/2D-CAD/pull/11)). Phase 12 (live DXF dimensions)
-is planned in [#16](https://github.com/leon14026/2D-CAD/pull/16) and does not wait on
-Phase 10 or 11.
+The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
+([#11](https://github.com/leon14026/2D-CAD/pull/11), [#16](https://github.com/leon14026/2D-CAD/pull/16)).
+MTEXT markup codes are in review ([#17](https://github.com/leon14026/2D-CAD/pull/17)).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -29,6 +28,18 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Review of #17 (MTEXT commands)
+
+- Found: `\U+00B1`-style escapes (how other programs write ±, °, ⌀ in MTEXT) fell into the
+  generic "command ends at `;`" rule and either swallowed the text up to the next `;` or left
+  `+00B1` in the note.
+- Fixed: `\U+XXXX` becomes that character; control codes are dropped.
+
+### 2026-11-27: Phase 12 plan merged
+
+- PR [#16](https://github.com/leon14026/2D-CAD/pull/16) merged to `main`. Docs only; a DXF
+  `DIMENSION` is not a live note yet. Independent of Phase 10 (DWG) and Phase 11 (phone).
+
 ### 2026-11-27: DXF INSERT explode merged
 
 - PR [#15](https://github.com/leon14026/2D-CAD/pull/15) merged to `main`. Kitchen and bath
@@ -38,6 +49,13 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 - PR [#11](https://github.com/leon14026/2D-CAD/pull/11) merged to `main`. Docs only; no phone
   layout yet. Phase 10 (DWG) and Phase 11 (phone) still do not depend on each other.
+
+### 2026-11-26: DXF MTEXT markup
+
+- Follow-up on #15, PR [#17](https://github.com/leon14026/2D-CAD/pull/17).
+- Floorplan MTEXT still showed `\A1;` before “PROVIDE 20 MIN. DOOR”
+  and a font command on a shear-panel note. Import now drops alignment, font, height and
+  paragraph commands; `\P` is a newline; stacked `\S1#2;` becomes `1/2`.
 
 ### 2026-11-26: Phase 12 (live DXF dimensions) planned
 

@@ -4,7 +4,9 @@
  * Export writes a text DXF that other CAD programs can open: lines, circles, arcs,
  * polylines (with bulges), layers, and annotations as the same line work the screen
  * draws. Import reads those entity types back; TEXT/MTEXT drop %% underline
- * toggles and turn %%c / %%d / %%p into Ø / ° / ±. Block INSERT is exploded into those
+ * toggles and turn %%c / %%d / %%p into Ø / ° / ±. MTEXT alignment, font, height
+ * and paragraph commands (`\A1;`, `\F…;`, `\P`) are dropped or turned into
+ * newlines; they are not shown as text. `\U+XXXX` becomes that character. Block INSERT is exploded into those
  * same types (nested inserts included). Anything else is skipped and counted.
  *
  * The writer targets the R2000 (AC1015) text form. Binary DXF is refused.
@@ -571,11 +573,85 @@ function decodeDxfCodes(text: string): string {
   return out;
 }
 
+/**
+ * MTEXT markup. Paragraph breaks become newlines; stacked fractions keep the
+ * digits with a slash; alignment, font, height, colour, underline and the rest
+ * are dropped. `\\`, `\{` and `\}` are a backslash or a brace. Braces that only
+ * group a font change are removed.
+ */
+function decodeMtextMarkup(text: string): string {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i] as string;
+    if (ch !== '\\') {
+      if (ch !== '{' && ch !== '}') out += ch;
+      i += 1;
+      continue;
+    }
+    const n = text[i + 1];
+    if (n === undefined) {
+      out += '\\';
+      break;
+    }
+    if (n === '\\') {
+      out += '\\';
+      i += 2;
+      continue;
+    }
+    if (n === '{' || n === '}') {
+      out += n;
+      i += 2;
+      continue;
+    }
+    if (n === '~') {
+      out += ' ';
+      i += 2;
+      continue;
+    }
+    if (n === 'P' || n === 'X') {
+      out += '\n';
+      i += 2;
+      continue;
+    }
+    if (n === 'U' && text[i + 2] === '+' && /^[0-9a-fA-F]{4}$/.test(text.slice(i + 3, i + 7))) {
+      // \U+00B1: a character by its code. It has no `;`, so it must not fall into the
+      // generic command branch below, which would swallow text up to the next `;`.
+      const code = parseInt(text.slice(i + 3, i + 7), 16);
+      if (code >= 32) out += String.fromCodePoint(code);
+      i += 7;
+      continue;
+    }
+    const lower = n.toLowerCase();
+    if (lower === 'l' || lower === 'o' || lower === 'k') {
+      i += 2;
+      continue;
+    }
+    if (n === 'S') {
+      const end = text.indexOf(';', i + 2);
+      if (end < 0) {
+        i += 2;
+        continue;
+      }
+      out += text.slice(i + 2, end).replace(/[#^]/g, '/');
+      i = end + 1;
+      continue;
+    }
+    if ((n >= 'A' && n <= 'Z') || (n >= 'a' && n <= 'z')) {
+      const end = text.indexOf(';', i + 2);
+      if (end >= 0) {
+        i = end + 1;
+        continue;
+      }
+    }
+    i += 2;
+  }
+  return out;
+}
+
 function mtextContent(e: DxfEntity): string {
   const chunks = [...allVal(e.values, 3), ...(allVal(e.values, 1) as string[])];
-  return decodeDxfCodes(
-    chunks.join('').replace(/\\P/g, '\n').replace(/\{\\[^;]*;/g, '').replace(/[{}]/g, ''),
-  ).slice(0, 2000);
+  return decodeDxfCodes(decodeMtextMarkup(chunks.join(''))).slice(0, 2000);
 }
 
 function textNote(e: DxfEntity, layerId: number, id: number): Note | null {

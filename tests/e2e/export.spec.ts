@@ -155,6 +155,45 @@ test('a DXF with %%u room names opens without the underline codes', async ({ pag
   expect(save).not.toContain('%%u');
 });
 
+test('a DXF MTEXT note drops alignment commands', async ({ page }) => {
+  await page.goto('./?test');
+  await page.locator('#al-file').setInputFiles({
+    name: 'mtext.dxf',
+    mimeType: 'application/dxf',
+    buffer: Buffer.from(
+      [
+        '0',
+        'SECTION',
+        '2',
+        'ENTITIES',
+        '0',
+        'MTEXT',
+        '8',
+        '0',
+        '10',
+        '0',
+        '20',
+        '0',
+        '40',
+        '5',
+        '1',
+        '\\A1;PROVIDE 20 MIN. DOOR\\PW/ SELF CLOSING HINGES',
+        '0',
+        'ENDSEC',
+        '0',
+        'EOF',
+        '',
+      ].join('\n'),
+    ),
+  });
+  await expect(page.locator('#al-toast')).toContainText('Opened');
+  const save = await page.evaluate(() => (window as unknown as { __archilite: { saveText(): string } }).__archilite.saveText());
+  expect(save).toContain('PROVIDE 20 MIN. DOOR');
+  expect(save).toContain('W/ SELF CLOSING HINGES');
+  expect(save).not.toContain('\\A1;');
+  expect(save).not.toContain('\\P');
+});
+
 test('a bad DXF is refused with a plain message', async ({ page }) => {
   await page.goto('./?test');
   await page.locator('#al-file').setInputFiles({
