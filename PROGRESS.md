@@ -28,6 +28,13 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Review of #17 (MTEXT commands)
+
+- Found: `\U+00B1`-style escapes (how other programs write ±, °, ⌀ in MTEXT) fell into the
+  generic "command ends at `;`" rule and either swallowed the text up to the next `;` or left
+  `+00B1` in the note.
+- Fixed: `\U+XXXX` becomes that character; control codes are dropped.
+
 ### 2026-11-27: Phase 12 plan merged
 
 - PR [#16](https://github.com/leon14026/2D-CAD/pull/16) merged to `main`. Docs only; a DXF
