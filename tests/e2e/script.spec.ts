@@ -57,7 +57,7 @@ test('a JavaScript bolt circle is one undo step and cannot fetch', async ({ page
     return api.runScript('javascript', `fetch('https://example.com')`);
   });
   expect(blocked.ok).toBe(false);
-  expect(blocked.error).toMatch(/no network access/);
+  expect(blocked.error).toMatch(/blocked in scripts/);
   expect(blocked.entities).toBe(0);
   expect(errors).toEqual([]);
 });
@@ -89,6 +89,9 @@ test('Python bolt circle matches JavaScript and loads Pyodide from this origin',
   expect(js.ok).toBe(true);
   expect(py.ok).toBe(true);
   expect(py.file).toBe(js.file);
+  // A Python run must not leave the page's own fetch replaced (the example loader uses it).
+  const status = await page.evaluate(async () => (await fetch('./examples/bracket.archilite')).status);
+  expect(status).toBe(200);
   expect(pyodide.length).toBeGreaterThan(0);
   expect(external).toEqual([]);
   expect(errors).toEqual([]);

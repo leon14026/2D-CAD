@@ -467,7 +467,9 @@ binding, example scripts (bolt circle, flange, slot pattern).
 
 Gate:
 - [x] The same script in JavaScript and Python produces an identical document.
-- [x] Scripts have no network access.
+- [x] Scripts cannot call `fetch`, XHR, sockets or workers by accident (best-effort guard, not a
+      sandbox: scripts run with the page's access, and the script panel says so), and a Python
+      run leaves the page's own `fetch` intact.
 - [x] Loading Pyodide does not change the base download budget or startup time.
 
 Implementation notes (for later phases):

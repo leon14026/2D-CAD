@@ -14,6 +14,9 @@ import {
 } from '../script';
 import { el } from './dom';
 
+const TRUST_NOTE =
+  'Scripts run with full access to this page. Only run code you wrote or trust.';
+
 const HINT =
   'cad.line, cad.circle, cad.arc, cad.rect, cad.polyline, cad.layer, cad.polar, cad.title, cad.run, cad.print. Angles in degrees. One undo step.';
 
@@ -93,6 +96,7 @@ export function mountScriptPanel(root: HTMLElement, _store: Store, actions: Acti
       exampleSelect,
       run,
     ),
+    el('p', { className: 'al-script-note', text: TRUST_NOTE }),
     editor,
     log,
   );

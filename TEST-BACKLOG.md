@@ -262,9 +262,10 @@ as well as `.archilite`.
       host, tell Claude.
 - [ ] **M8.3 Later Python loads.** Start a new drawing. Run the Python flange, then the slot
       pattern. Expect: each run after the first is much quicker, still one undo step.
-- [ ] **M8.4 No network from a script.** In JavaScript, replace the editor with
-      `fetch('https://example.com')` and Run. Expect: a toast that scripts have no network
-      access, and an empty drawing.
+- [ ] **M8.4 Network calls from a script.** In JavaScript, replace the editor with
+      `fetch('https://example.com')` and Run. Expect: a message that network access is blocked
+      in scripts, and an empty drawing. Then run the Python bolt circle, press Ctrl+Z, and use
+      "Load the example". Expect: the example loads (the page's own fetch still works).
 
 ## Coming with later phases
 

@@ -345,6 +345,14 @@ body.al-show-script .al-script {
   margin-left: auto;
 }
 
+.al-script-note {
+  margin: 0;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--al-rule);
+  color: var(--al-ink-muted);
+  font-size: var(--al-text-small);
+}
+
 .al-script-editor {
   flex: 1;
   min-height: 0;

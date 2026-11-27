@@ -36,11 +36,15 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 - Decisions:
   - Pyodide 0.29.5 (MPL-2.0), unmodified, copied at build time. Not imported into the main
     bundle. `ws` comes with the npm package for Node tests; the page never loads it.
-  - Scripts have no network: JS shadows `fetch`/XHR/WebSocket/Worker; Python patches
-    `js.fetch` and `urllib`. The page's `fetch` stays intact so Pyodide can load.
+  - Scripts get a best-effort network guard, not a sandbox: JS shadows `fetch`/XHR/WebSocket/
+    Worker; Python gets a guarded `js` module and refusing HTTP modules for the length of one
+    run, then the real ones are put back (the first version overwrote the page's `fetch`, so
+    "Load the example" failed after any Python run). Scripts run with the page's own access and
+    can get past the JS guard; the script panel says so.
 - Gate (passed in CI, Ubuntu runner: 70 browser tests; pan 10.3 ms, zoom 15.1 ms per frame):
   - JS and Python examples write identical `.archilite` files (`saveDocument`).
-  - JS `fetch` and Python `js.fetch` / `urllib` are refused; the drawing is unchanged.
+  - JS `fetch` and Python `js.fetch` / `urllib` are refused (best effort); the drawing is
+    unchanged, and the page's own `fetch` still works after a Python run.
   - Opening the app, and opening the script panel on JavaScript, does not request
     `/pyodide/`. Size 111.9 KB of 300 KB (Pyodide is 12 MB under `dist/pyodide/`, excluded).
   - 1,142 unit tests; 70 browser tests; `app-window` refreshed for the Script button and

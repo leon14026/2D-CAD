@@ -33,13 +33,32 @@ describe('JavaScript and Python identity', () => {
     async () => {
       const start = createSession();
       await expect(applyPython(start, 'from js import fetch\nfetch("https://example.com")', py)).rejects.toThrow(
-        /no network access/,
+        /blocked in scripts/,
       );
       await expect(
         applyPython(start, 'import urllib.request\nurllib.request.urlopen("https://example.com")', py),
-      ).rejects.toThrow(/no network access/);
+      ).rejects.toThrow(/blocked in scripts/);
       expect(start.doc.entities.size).toBe(0);
-      expect(SCRIPT_NO_NETWORK).toMatch(/network/);
+      expect(SCRIPT_NO_NETWORK).toMatch(/network/i);
+    },
+    PYODIDE_TIMEOUT,
+  );
+
+  it(
+    'a Python run, failed or not, leaves the page fetch and later runs working',
+    async () => {
+      const realFetch = globalThis.fetch;
+      await applyPython(createSession(), 'cad.line(0, 0, 10, 0)', py);
+      expect(globalThis.fetch).toBe(realFetch);
+      await expect(applyPython(createSession(), 'import js\njs.fetch("https://example.com")', py)).rejects.toThrow(
+        /blocked in scripts/,
+      );
+      await expect(applyPython(createSession(), 'raise ValueError("boom")', py)).rejects.toThrow(/boom/);
+      expect(globalThis.fetch).toBe(realFetch);
+      // The guard is gone again: the real js module is back for the next script.
+      const after = await applyPython(createSession(), 'import js\ncad.line(0, 0, 5, 0)\ncad.print(js.Math.max(1, 2))', py);
+      expect(after.session.doc.entities.size).toBe(1);
+      expect(after.log).toEqual(['2']);
     },
     PYODIDE_TIMEOUT,
   );
