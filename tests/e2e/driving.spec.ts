@@ -146,3 +146,58 @@ test('a reference dimension reads in brackets and does not hold the drawing', as
   expect(maxResidual(doc)).toBe(0);
   expect(errors).toEqual([]);
 });
+
+test('a new rectangle starts held square; a width typed from its right-hand end works; rounding lets go and says so', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newDrawing(page);
+  await drawReference(page, [{ tool: 'rectangle' }, { type: '0,0' }, { type: '@100,50' }, { enter: true }]);
+  expect((await state(page)).constraints).toBe(4);
+  let doc = await docOf(page);
+  expect([...doc.constraints.values()].map((c) => c.body.kind)).toEqual(['horizontal', 'vertical', 'horizontal', 'vertical']);
+
+  // Dimension the bottom side from its right-hand end to its left-hand end, then type 120.
+  await drawReference(page, [{ tool: 'dimLinear' }, { type: '100,0' }, { type: '0,0' }, { type: '50,-12' }, { enter: true }]);
+  doc = await docOf(page);
+  expect(doc.constraints.size).toBe(5);
+  const p = await toPage(page, 50, -12);
+  await page.mouse.dblclick(p.x, p.y);
+  await expect(page.locator('.al-entry-prompt')).toContainText('New value');
+  await page.keyboard.type('120');
+  await page.keyboard.press('Enter');
+  doc = await docOf(page);
+  const plate = [...doc.entities.values()].find((e) => e.geom.kind === 'polyline');
+  expect(plate?.geom.kind === 'polyline' && plate.geom.vertices.map((v) => [v.x, v.y])).toEqual([[-20, 0], [100, 0], [100, 50], [-20, 50]]);
+  expect(maxResidual(doc)).toBe(0);
+
+  // Round two corners: the constraints no longer fit, so they are let go, with a message.
+  await drawReference(page, [{ tool: 'fillet' }, { type: '10' }, { pick: [20, 0] }, { pick: [-20, 20] }, { enter: true }]);
+  await expect(page.locator('#al-toast')).toContainText('Let go of 5 constraints');
+  await expect(page.locator('#al-toast')).toContainText('Ctrl+Z brings them back');
+  expect((await state(page)).constraints).toBe(0);
+  await page.keyboard.press('Control+z');
+  expect((await state(page)).constraints).toBe(5);
+  expect(errors).toEqual([]);
+});
+
+test('turning a new rectangle is allowed: it lets go of its horizontal and vertical sides', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newDrawing(page);
+  await drawReference(page, [
+    { tool: 'rectangle' },
+    { type: '0,0' },
+    { type: '@100,50' },
+    { enter: true },
+    { select: [[50, 0]] },
+    { tool: 'rotate' },
+    { type: '0,0' },
+    { type: '30' },
+  ]);
+  await expect(page.locator('#al-toast')).toContainText('Let go of 4 constraints');
+  expect((await state(page)).constraints).toBe(0);
+  const doc = await docOf(page);
+  const plate = [...doc.entities.values()].find((e) => e.geom.kind === 'polyline');
+  const second = plate?.geom.kind === 'polyline' ? plate.geom.vertices[1] : undefined;
+  expect(second?.x).toBeCloseTo(50 * Math.sqrt(3), 9);
+  expect(second?.y).toBeCloseTo(50, 9);
+  expect(errors).toEqual([]);
+});

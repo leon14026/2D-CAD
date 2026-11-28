@@ -24,6 +24,8 @@ export interface Outcome {
   readonly drafting: Drafting;
   /** Why nothing happened, in plain words, or null. */
   readonly error: string | null;
+  /** Constraints the change let go because it made them untrue (see `Executed.released`). */
+  readonly released?: number;
 }
 
 export function drafting(session: Session, memory: ToolMemory = DEFAULT_MEMORY): Drafting {
@@ -85,18 +87,24 @@ export function feed(d: Drafting, input: ToolInput, selection: readonly number[]
   // All or nothing: a refused command leaves the session and the tool as they were.
   const applied = attempt(() => {
     let session = d.session;
+    let released = 0;
     for (let i = 0; i < (result.undo ?? 0); i++) session = undo(session);
-    for (const call of result.calls) session = executeUnchecked(session, call.id, call.params).session;
-    return session;
+    for (const call of result.calls) {
+      const r = executeUnchecked(session, call.id, call.params);
+      session = r.session;
+      released += r.released;
+    }
+    return { session, released };
   }, CommandError);
   if (!applied.ok) return { drafting: d, error: applied.error };
   return {
     drafting: {
-      session: applied.value,
+      session: applied.value.session,
       memory: result.memory ? { ...d.memory, ...result.memory } : d.memory,
       active: result.state ? { id: d.active.id, state: result.state } : null,
     },
     error: null,
+    released: applied.value.released,
   };
 }
 
