@@ -27,6 +27,8 @@ export class Draft {
   private blocksNow: readonly Block[];
   private settingsNow: DocSettings;
   private nextIdNow: number;
+  /** Constraints this command let go of because the change made them untrue (not ones whose shape was deleted). */
+  released = 0;
 
   constructor(readonly base: Doc) {
     this.layersNow = base.layers;

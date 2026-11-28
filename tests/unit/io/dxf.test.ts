@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createSession, execute, loadDocument, newDocument } from '../../../src/core/doc';
+import { createSession, execute, loadDocument, newDocument, resolveNotes, saveDocument } from '../../../src/core/doc';
 import {
   arc,
   arcEndPoint,
@@ -726,6 +726,278 @@ describe('DXF import of a minimal file', () => {
     const { doc, skipped } = importDxf(dxf);
     expect(skipped).toBe(1);
     expect(doc.entities.size).toBe(0);
+  });
+});
+
+describe('DXF import of DIMENSION', () => {
+  const FIXTURE = readFileSync('tests/fixtures/linear-100.dxf', 'utf8');
+
+  function entities(...items: (string | number)[]): string {
+    return pairs(0, 'SECTION', 2, 'ENTITIES', ...items, 0, 'ENDSEC', 0, 'EOF');
+  }
+
+  function measured(doc: ReturnType<typeof importDxf>['doc']): number | undefined {
+    const note = [...doc.notes.values()].find((n) => n.body.kind !== 'text');
+    if (!note) return undefined;
+    const r = resolveNotes(doc).get(note.id);
+    return r?.ok ? r.r.value : undefined;
+  }
+
+  it('binds a 100 mm linear dimension from the committed fixture, and does not copy the number', () => {
+    const { doc, skipped } = importDxf(FIXTURE);
+    expect(skipped).toBe(0);
+    expect(doc.entities.size).toBe(1);
+    expect(doc.notes.size).toBe(1);
+    const note = [...doc.notes.values()][0]!;
+    expect(note.body.kind).toBe('linear');
+    if (note.body.kind !== 'linear') return;
+    expect(note.body.orient).toBe('horizontal');
+    expect(measured(doc)).toBe(100);
+    const saved = JSON.parse(saveDocument(doc)) as { notes: { body: Record<string, unknown> }[] };
+    expect(saved.notes[0]?.body).not.toHaveProperty('value');
+    expect(saved.notes[0]?.body).not.toHaveProperty('text');
+    expect(saveDocument(doc)).not.toMatch(/"42"/);
+
+    const line = [...doc.entities.values()][0]!;
+    const moved = execute(createSession(doc), 'entity.transform', {
+      ids: [line.id],
+      transform: { kind: 'scale', center: { x: 0, y: 0 }, factor: 1.4 },
+    }).session.doc;
+    expectClose(measured(moved) ?? NaN, 140);
+  });
+
+  it('skips a dimension whose text is OVER', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 0, 23, 0, 14, 100, 24, 0, 70, 32, 50, 0, 1, 'OVER',
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(doc.entities.size).toBe(1);
+    expect(doc.notes.size).toBe(0);
+    expect(skipped).toBe(1);
+  });
+
+  it('skips a dimension whose defpoints are not on geometry', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 3, 23, 7, 14, 9, 24, 2, 70, 32, 50, 0,
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(doc.entities.size).toBe(1);
+    expect(doc.notes.size).toBe(0);
+    expect(skipped).toBe(1);
+  });
+
+  describe('a dimension inside a block insert', () => {
+    // A 100 mm line with a horizontal dimension, as a block. Inserting it turned must turn the
+    // dimension too, or a vertical 100 mm line reads 0.
+    const part = [
+      0, 'BLOCK', 2, 'PART', 10, 0, 20, 0,
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 0, 23, 0, 14, 100, 24, 0, 70, 32, 50, 0, 1, '<>',
+      0, 'ENDBLK',
+    ] as const;
+
+    function inserted(rotation: number, scaleX = 1): string {
+      return pairs(
+        0, 'SECTION', 2, 'BLOCKS', ...part, 0, 'ENDSEC',
+        0, 'SECTION', 2, 'ENTITIES',
+        0, 'INSERT', 8, '0', 2, 'PART', 10, 0, 20, 0, 41, scaleX, 42, 1, 43, 1, 50, rotation,
+        0, 'ENDSEC', 0, 'EOF',
+      );
+    }
+
+    function only(doc: ReturnType<typeof importDxf>['doc']) {
+      const note = [...doc.notes.values()].find((n) => n.body.kind === 'linear');
+      return note && note.body.kind === 'linear' ? note.body.orient : undefined;
+    }
+
+    it('keeps a horizontal dimension horizontal when the insert is not turned', () => {
+      const { doc, skipped } = importDxf(inserted(0));
+      expect(skipped).toBe(0);
+      expect(only(doc)).toBe('horizontal');
+      expectClose(measured(doc) ?? NaN, 100);
+    });
+
+    it('makes it vertical when the insert is turned a quarter, and still reads 100', () => {
+      const { doc, skipped } = importDxf(inserted(90));
+      expect(skipped).toBe(0);
+      expect(only(doc)).toBe('vertical');
+      expectClose(measured(doc) ?? NaN, 100);
+    });
+
+    it('keeps it horizontal after a half turn or a mirror', () => {
+      for (const dxf of [inserted(180), inserted(0, -1)]) {
+        const { doc } = importDxf(dxf);
+        expect(only(doc)).toBe('horizontal');
+        expectClose(measured(doc) ?? NaN, 100);
+      }
+    });
+
+    it('skips it, and says so, when the insert is turned to an angle a linear dimension cannot hold', () => {
+      const { doc, skipped } = importDxf(inserted(45));
+      expect(doc.entities.size).toBe(1);
+      expect(doc.notes.size).toBe(0);
+      expect(skipped).toBe(1);
+    });
+
+    it('carries the turn through nested blocks, whichever level turns', () => {
+      for (const [innerTurn, outerTurn] of [[90, 0], [0, 90]] as const) {
+        const dxf = pairs(
+          0, 'SECTION', 2, 'BLOCKS', ...part,
+          0, 'BLOCK', 2, 'OUTER', 10, 0, 20, 0,
+          0, 'INSERT', 8, '0', 2, 'PART', 10, 0, 20, 0, 50, innerTurn,
+          0, 'ENDBLK',
+          0, 'ENDSEC',
+          0, 'SECTION', 2, 'ENTITIES',
+          0, 'INSERT', 8, '0', 2, 'OUTER', 10, 0, 20, 0, 50, outerTurn,
+          0, 'ENDSEC', 0, 'EOF',
+        );
+        const { doc, skipped } = importDxf(dxf);
+        expect(skipped).toBe(0);
+        expect(only(doc)).toBe('vertical');
+        expectClose(measured(doc) ?? NaN, 100);
+      }
+    });
+  });
+
+  it('skips an ordinate dimension', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 0, 20, 10, 13, 0, 23, 0, 14, 0, 24, 0, 70, 6,
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(doc.notes.size).toBe(0);
+    expect(skipped).toBe(1);
+  });
+
+  it('skips a rotated linear dimension that is not horizontal or vertical', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 10, 21, 10,
+      0, 'DIMENSION', 8, '0', 10, 0, 20, 5, 13, 0, 23, 0, 14, 10, 24, 10, 70, 32, 50, 45,
+    );
+    const { skipped, doc } = importDxf(dxf);
+    expect(doc.notes.size).toBe(0);
+    expect(skipped).toBe(1);
+  });
+
+  it('binds an aligned dimension (type 1)', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 30, 21, 40,
+      0, 'DIMENSION', 8, '0', 10, 40, 20, 40, 13, 0, 23, 0, 14, 30, 24, 40, 70, 33,
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    const note = [...doc.notes.values()][0]?.body;
+    expect(note?.kind).toBe('aligned');
+    expectClose(measured(doc) ?? NaN, 50);
+  });
+
+  it('binds a vertical linear dimension', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 0, 21, 80,
+      0, 'DIMENSION', 8, '0', 10, 10, 20, 40, 13, 0, 23, 0, 14, 0, 24, 80, 70, 32, 50, 90,
+    );
+    const { doc } = importDxf(dxf);
+    const note = [...doc.notes.values()][0]?.body;
+    expect(note?.kind).toBe('linear');
+    if (note?.kind !== 'linear') return;
+    expect(note.orient).toBe('vertical');
+    expectClose(measured(doc) ?? NaN, 80);
+  });
+
+  it('binds a radius dimension to a circle', () => {
+    const dxf = entities(
+      0, 'CIRCLE', 8, '0', 10, 0, 20, 0, 40, 10,
+      0, 'DIMENSION', 8, '0', 10, 0, 20, 0, 11, 15, 21, 0, 15, 10, 25, 0, 70, 36, 1, '<>',
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    const note = [...doc.notes.values()][0]?.body;
+    expect(note?.kind).toBe('radius');
+    expectClose(measured(doc) ?? NaN, 10);
+  });
+
+  it('binds a diameter dimension to a circle', () => {
+    const dxf = entities(
+      0, 'CIRCLE', 8, '0', 10, 0, 20, 0, 40, 10,
+      0, 'DIMENSION', 8, '0', 10, 10, 20, 0, 11, -15, 21, 0, 15, -10, 25, 0, 70, 35, 1, '<>',
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    const note = [...doc.notes.values()][0]?.body;
+    expect(note?.kind).toBe('diameter');
+    expectClose(measured(doc) ?? NaN, 20);
+  });
+
+  it('binds an angular dimension between two lines', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 10, 21, 0,
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 0, 21, 10,
+      0, 'DIMENSION', 8, '0', 10, 0, 20, 10, 13, 0, 23, 0, 14, 10, 24, 0, 15, 0, 25, 0, 16, 5, 26, 5, 70, 34, 1, '<>',
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    const note = [...doc.notes.values()][0]?.body;
+    expect(note?.kind).toBe('angle');
+    expectClose(measured(doc) ?? NaN, Math.PI / 2);
+  });
+
+  it('binds a 3-point angular dimension', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 10, 21, 0,
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 0, 21, 10,
+      0, 'DIMENSION', 8, '0', 10, 5, 20, 5, 13, 10, 23, 0, 14, 0, 24, 0, 15, 0, 25, 10, 16, 4, 26, 4, 70, 37,
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    expect([...doc.notes.values()][0]?.body.kind).toBe('angle');
+    expectClose(measured(doc) ?? NaN, Math.PI / 2);
+  });
+
+  it('binds a dimension whose defpoints are only close, using tolFor', () => {
+    const dxf = entities(
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 1e-12, 23, 0, 14, 100, 24, 0, 70, 32, 50, 0,
+    );
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    expectClose(measured(doc) ?? NaN, 100);
+  });
+
+  it('does not explode an anonymous *D block, and skips an INSERT of one', () => {
+    const { doc, skipped } = importDxf(FIXTURE);
+    expect(doc.entities.size).toBe(1);
+    expect(skipped).toBe(0);
+    const withInsert =
+      pairs(0, 'SECTION', 2, 'BLOCKS', 0, 'BLOCK', 2, '*D9', 10, 0, 20, 0, 0, 'LINE', 8, '0', 10, 0, 20, 20, 11, 10, 21, 20, 0, 'ENDBLK', 0, 'ENDSEC') +
+      pairs(0, 'SECTION', 2, 'ENTITIES', 0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 10, 21, 0, 0, 'INSERT', 8, '0', 2, '*D9', 10, 0, 20, 0, 0, 'ENDSEC', 0, 'EOF');
+    const exploded = importDxf(withInsert);
+    expect(exploded.doc.entities.size).toBe(1);
+    expect(exploded.skipped).toBe(1);
+  });
+
+  it('maps a DIMENSION inside an INSERT with the insert transform', () => {
+    const dxf =
+      pairs(
+        0, 'SECTION', 2, 'BLOCKS', 0, 'BLOCK', 2, 'BAR', 10, 0, 20, 0,
+        0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+        0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 0, 23, 0, 14, 100, 24, 0, 70, 32, 50, 0,
+        0, 'ENDBLK', 0, 'ENDSEC',
+      ) + pairs(0, 'SECTION', 2, 'ENTITIES', 0, 'INSERT', 8, '0', 2, 'BAR', 10, 20, 20, 5, 0, 'ENDSEC', 0, 'EOF');
+    const { doc, skipped } = importDxf(dxf);
+    expect(skipped).toBe(0);
+    const g = [...doc.entities.values()][0]?.geom;
+    expect(g?.kind).toBe('segment');
+    if (g?.kind !== 'segment') return;
+    expectPoint(g.start, { x: 20, y: 5 });
+    expectPoint(g.end, { x: 120, y: 5 });
+    expectClose(measured(doc) ?? NaN, 100);
+  });
+
+  it('still skips HATCH', () => {
+    const dxf = entities(0, 'HATCH', 8, '0', 10, 0, 20, 0);
+    expect(importDxf(dxf).skipped).toBe(1);
   });
 });
 

@@ -28,6 +28,7 @@ import {
   type CommandDef,
   type StyleProps,
 } from './command-kit';
+import { rectanglePresets, releaseTurned } from './constraints';
 import { CommandError } from './draft';
 import { deleteConstraintPair, deleteNotePair } from './driving';
 import { transformInsert } from './blocks';
@@ -72,15 +73,18 @@ import {
 export interface AddEntityParams extends StyleProps {
   readonly geom: Shape;
   readonly layer?: number;
+  /** A rectangle only: also hold each side horizontal or vertical, in the same undo step. */
+  readonly presets?: boolean;
 }
 
 const addEntity = define<AddEntityParams, { id: number }>({
   id: 'entity.add',
   label: 'Add',
   parse(raw) {
-    const o = readObject(raw, '', ['geom'], ['layer', 'color', 'linetype', 'lineweight']);
+    const o = readObject(raw, '', ['geom'], ['layer', 'color', 'linetype', 'lineweight', 'presets']);
     const layer = optional(o, 'layer', readPositiveInteger);
-    return { geom: readShape(o['geom'], 'geom'), ...(layer !== undefined && { layer }), ...readStyleProps(o) };
+    const presets = optional(o, 'presets', readBoolean);
+    return { geom: readShape(o['geom'], 'geom'), ...(layer !== undefined && { layer }), ...(presets !== undefined && { presets }), ...readStyleProps(o) };
   },
   run(draft, p) {
     const layer = p.layer ?? draft.settings.currentLayer;
@@ -96,6 +100,11 @@ const addEntity = define<AddEntityParams, { id: number }>({
       geom: p.geom,
       ...draft.sheetField(),
     });
+    if (p.presets === true) {
+      const held = rectanglePresets(id, p.geom);
+      if (!held) throw new CommandError('Only a rectangle with upright sides can start with constraints.');
+      for (const body of held) draft.putConstraint({ id: draft.allocateId(), body, ...draft.sheetField() });
+    }
     return { id };
   },
 });
@@ -162,6 +171,7 @@ const transformEntities = define<TransformParams, { changed: number }>({
     for (const e of entities) draft.putEntity({ ...e, geom: applyTransform(p.transform, e.geom) });
     for (const n of notes) draft.putNote(transformNote(p.transform, n));
     for (const ins of inserts) draft.putInsert(transformInsert(p.transform, ins));
+    if (p.transform.kind === 'rotate' || p.transform.kind === 'mirror') releaseTurned(draft, new Set(entities.map((e) => e.id)));
     return { changed: entities.length + notes.length + inserts.length };
   },
 });

@@ -150,6 +150,13 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Sheets, blocks and constraints (Phase 9) are document data: `pruneAndSolve` runs in
   `commitDraft` after every command. Bound point references only. Optional `sheet` is omitted
   on the first sheet. Inserts share the entity id space; sheets and blocks are named.
+- A rectangle drawn with the Rectangle tool starts with four constraints (`entity.add` with
+  `presets: true`, nothing else passes it). Constraints name polyline corners by number, so a
+  command that changes a polyline's corner count lets those constraints go (`releaseRenumbered`),
+  and a turn or mirror lets go the horizontal and vertical ones it made untrue (`releaseTurned`).
+  Both count in `Executed.released` (tools: `Outcome.released`) and the app says so with
+  `releasedMessage`. Constraint ids share the entity id space, so a tool-drawn rectangle uses the
+  four ids after its own.
 - Refusals are explained in plain words and change nothing: tools return `refuse(state, why)`,
   commands throw `CommandError`.
 - Commands that split or rebuild an entity keep its layer, style and draw order, and the first

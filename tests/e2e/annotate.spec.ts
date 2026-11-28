@@ -89,7 +89,8 @@ test('a hatch leaves islands clear and reports its area in the panel', async ({ 
   await expect(panel(page)).toContainText('Hatch');
   await expect(panel(page)).toContainText(/2,?321\.4/); // 60 × 40 − 25π = 2321.46
   const [hatch] = await notesOf(page);
-  expect(hatch?.body).toMatchObject({ kind: 'hatch', loops: [[2], [3]] });
+  // The plate is entity 2, its four constraints are 3 to 6, so the circle is entity 7.
+  expect(hatch?.body).toMatchObject({ kind: 'hatch', loops: [[2], [7]] });
 });
 
 test('the dimension style is edited in the panel, saved under a new name, and used by the next dimension', async ({ page }) => {

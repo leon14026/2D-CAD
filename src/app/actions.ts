@@ -6,6 +6,7 @@ import {
   CommandError,
   createSession,
   executeUnchecked,
+  releasedMessage,
   FILE_EXTENSION,
   FileFormatError,
   findLayer,
@@ -233,6 +234,7 @@ export class Actions {
     try {
       const r = executeUnchecked(this.store.get().session, id, params);
       this.store.set({ session: r.session });
+      if (r.released > 0) this.store.set({ message: { kind: 'info', text: releasedMessage(r.released) } });
       return true;
     } catch (err) {
       if (err instanceof CommandError) {

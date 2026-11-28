@@ -8,6 +8,7 @@ import {
   CONSTRAINT_KINDS,
   constraintProblem,
   constraintRefuseMessage,
+  pinsForDistanceEdit,
   solveConstraints,
   unmetOnDraft,
   type Constraint,
@@ -497,7 +498,7 @@ const setConstraintValue = define<SetConstraintValueParams, { id: number }>({
     }
     requireConstraintApplies(draft, next);
     draft.putConstraint({ ...c, body: next });
-    solveConstraints(draft);
+    solveConstraints(draft, next.kind === 'distance' ? pinsForDistanceEdit(draft.env(), next) : undefined);
     const unmet = unmetOnDraft(draft);
     if (unmet.length > 0) {
       const bad = draft.constraint(unmet[0]!.id) ?? { ...c, body: next };

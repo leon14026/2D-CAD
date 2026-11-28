@@ -14,15 +14,15 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   re-solve after every edit (Phase 9). A dimension you place also holds the drawing (Phase 13).
 - **DWG, read only.** Open a `.dwg` the same way as a DXF. The decoder loads only then, from
   this site, and stays off the 300 KB budget. Paper layouts, hatches, splines, ellipses,
-  solids, images, proxies and dimensions are left out (the toast says how many). There is no
-  DWG export.
+  solids, images and proxies are left out (the toast says how many). Dimensions use the same
+  mapper as DXF. There is no DWG export.
 - **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
   browser. It does not need DWG, so it can land before or after Phase 10.
-- **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
-  measurements (where to measure, never the stored number). Until then they are skipped.
+- **Live DXF dimensions.** A DXF `DIMENSION` becomes an ArchiLite measurement (where to
+  measure, never the stored number). Hatches stay skipped.
 
-**Status:** Phases 1 to 9 and 13 are merged. Phase 10 (read-only DWG import) is in this pull
-request. Phase 11 (phone browser) and Phase 12 (live DXF dimensions) are planned independently.
+**Status:** Phases 1 to 9, 12 and 13 are merged. Phase 10 (read-only DWG import) is in this
+pull request. Phase 11 (phone browser) is planned independently.
 See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
