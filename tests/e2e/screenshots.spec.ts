@@ -83,6 +83,11 @@ test('the Phase 5 reference drawing, made with every modify tool', async ({ page
   test.setTimeout(90_000);
   await page.goto('./?test');
   await drawModifyReference(page);
+  // Filleting a preset rectangle leaves an info toast; dismiss it so the snapshot is
+  // the drawing, not a message that times out at different lengths on CI.
+  const toast = page.locator('#al-toast');
+  if (await toast.isVisible()) await toast.click();
+  await expect(toast).toBeHidden();
   await parkMouse(page);
   await expect(page).toHaveScreenshot('modify-reference.png', { clip: await drawingClip(page) });
 });
