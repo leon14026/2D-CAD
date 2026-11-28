@@ -127,6 +127,35 @@ describe('script host', () => {
     expect(session.doc.settings.title).toBe('Named');
   });
 
+  it('cad.setConstraint changes a length, converting angles from degrees', () => {
+    const { session } = applyJavaScript(
+      createSession(),
+      `
+        const a = cad.line(0, 0, 10, 0);
+        const c = cad.run('constraint.add', { body: { kind: 'length', target: a, value: 10 } });
+        cad.setConstraint(c.id, 20);
+      `,
+    );
+    const g = [...session.doc.entities.values()][0]?.geom;
+    expect(g?.kind).toBe('segment');
+    if (g?.kind === 'segment') {
+      expect(Math.hypot(g.end.x - g.start.x, g.end.y - g.start.y)).toBeCloseTo(20, 9);
+    }
+    const { session: angled } = applyJavaScript(
+      createSession(),
+      `
+        const a = cad.line(0, 0, 10, 0);
+        const b = cad.line(0, 0, 0, 10);
+        const c = cad.run('constraint.add', { body: { kind: 'angle', a, b, value: Math.PI / 2 } });
+        cad.setConstraint(c.id, 45);
+      `,
+    );
+    const body = [...angled.doc.constraints.values()][0]?.body;
+    expect(body?.kind).toBe('angle');
+    if (body?.kind === 'angle') expect(body.value).toBeCloseTo(Math.PI / 4, 9);
+    expect(() => applyJavaScript(createSession(), `cad.setConstraint(99, 1)`)).toThrow(/no constraint/);
+  });
+
   it('asList unwraps array-likes and toJs proxies', () => {
     expect(asList([1, 2], 'p')).toEqual([1, 2]);
     expect(asList({ 0: 1, 1: 2, length: 2 }, 'p')).toEqual([1, 2]);

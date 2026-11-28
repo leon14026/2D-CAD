@@ -52,6 +52,7 @@ export function paletteEntries(actions: Actions, store: Store, drafting: Draftin
     { label: 'Show or hide the layers panel', keys: '[', run: () => actions.toggleLayersPanel() },
     { label: 'Show or hide the selection panel', keys: ']', run: () => actions.toggleSelectionPanel() },
     { label: 'Show or hide the script panel', keys: '`', run: () => actions.toggleScriptPanel() },
+    { label: s().showConstraints ? 'Hide constraints' : 'Show constraints', keys: 'Shift C', run: () => actions.toggleConstraints() },
     ...LENGTH_UNITS.flatMap((u) => [
       {
         label: `Treat drawing units as ${UNIT_WORDS[u]} (keep the numbers)`,
@@ -323,6 +324,7 @@ export function mountShell(store: Store, actions: Actions, drafting: DraftingCon
     if (e.shiftKey && key === 's') return run(() => actions.toggleSnaps());
     if (e.shiftKey && key === 'o') return run(() => actions.toggleOrtho());
     if (e.shiftKey && key === 't') return run(() => actions.togglePolar());
+    if (e.shiftKey && key === 'c') return run(() => actions.toggleConstraints());
     const tool = e.shiftKey ? undefined : TOOL_BUTTONS.find((b) => b.key === key);
     if (tool) return run(() => drafting.start(tool.id));
     if (key === 'escape') {

@@ -1,10 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
-(text codes and units), [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT),
-and [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
-The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
-([#11](https://github.com/leon14026/2D-CAD/pull/11), [#16](https://github.com/leon14026/2D-CAD/pull/16)).
+**Now:** Phases 1 to 9 are merged and live. Phase 12 (live DXF dimensions) is in this pull
+request. Phase 13 (driving dimensions) is in [#21](https://github.com/leon14026/2D-CAD/pull/21)
+and does not wait on this one. The Phase 11 phone plan is on `main`
+([#11](https://github.com/leon14026/2D-CAD/pull/11)).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -22,8 +21,8 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | In progress | [#26](https://github.com/leon14026/2D-CAD/pull/26) | — |
-| 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | Planned | — | — |
+| 12. Live DXF dimensions | Done | [#23](https://github.com/leon14026/2D-CAD/pull/23) | 2026-11-27 |
+| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) (merged), [#24](https://github.com/leon14026/2D-CAD/pull/24) (merged), rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
@@ -35,6 +34,58 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   Independent of Phase 10, 12 and 13; branched from `main`. PR [#26](https://github.com/leon14026/2D-CAD/pull/26).
 - Local gate: 1,214 unit tests, 80 browser tests (including 390×844 phone), 125.6 KB gzipped.
   20,000-entity pan 8.4 ms avg (119 fps), zoom 12.3 ms avg (82 fps).
+
+### 2026-11-27: Phase 13: rectangle presets
+
+- Owner decision: shapes get preset constraints, like a sketch in a parametric CAD program.
+  Branch `phase-13-shape-presets`, pull request [#28](https://github.com/leon14026/2D-CAD/pull/28),
+  built on [#21](https://github.com/leon14026/2D-CAD/pull/21); #21 must merge first.
+- Built: a rectangle drawn with the tool holds each side horizontal or vertical (four
+  constraints, one undo step). Typing a new width or height now works from every side and
+  either end of it; before this, three of the four click orders were refused or grew the wrong way.
+- Solver fix found on the way: a one-axis constraint (horizontal, vertical, a distance along x
+  or y) now votes on its own axis only. Before, a typed width landed about 6e-10 short
+  (`-19.999999999418` for `-20`); now it is exact.
+- Rounding, cutting, joining, exploding, turning and mirroring a preset rectangle are not
+  refused. They let the constraints go and say so; Ctrl+Z brings them back. A turned
+  dimension stays, in brackets.
+- Reference drawings: the plate in both is drawn with the Rectangle tool, so every later id is
+  four higher. Same geometry, same notes; the hand-worked checks and the two approved files
+  were renumbered and compared with the old ones first.
+- Not done, for the owner to decide: copies, arrays and offsets of a rectangle are plain;
+  scaling a dimensioned shape is still refused; the Polygon tool has no presets (its equal
+  sides need constraints on one polyline's edges); lines drawn exactly horizontal or vertical
+  get no constraint.
+
+### 2026-11-27: Click a dimension's number to redimension
+
+- SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
+  number now opens the entry box to type a new size. A click on the dimension lines only
+  selects. Double-click anywhere on the dimension still edits.
+
+### 2026-11-27: Phase 13 started
+
+- Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a
+  conflicting edit, constraint marks, FILE_VERSION 4. Independent of Phases 10–12.
+- Review fix: the refusal check looked at every constraint on the sheet and pinned every
+  touched entity, whether or not its shape changed. With two constraints that could never
+  both be met, moving an unrelated line, or only changing a line's lineweight, was refused
+  with a message about the other line. An edit is now refused only for a constraint it broke
+  or made worse, and a restyle pins nothing.
+- Known and left for the owner: a rectangle is one closed polyline with no horizontal or
+  vertical constraints, so typing a new width for a dimension between two of its corners moves
+  only the second corner. Phase 13 plans no automatic horizontal/vertical constraints.
+  (Resolved the same day: see "Phase 13: rectangle presets" below.)
+
+### 2026-11-27: Phase 12 started
+
+- DXF `DIMENSION` becomes an ArchiLite note bound to geometry (where to measure, never the
+  stored number). Overrides, ordinates, unbound defpoints and hatches stay skipped.
+  Independent of Phases 10, 11 and 13.
+- Review fix: a horizontal or vertical dimension inside a block insert kept its pre-turn axis,
+  so a 100 mm line inserted at 90 degrees read 0.00 (and at 45 degrees 70.71). The measuring
+  direction now travels through the insert's transform with the points. A direction that ends
+  up off both axes is skipped and counted, like any other dimension ArchiLite cannot hold.
 
 ### 2026-11-27: Phase 13 planned
 

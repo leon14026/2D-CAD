@@ -19,10 +19,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
   measurements (where to measure, never the stored number). Until then they are skipped.
 
-**Status:** Phases 1 to 9 are built and merged. Phase 11 (phone browser) is in
-[#26](https://github.com/leon14026/2D-CAD/pull/26) and does not wait on Phase 10. Phase 12
-(live DXF dimensions) is planned and does not wait on Phase 10 or 11. Phase 13 (driving
-dimensions and editing constrained drawings) is planned and does not wait on any of them. See
+**Status:** Phases 1 to 9, 12 (live DXF dimensions) and 13 (driving dimensions and rectangle
+presets) are built and merged. Phase 11 (phone browser) is in
+[#26](https://github.com/leon14026/2D-CAD/pull/26) and does not wait on Phase 10. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.

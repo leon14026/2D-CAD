@@ -28,7 +28,9 @@ import {
   type CommandDef,
   type StyleProps,
 } from './command-kit';
+import { rectanglePresets, releaseTurned } from './constraints';
 import { CommandError } from './draft';
+import { deleteConstraintPair, deleteNotePair } from './driving';
 import { transformInsert } from './blocks';
 import { EDIT_COMMANDS } from './edit-commands';
 import { LAYOUT_COMMANDS } from './layout-commands';
@@ -71,15 +73,18 @@ import {
 export interface AddEntityParams extends StyleProps {
   readonly geom: Shape;
   readonly layer?: number;
+  /** A rectangle only: also hold each side horizontal or vertical, in the same undo step. */
+  readonly presets?: boolean;
 }
 
 const addEntity = define<AddEntityParams, { id: number }>({
   id: 'entity.add',
   label: 'Add',
   parse(raw) {
-    const o = readObject(raw, '', ['geom'], ['layer', 'color', 'linetype', 'lineweight']);
+    const o = readObject(raw, '', ['geom'], ['layer', 'color', 'linetype', 'lineweight', 'presets']);
     const layer = optional(o, 'layer', readPositiveInteger);
-    return { geom: readShape(o['geom'], 'geom'), ...(layer !== undefined && { layer }), ...readStyleProps(o) };
+    const presets = optional(o, 'presets', readBoolean);
+    return { geom: readShape(o['geom'], 'geom'), ...(layer !== undefined && { layer }), ...(presets !== undefined && { presets }), ...readStyleProps(o) };
   },
   run(draft, p) {
     const layer = p.layer ?? draft.settings.currentLayer;
@@ -95,6 +100,11 @@ const addEntity = define<AddEntityParams, { id: number }>({
       geom: p.geom,
       ...draft.sheetField(),
     });
+    if (p.presets === true) {
+      const held = rectanglePresets(id, p.geom);
+      if (!held) throw new CommandError('Only a rectangle with upright sides can start with constraints.');
+      for (const body of held) draft.putConstraint({ id: draft.allocateId(), body, ...draft.sheetField() });
+    }
     return { id };
   },
 });
@@ -111,16 +121,20 @@ const deleteEntities = define<IdsParams, { deleted: number }>({
     return { ids: readIds(o['ids'], 'ids') };
   },
   run(draft, p) {
-    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
+    const isNote = (id: number) => draft.note(id) !== undefined;
+    const isInsert = (id: number) => draft.insert(id) !== undefined;
+    const isConstraint = (id: number) => draft.constraint(id) !== undefined;
     for (const id of p.ids) {
       if (isNote(id)) requireNoteEditable(draft, id);
       else if (isInsert(id)) requireUnlocked(draft, draft.insert(id)!.layer);
-      else requireEditable(draft, id);
+      else if (isConstraint(id)) {
+        /* constraints are not on a layer */
+      } else requireEditable(draft, id);
     }
     for (const id of p.ids) {
-      if (isNote(id)) draft.deleteNote(id);
+      if (isNote(id)) deleteNotePair(draft, id);
       else if (isInsert(id)) draft.deleteInsert(id);
+      else if (isConstraint(id)) deleteConstraintPair(draft, id);
       else draft.deleteEntity(id);
     }
     return { deleted: p.ids.length };
@@ -141,18 +155,23 @@ const transformEntities = define<TransformParams, { changed: number }>({
   label: 'Transform',
   parse: readTransformParams,
   run(draft, p) {
-    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
-    const entities = p.ids.filter((id) => !isNote(id) && !isInsert(id)).map((id) => requireEditable(draft, id));
+    const isNote = (id: number) => draft.note(id) !== undefined;
+    const isInsert = (id: number) => draft.insert(id) !== undefined;
+    const isConstraint = (id: number) => draft.constraint(id) !== undefined;
+    const entities = p.ids.filter((id) => !isNote(id) && !isInsert(id) && !isConstraint(id)).map((id) => requireEditable(draft, id));
     const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id));
     const inserts = p.ids.filter(isInsert).map((id) => {
       const ins = draft.insert(id)!;
       requireUnlocked(draft, ins.layer);
       return ins;
     });
+    if (entities.length + notes.length + inserts.length === 0) {
+      throw new CommandError('Constraints are marks, not geometry. Change or delete them in the selection panel.');
+    }
     for (const e of entities) draft.putEntity({ ...e, geom: applyTransform(p.transform, e.geom) });
     for (const n of notes) draft.putNote(transformNote(p.transform, n));
     for (const ins of inserts) draft.putInsert(transformInsert(p.transform, ins));
+    if (p.transform.kind === 'rotate' || p.transform.kind === 'mirror') releaseTurned(draft, new Set(entities.map((e) => e.id)));
     return { changed: entities.length + notes.length + inserts.length };
   },
 });
@@ -162,9 +181,10 @@ const copyEntities = define<TransformParams, { ids: number[] }>({
   label: 'Copy',
   parse: readTransformParams,
   run(draft, p) {
-    const isNote = (id: number) => draft.entity(id) === undefined && draft.note(id) !== undefined;
-    const isInsert = (id: number) => draft.entity(id) === undefined && draft.insert(id) !== undefined;
-    const sources = p.ids.filter((id) => !isNote(id) && !isInsert(id)).map((id) => requireEditable(draft, id));
+    const isNote = (id: number) => draft.note(id) !== undefined;
+    const isInsert = (id: number) => draft.insert(id) !== undefined;
+    const isConstraint = (id: number) => draft.constraint(id) !== undefined;
+    const sources = p.ids.filter((id) => !isNote(id) && !isInsert(id) && !isConstraint(id)).map((id) => requireEditable(draft, id));
     // A dimension, centre mark or hatch belongs to the geometry it measures, so it is not copied.
     const notes = p.ids.filter(isNote).map((id) => requireNoteEditable(draft, id)).filter(isFreeNote);
     const inserts = p.ids.filter(isInsert).map((id) => {

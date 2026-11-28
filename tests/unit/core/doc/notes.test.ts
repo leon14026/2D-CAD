@@ -312,6 +312,11 @@ describe('references follow geometry', () => {
     expect(refAt(doc, P(-0, 7))).toEqual({ kind: 'free', p: P(0, 7) });
   });
 
+  it('refAt with a tolerance binds a point that is only close', () => {
+    expect(refAt(doc, P(1e-10, 0))).toEqual({ kind: 'free', p: P(1e-10, 0) });
+    expect(refAt(doc, P(1e-10, 0), 1e-9)).toEqual({ kind: 'end', id: 2, end: 'start' });
+  });
+
   it('resolveRef reads the points now, and says what is missing', () => {
     const env = docEnv(doc);
     expectPoint(resolveRef(env, { kind: 'end', id: 2, end: 'end' }), P(10, 0));
@@ -344,13 +349,13 @@ describe('references follow geometry', () => {
   it('a dimension follows its geometry when it is moved, rotated or scaled', () => {
     let s = withShapes(segment(P(0, 0), P(30, 0)), segment(P(0, 0), P(0, 40))).session;
     const dim: NoteBody = { kind: 'aligned', a: refAt(s.doc, P(30, 0)), b: refAt(s.doc, P(0, 40)), at: P(40, 40), style: STYLE };
-    const id = execute(s, 'note.add', { body: dim });
+    const id = execute(s, 'note.add', { body: dim, reference: true });
     s = id.session;
     expectClose(resolveNotes(s.doc).get(id.result.id)?.ok ? (resolveNotes(s.doc).get(id.result.id) as { ok: true; r: { value?: number } }).r.value ?? NaN : NaN, 50);
     s = execute(s, 'entity.transform', { ids: [2, 3], transform: { kind: 'scale', center: P(0, 0), factor: 2 } }).session;
     const r = resolveNotes(s.doc).get(id.result.id) as { ok: true; r: { value: number; text: string } };
     expectClose(r.r.value, 100);
-    expect(r.r.text).toBe('100.00');
+    expect(r.r.text).toBe('(100.00)');
   });
 });
 

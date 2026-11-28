@@ -4,7 +4,8 @@
  * the main canvas is redrawn when the drawing, the view or the selection changes.
  */
 import type { Shape, Vec2 } from '../core/geom';
-import { pickShapes, resolveNotes } from '../core/doc';
+import { constraintEntityIds, pickShapes, resolveNotes, type ConstraintMark } from '../core/doc';
+import { visibleConstraintMarks } from '../app/store';
 import { DocIndex, SNAP_LABELS, type SnapHit } from '../core/spatial';
 import type { AppState, Store } from '../app/store';
 import { palette } from '../ui/palette';
@@ -61,7 +62,8 @@ export class CanvasView {
         s.viewport !== p.viewport ||
         s.selection !== p.selection ||
         s.showGrid !== p.showGrid ||
-        s.lineweights !== p.lineweights
+        s.lineweights !== p.lineweights ||
+        s.showConstraints !== p.showConstraints
       ) {
         this.invalidate(true);
       } else if (s.hover !== p.hover) {
@@ -159,33 +161,42 @@ export class CanvasView {
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
     const vp: Viewport = s.viewport;
 
-    if (s.hover !== null && !s.selection.has(s.hover)) {
-      const e = s.session.doc.entities.get(s.hover);
+    const k = vp.pxPerUnit * dpr;
+    const X = (x: number) => vp.originX * dpr + x * k;
+    const Y = (y: number) => vp.originY * dpr - y * k;
+    const highlight = (shapes: readonly Shape[]) => {
+      if (shapes.length === 0) return;
+      ctx.beginPath();
+      for (const shape of shapes) traceShape(ctx, shape, X, Y, k);
+      ctx.strokeStyle = palette.selection;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 4 * dpr;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    };
+    const highlightId = (id: number) => {
+      const e = s.session.doc.entities.get(id);
       if (e) {
-        const k = vp.pxPerUnit * dpr;
-        ctx.beginPath();
-        traceShape(ctx, e.geom, (x) => vp.originX * dpr + x * k, (y) => vp.originY * dpr - y * k, k);
-        ctx.strokeStyle = palette.selection;
-        ctx.globalAlpha = 0.45;
-        ctx.lineWidth = 4 * dpr;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      } else {
-        const r = resolveNotes(s.session.doc).get(s.hover);
-        if (r?.ok) {
-          const k = vp.pxPerUnit * dpr;
-          ctx.beginPath();
-          for (const shape of pickShapes(r.r.prims)) traceShape(ctx, shape, (x) => vp.originX * dpr + x * k, (y) => vp.originY * dpr - y * k, k);
-          ctx.strokeStyle = palette.selection;
-          ctx.globalAlpha = 0.45;
-          ctx.lineWidth = 4 * dpr;
-          ctx.lineCap = 'round';
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
+        highlight([e.geom]);
+        return;
       }
+      const r = resolveNotes(s.session.doc).get(id);
+      if (r?.ok) highlight(pickShapes(r.r.prims));
+    };
+    if (s.hover !== null && !s.selection.has(s.hover)) highlightId(s.hover);
+    const focus = [...s.selection].concat(s.hover !== null ? [s.hover] : []);
+    const held = new Set<number>();
+    for (const id of focus) {
+      const c = s.session.doc.constraints.get(id);
+      if (c) for (const eid of constraintEntityIds(c)) held.add(eid);
     }
+    for (const id of held) {
+      if (!s.selection.has(id) && id !== s.hover) highlightId(id);
+    }
+
+    const marks = visibleConstraintMarks(s);
+    if (marks.length > 0) this.drawMarks(ctx, vp, marks, s.selection);
 
     if (this.box) {
       const { from, to, mode } = this.box;
@@ -208,6 +219,32 @@ export class CanvasView {
     if (this.draft) this.drawDraft(ctx, vp, this.draft);
 
     drawRulers(ctx, vp, this.width, this.height, dpr, s.session.doc.settings.units, this.cursor);
+  }
+
+  private drawMarks(ctx: CanvasRenderingContext2D, vp: Viewport, marks: readonly ConstraintMark[], selection: ReadonlySet<number>): void {
+    const { dpr } = this;
+    const k = vp.pxPerUnit * dpr;
+    const X = (x: number) => vp.originX * dpr + x * k;
+    const Y = (y: number) => vp.originY * dpr - y * k;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    ctx.setLineDash([]);
+    for (const selected of [false, true]) {
+      ctx.beginPath();
+      let any = false;
+      for (const m of marks) {
+        if (selection.has(m.id) !== selected) continue;
+        any = true;
+        for (const [a, b] of m.segs) {
+          ctx.moveTo(X(a.x), Y(a.y));
+          ctx.lineTo(X(b.x), Y(b.y));
+        }
+      }
+      if (!any) continue;
+      ctx.strokeStyle = selected ? palette.selection : palette.origin;
+      ctx.lineWidth = (selected ? 2 : 1) * dpr;
+      ctx.stroke();
+    }
   }
 
   private drawDraft(ctx: CanvasRenderingContext2D, vp: Viewport, d: DraftFeedback): void {

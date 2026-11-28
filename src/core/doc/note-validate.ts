@@ -257,15 +257,28 @@ export function readNoteBody(v: unknown, path: string): NoteBody {
 }
 
 export function readNote(v: unknown, path: string): Note {
-  const o = readObject(v, path, ['id', 'layer', 'z', 'color', 'lineweight', 'body'], ['sheet']);
+  const o = readObject(v, path, ['id', 'layer', 'z', 'color', 'lineweight', 'body'], ['sheet', 'drive', 'reference']);
   const sheet = Object.hasOwn(o, 'sheet') ? readName(o['sheet'], join(path, 'sheet'), 64) : undefined;
+  const drive = Object.hasOwn(o, 'drive') ? readPositiveInteger(o['drive'], join(path, 'drive')) : undefined;
+  const reference = Object.hasOwn(o, 'reference') ? readBoolean(o['reference'], join(path, 'reference')) : undefined;
+  if (reference === false) throw new ValidationError(join(path, 'reference'), 'must be true when present');
+  const body = readNoteBody(o['body'], join(path, 'body'));
+  if (reference && !['linear', 'aligned', 'radius', 'diameter', 'angle'].includes(body.kind)) {
+    throw new ValidationError(join(path, 'reference'), 'is only allowed on a dimension');
+  }
+  if (drive !== undefined && !['linear', 'aligned', 'radius', 'diameter', 'angle'].includes(body.kind)) {
+    throw new ValidationError(join(path, 'drive'), 'is only allowed on a dimension');
+  }
+  if (reference && drive !== undefined) throw new ValidationError(join(path, 'drive'), 'cannot be set on a reference dimension');
   return {
     id: readPositiveInteger(o['id'], join(path, 'id')),
     layer: readPositiveInteger(o['layer'], join(path, 'layer')),
     z: readNumber(o['z'], join(path, 'z')),
     color: readColorRef(o['color'], join(path, 'color')),
     lineweight: readLineweightRef(o['lineweight'], join(path, 'lineweight')),
-    body: readNoteBody(o['body'], join(path, 'body')),
+    body,
     ...(sheet ? { sheet } : {}),
+    ...(drive !== undefined ? { drive } : {}),
+    ...(reference ? { reference: true as const } : {}),
   };
 }

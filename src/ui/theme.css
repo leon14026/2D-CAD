@@ -596,6 +596,44 @@ body.al-show-script .al-script {
   padding: 0 12px;
 }
 
+.al-constraint-list {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--al-rule);
+}
+
+.al-constraint-list h3 {
+  margin: 0 0 8px;
+  font-size: var(--al-text-small);
+  font-weight: 700;
+}
+
+.al-constraint {
+  padding: 8px 0;
+  border-top: 1px solid var(--al-rule);
+  cursor: pointer;
+}
+
+.al-constraint:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.al-constraint-head {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.al-constraint .al-form {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.al-constraint .al-action {
+  margin-top: 8px;
+}
+
 /* ---------- drawing area ---------- */
 
 .al-stage {

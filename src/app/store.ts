@@ -2,7 +2,7 @@
  * App state: the editing session plus everything about how it is being viewed. One plain
  * object, replaced on every change; views subscribe and redraw what they need.
  */
-import { canRedo, canUndo, createSession, newDocument, redo, undo, type Doc, type Session } from '../core/doc';
+import { canRedo, canUndo, constraintMarks, createSession, newDocument, redo, undo, type ConstraintMark, type Doc, type Session } from '../core/doc';
 import { DEFAULT_SNAPS, isSelectable, type SnapKind } from '../core/spatial';
 import { DEFAULT_MEMORY, type ActiveTool, type ToolMemory } from '../core/tools';
 import type { Viewport } from '../render/viewport';
@@ -31,6 +31,7 @@ export interface AppState {
    * A completed box, a new tool, or Esc clears it.
    */
   readonly boxSelect: boolean;
+  readonly showConstraints: boolean;
   readonly message: Message | null;
   /** The drawing or editing tool in use, or null when selecting. */
   readonly tool: ActiveTool | null;
@@ -78,7 +79,8 @@ export class Store {
 function pruneSelection(s: AppState): Partial<AppState> {
   const doc = s.session.doc;
   const keep = (id: number) => {
-    const item = doc.entities.get(id) ?? doc.notes.get(id);
+    if (doc.constraints.has(id)) return true;
+    const item = doc.entities.get(id) ?? doc.notes.get(id) ?? doc.inserts.get(id);
     return item !== undefined && isSelectable(doc, item);
   };
   const selection = [...s.selection].filter(keep);
@@ -103,6 +105,7 @@ export function initialState(viewport: Viewport): AppState {
     showSelection: true,
     showScript: false,
     boxSelect: false,
+    showConstraints: false,
     message: null,
     tool: null,
     toolMemory: DEFAULT_MEMORY,
@@ -116,6 +119,11 @@ export function initialState(viewport: Viewport): AppState {
 }
 
 export const isDirty = (s: AppState) => s.session.doc !== s.savedDoc;
+
+/** Constraint marks to pick and draw, or none when they are hidden. */
+export function visibleConstraintMarks(s: AppState): readonly ConstraintMark[] {
+  return s.showConstraints ? constraintMarks(s.session.doc) : [];
+}
 
 export function doUndo(store: Store): void {
   const s = store.get();

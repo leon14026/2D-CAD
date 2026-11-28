@@ -4,6 +4,7 @@ import { circle, segment } from '../../../../src/core/geom';
 import {
   currentPrompt,
   DEFAULT_MEMORY,
+  EMPTY_STATE,
   feed,
   startTool,
   TOOLS,
@@ -208,6 +209,60 @@ describe('layout tools', () => {
     expect(feed(namedInsert.drafting, N(1)).error).toBeTruthy();
     const distFree = feed(feed(startTool(d0, 'constrainDistance'), P(99, 99)).drafting, P(98, 98));
     expect(feed(distFree.drafting, N(5)).error).toMatch(/sit on drawn shapes/);
+  });
+
+  it('editConstraint types a new number onto the selected driving dimension', () => {
+    const a = execute(createSession(newDocument()), 'entity.add', { geom: segment({ x: 0, y: 0 }, { x: 10, y: 0 }) });
+    const dim = execute(a.session, 'note.add', {
+      body: {
+        kind: 'aligned',
+        a: { kind: 'end', id: a.result.id, end: 'start' },
+        b: { kind: 'end', id: a.result.id, end: 'end' },
+        at: { x: 5, y: -4 },
+        style: 'ISO',
+      },
+    });
+    const nid = dim.result.id;
+    const cid = dim.session.doc.notes.get(nid)!.drive!;
+    const d0: Drafting = { session: dim.session, memory: DEFAULT_MEMORY, active: null };
+    expect(currentPrompt(startTool(d0, 'editConstraint', [nid]))?.text).toBe('New value');
+    expect(currentPrompt(startTool(d0, 'editConstraint', [cid]))?.text).toBe('New value');
+    expect(feed(startTool(d0, 'editConstraint', [cid]), N(16)).error).toBeNull();
+    expect(feed(startTool(d0, 'editConstraint', [cid]), N(16)).drafting.session.doc.constraints.get(cid)?.body).toMatchObject({
+      value: 16,
+    });
+    expect(feed(startTool(d0, 'editConstraint', [cid]), ENTER).drafting.active).toBeNull();
+    expect(feed(startTool(blank(), 'editConstraint'), N(1)).error).toMatch(/Pick a driving dimension/);
+    expect(currentPrompt(startTool(blank(), 'editConstraint'))?.text).toMatch(/Nothing to edit/);
+    const horiz = execute(a.session, 'constraint.add', {
+      body: { kind: 'horizontal', a: { kind: 'end', id: a.result.id, end: 'start' }, b: { kind: 'end', id: a.result.id, end: 'end' } },
+    });
+    const hid = [...horiz.session.doc.constraints.values()].find((c) => c.body.kind === 'horizontal')!.id;
+    const ctxH = { doc: horiz.session.doc, selection: [hid], memory: DEFAULT_MEMORY };
+    expect(TOOLS.editConstraint.input({ ...EMPTY_STATE, ids: [hid] }, N(1), ctxH).error).toMatch(/no value to change/);
+    const ctx = { doc: dim.session.doc, selection: [cid], memory: DEFAULT_MEMORY };
+    const t = TOOLS.editConstraint;
+    const s = t.start(ctx);
+    t.prompt(s, ctx);
+    t.base(s);
+    t.preview(s, { x: 0, y: 0 }, ctx);
+    t.input(s, { kind: 'text', text: 'x' }, ctx);
+    t.prompt({ ...EMPTY_STATE, ids: [hid] }, ctxH);
+    t.prompt({ ...EMPTY_STATE, ids: [999_999] }, ctx);
+    expect(t.input({ ...EMPTY_STATE, ids: [999_999] }, N(1), ctx).error).toMatch(/no value to change/);
+    expect(
+      TOOLS.block.input({ ...EMPTY_STATE, step: 2, ids: [a.result.id] }, P(0, 0), { doc: a.session.doc, selection: [], memory: DEFAULT_MEMORY }).calls[0]
+        ?.params,
+    ).toMatchObject({ name: 'Block' });
+    const angA = execute(createSession(newDocument()), 'entity.add', { geom: segment({ x: 0, y: 0 }, { x: 10, y: 0 }) });
+    const angB = execute(angA.session, 'entity.add', { geom: segment({ x: 0, y: 0 }, { x: 0, y: 10 }) });
+    const ang = execute(angB.session, 'constraint.add', { body: { kind: 'angle', a: angA.result.id, b: angB.result.id, value: Math.PI / 2 } });
+    const aid = [...ang.session.doc.constraints.keys()][0]!;
+    const dAng: Drafting = { session: ang.session, memory: DEFAULT_MEMORY, active: null };
+    expect(currentPrompt(startTool(dAng, 'editConstraint', [aid]))?.defaultValue).toBe(90);
+    expect(feed(startTool(dAng, 'editConstraint', [aid]), N(45)).error).toBeNull();
+    const dH: Drafting = { session: horiz.session, memory: DEFAULT_MEMORY, active: null };
+    expect(currentPrompt(startTool(dH, 'editConstraint', [hid]))?.text).toMatch(/Nothing to edit/);
   });
 });
 

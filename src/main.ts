@@ -31,6 +31,11 @@ mountSelectionPanel(requireElement('#al-selection-panel', HTMLElement), store, {
   editNote: (id, patch) => actions.editNote(id, patch),
   useDimStyle: (name) => actions.useDimStyle(name),
   saveDimStyle: (style) => actions.saveDimStyle(style),
+  setNoteReference: (id, reference) => actions.setNoteReference(id, reference),
+  setConstraintValue: (id, value) => actions.setConstraintValue(id, value),
+  setConstraintFix: (id, p) => actions.setConstraintFix(id, p),
+  removeConstraint: (id) => actions.removeConstraint(id),
+  selectIds: (ids) => actions.selectIds(ids),
 });
 mountScriptPanel(requireElement('#al-script-panel', HTMLElement), store, actions);
 mountShell(store, actions, drafting, `v${buildInfo.version} (${buildInfo.sha})`);

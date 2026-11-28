@@ -1,12 +1,12 @@
 {
   "format": "archilite",
-  "version": 3,
+  "version": 4,
   "title": "Annotation reference",
   "units": "mm",
   "currentLayer": 1,
   "currentDimStyle": "ISO",
   "currentSheet": "Sheet 1",
-  "nextId": 17,
+  "nextId": 21,
   "dimStyles": [
     {"name":"ISO","textHeight":3.5,"arrowSize":3,"extGap":1,"extOver":2,"textGap":1,"precision":2,"anglePrecision":1,"centreMark":2.5,"centreOver":2}
   ],
@@ -19,23 +19,28 @@
   "blocks": [],
   "entities": [
     {"id":2,"layer":1,"z":2,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"polyline","vertices":[{"x":0,"y":0,"bulge":0},{"x":60,"y":0,"bulge":0},{"x":60,"y":40,"bulge":0},{"x":0,"y":40,"bulge":0}],"closed":true}},
-    {"id":3,"layer":1,"z":3,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":15,"y":20},"radius":4}},
-    {"id":4,"layer":1,"z":4,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":45,"y":20},"radius":5}},
-    {"id":5,"layer":1,"z":5,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":80,"y":0},"end":{"x":110,"y":0}}},
-    {"id":6,"layer":1,"z":6,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":80,"y":0},"end":{"x":100,"y":20}}}
+    {"id":7,"layer":1,"z":7,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":15,"y":20},"radius":4}},
+    {"id":8,"layer":1,"z":8,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"circle","center":{"x":45,"y":20},"radius":5}},
+    {"id":9,"layer":1,"z":9,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":80,"y":0},"end":{"x":110,"y":0}}},
+    {"id":10,"layer":1,"z":10,"color":"byLayer","linetype":"byLayer","lineweight":"byLayer","geom":{"kind":"segment","start":{"x":80,"y":0},"end":{"x":100,"y":20}}}
   ],
   "notes": [
-    {"id":7,"layer":1,"z":7,"color":"byLayer","lineweight":"byLayer","body":{"kind":"linear","orient":"horizontal","a":{"kind":"vertex","id":2,"index":0},"b":{"kind":"vertex","id":2,"index":1},"at":{"x":30,"y":-10},"style":"ISO"}},
-    {"id":8,"layer":1,"z":8,"color":"byLayer","lineweight":"byLayer","body":{"kind":"aligned","a":{"kind":"end","id":5,"end":"start"},"b":{"kind":"end","id":6,"end":"end"},"at":{"x":82,"y":22},"style":"ISO"}},
-    {"id":9,"layer":1,"z":9,"color":"byLayer","lineweight":"byLayer","body":{"kind":"angle","vertex":{"kind":"end","id":5,"end":"start"},"a":{"kind":"end","id":5,"end":"end"},"b":{"kind":"end","id":6,"end":"end"},"at":{"x":105,"y":8},"style":"ISO"}},
-    {"id":10,"layer":1,"z":10,"color":"byLayer","lineweight":"byLayer","body":{"kind":"diameter","target":3,"at":{"x":15,"y":35},"style":"ISO"}},
-    {"id":11,"layer":1,"z":11,"color":"byLayer","lineweight":"byLayer","body":{"kind":"radius","target":4,"at":{"x":56,"y":24},"style":"ISO"}},
-    {"id":12,"layer":1,"z":12,"color":"byLayer","lineweight":"byLayer","body":{"kind":"centre","target":4,"extended":false,"style":"ISO"}},
-    {"id":13,"layer":1,"z":13,"color":"byLayer","lineweight":"byLayer","body":{"kind":"text","at":{"x":80,"y":32},"height":3.5,"angle":0,"anchor":"left","text":"6 mm steel plate"}},
-    {"id":14,"layer":1,"z":14,"color":"byLayer","lineweight":"byLayer","body":{"kind":"leader","points":[{"x":45,"y":40},{"x":52,"y":48}],"text":"Break sharp edges","style":"ISO"}},
-    {"id":15,"layer":1,"z":15,"color":"byLayer","lineweight":"byLayer","body":{"kind":"hatch","loops":[[2],[3],[4]],"pattern":"lines","spacing":4,"angle":0.7853981633974483}},
-    {"id":16,"layer":1,"z":16,"color":"byLayer","lineweight":"byLayer","body":{"kind":"titleBlock","at":{"x":-120,"y":-70},"size":"A4","fields":{"title":"","number":"","scale":"","revision":"","material":"","drawnBy":"","date":"","company":""}}}
+    {"id":11,"layer":1,"z":11,"color":"byLayer","lineweight":"byLayer","body":{"kind":"linear","orient":"horizontal","a":{"kind":"vertex","id":2,"index":0},"b":{"kind":"vertex","id":2,"index":1},"at":{"x":30,"y":-10},"style":"ISO"},"reference":true},
+    {"id":12,"layer":1,"z":12,"color":"byLayer","lineweight":"byLayer","body":{"kind":"aligned","a":{"kind":"end","id":9,"end":"start"},"b":{"kind":"end","id":10,"end":"end"},"at":{"x":82,"y":22},"style":"ISO"},"reference":true},
+    {"id":13,"layer":1,"z":13,"color":"byLayer","lineweight":"byLayer","body":{"kind":"angle","vertex":{"kind":"end","id":9,"end":"start"},"a":{"kind":"end","id":9,"end":"end"},"b":{"kind":"end","id":10,"end":"end"},"at":{"x":105,"y":8},"style":"ISO"},"reference":true},
+    {"id":14,"layer":1,"z":14,"color":"byLayer","lineweight":"byLayer","body":{"kind":"diameter","target":7,"at":{"x":15,"y":35},"style":"ISO"},"reference":true},
+    {"id":15,"layer":1,"z":15,"color":"byLayer","lineweight":"byLayer","body":{"kind":"radius","target":8,"at":{"x":56,"y":24},"style":"ISO"},"reference":true},
+    {"id":16,"layer":1,"z":16,"color":"byLayer","lineweight":"byLayer","body":{"kind":"centre","target":8,"extended":false,"style":"ISO"}},
+    {"id":17,"layer":1,"z":17,"color":"byLayer","lineweight":"byLayer","body":{"kind":"text","at":{"x":80,"y":32},"height":3.5,"angle":0,"anchor":"left","text":"6 mm steel plate"}},
+    {"id":18,"layer":1,"z":18,"color":"byLayer","lineweight":"byLayer","body":{"kind":"leader","points":[{"x":45,"y":40},{"x":52,"y":48}],"text":"Break sharp edges","style":"ISO"}},
+    {"id":19,"layer":1,"z":19,"color":"byLayer","lineweight":"byLayer","body":{"kind":"hatch","loops":[[2],[7],[8]],"pattern":"lines","spacing":4,"angle":0.7853981633974483}},
+    {"id":20,"layer":1,"z":20,"color":"byLayer","lineweight":"byLayer","body":{"kind":"titleBlock","at":{"x":-120,"y":-70},"size":"A4","fields":{"title":"","number":"","scale":"","revision":"","material":"","drawnBy":"","date":"","company":""}}}
   ],
   "inserts": [],
-  "constraints": []
+  "constraints": [
+    {"id":3,"body":{"kind":"horizontal","a":{"kind":"vertex","id":2,"index":0},"b":{"kind":"vertex","id":2,"index":1}}},
+    {"id":4,"body":{"kind":"vertical","a":{"kind":"vertex","id":2,"index":1},"b":{"kind":"vertex","id":2,"index":2}}},
+    {"id":5,"body":{"kind":"horizontal","a":{"kind":"vertex","id":2,"index":2},"b":{"kind":"vertex","id":2,"index":3}}},
+    {"id":6,"body":{"kind":"vertical","a":{"kind":"vertex","id":2,"index":3},"b":{"kind":"vertex","id":2,"index":0}}}
+  ]
 }
