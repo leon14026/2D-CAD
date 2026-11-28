@@ -322,6 +322,12 @@ export function constraintRefuseMessage(c: Constraint): string {
   }
 }
 
+/** What to tell the person when a change made some constraints untrue and they were let go. */
+export function releasedMessage(count: number): string {
+  const many = count > 1;
+  return `Let go of ${many ? `${count} constraints` : 'a constraint'} that this change made untrue. Ctrl+Z brings ${many ? 'them' : 'it'} back.`;
+}
+
 export interface SolvePins {
   readonly points: ReadonlyMap<string, Vec2>;
   readonly radii: ReadonlyMap<number, number>;
@@ -406,12 +412,36 @@ function refHandle(ref: PointRef): Handle | null {
   return { id: ref.id, key: ref.kind };
 }
 
-function push(map: Map<string, Vec2[]>, h: Handle | null, p: Vec2): void {
+/**
+ * What the constraints want for one handle this round. A constraint that controls one axis only
+ * (horizontal, vertical, a distance along x or y) votes on that axis alone, so it is not diluted
+ * by the others' "stay where you are".
+ */
+interface Votes {
+  readonly all: Vec2[];
+  readonly xs: number[];
+  readonly ys: number[];
+}
+
+type Proposals = Map<string, Votes>;
+
+function push(map: Proposals, h: Handle | null, p: Vec2, axis?: 'x' | 'y'): void {
   if (!h) return;
   const k = `${h.id}:${h.key}`;
-  const list = map.get(k);
-  if (list) list.push(p);
-  else map.set(k, [p]);
+  let v = map.get(k);
+  if (!v) {
+    v = { all: [], xs: [], ys: [] };
+    map.set(k, v);
+  }
+  v.all.push(p);
+  if (axis !== 'y') v.xs.push(p.x);
+  if (axis !== 'x') v.ys.push(p.y);
+}
+
+/** The point the votes agree on. An axis nobody voted on keeps the (identical) current value. */
+function settle(v: Votes): Vec2 {
+  const base = avg(v.all);
+  return { x: v.xs.length > 0 ? mean(v.xs) : base.x, y: v.ys.length > 0 ? mean(v.ys) : base.y };
 }
 
 function avg(pts: readonly Vec2[]): Vec2 {
@@ -471,8 +501,31 @@ function placeAtDistance(from: Vec2, toward: Vec2, value: number): Vec2 {
   return add(from, scale(sub(toward, from), value / d));
 }
 
-function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radii: Map<number, number[]>, pins: SolvePins): void {
-  const put = (ref: PointRef, p: Vec2) => push(pts, refHandle(ref), p);
+/** Where the second point of a distance goes so the distance holds, with the first point still. */
+function distanceTarget(b: Extract<ConstraintBody, { kind: 'distance' }>, a: Vec2, c: Vec2): Vec2 {
+  if (b.axis === 'x') return { x: a.x + (c.x >= a.x ? 1 : -1) * b.value, y: c.y };
+  if (b.axis === 'y') return { x: c.x, y: a.y + (c.y >= a.y ? 1 : -1) * b.value };
+  return placeAtDistance(a, c, b.value);
+}
+
+/**
+ * Pins for typing a new value into a distance: the first point you clicked stays where it is and
+ * the second is placed at the new distance. Everything joined to the second point then follows
+ * it, whichever way round the neighbouring horizontal and vertical constraints were written.
+ */
+export function pinsForDistanceEdit(env: NoteEnv, body: Extract<ConstraintBody, { kind: 'distance' }>): SolvePins {
+  const points = new Map<string, Vec2>();
+  const a = resolveRef(env, body.a);
+  const c = resolveRef(env, body.b);
+  const ha = refHandle(body.a);
+  const hb = refHandle(body.b);
+  if (ha) points.set(`${ha.id}:${ha.key}`, a);
+  if (hb) points.set(`${hb.id}:${hb.key}`, distanceTarget(body, a, c));
+  return { points, radii: new Map() };
+}
+
+function propose(env: NoteEnv, b: ConstraintBody, pts: Proposals, radii: Map<number, number[]>, pins: SolvePins): void {
+  const put = (ref: PointRef, p: Vec2, axis?: 'x' | 'y') => push(pts, refHandle(ref), p, axis);
   switch (b.kind) {
     case 'coincident': {
       const a = resolveRef(env, b.a);
@@ -497,15 +550,15 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
       const pa = pinOf(pins, b.a);
       const pb = pinOf(pins, b.b);
       if (pa && !pb) {
-        put(b.b, { x: c.x, y: pa.y });
+        put(b.b, { x: c.x, y: pa.y }, 'y');
         return;
       }
       if (pb && !pa) {
-        put(b.a, { x: a.x, y: pb.y });
+        put(b.a, { x: a.x, y: pb.y }, 'y');
         return;
       }
       if (pa && pb) return;
-      put(b.b, { x: c.x, y: a.y });
+      put(b.b, { x: c.x, y: a.y }, 'y');
       return;
     }
     case 'vertical': {
@@ -514,15 +567,15 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
       const pa = pinOf(pins, b.a);
       const pb = pinOf(pins, b.b);
       if (pa && !pb) {
-        put(b.b, { x: pa.x, y: c.y });
+        put(b.b, { x: pa.x, y: c.y }, 'x');
         return;
       }
       if (pb && !pa) {
-        put(b.a, { x: pb.x, y: a.y });
+        put(b.a, { x: pb.x, y: a.y }, 'x');
         return;
       }
       if (pa && pb) return;
-      put(b.b, { x: a.x, y: c.y });
+      put(b.b, { x: a.x, y: c.y }, 'x');
       return;
     }
     case 'distance': {
@@ -533,33 +586,31 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
       if (b.axis === 'x') {
         if (pa && !pb) {
           const sign = c.x >= pa.x ? 1 : -1;
-          put(b.b, { x: pa.x + sign * b.value, y: c.y });
+          put(b.b, { x: pa.x + sign * b.value, y: c.y }, 'x');
           return;
         }
         if (pb && !pa) {
           const sign = pb.x >= a.x ? 1 : -1;
-          put(b.a, { x: pb.x - sign * b.value, y: a.y });
+          put(b.a, { x: pb.x - sign * b.value, y: a.y }, 'x');
           return;
         }
         if (pa && pb) return;
-        const sign = c.x >= a.x ? 1 : -1;
-        put(b.b, { x: a.x + sign * b.value, y: c.y });
+        put(b.b, distanceTarget(b, a, c), 'x');
         return;
       }
       if (b.axis === 'y') {
         if (pa && !pb) {
           const sign = c.y >= pa.y ? 1 : -1;
-          put(b.b, { x: c.x, y: pa.y + sign * b.value });
+          put(b.b, { x: c.x, y: pa.y + sign * b.value }, 'y');
           return;
         }
         if (pb && !pa) {
           const sign = pb.y >= a.y ? 1 : -1;
-          put(b.a, { x: a.x, y: pb.y - sign * b.value });
+          put(b.a, { x: a.x, y: pb.y - sign * b.value }, 'y');
           return;
         }
         if (pa && pb) return;
-        const sign = c.y >= a.y ? 1 : -1;
-        put(b.b, { x: c.x, y: a.y + sign * b.value });
+        put(b.b, distanceTarget(b, a, c), 'y');
         return;
       }
       if (pa && !pb) {
@@ -571,7 +622,7 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
         return;
       }
       if (pa && pb) return;
-      put(b.b, placeAtDistance(a, c, b.value));
+      put(b.b, distanceTarget(b, a, c));
       return;
     }
     case 'fix':
@@ -675,7 +726,7 @@ function propose(env: NoteEnv, b: ConstraintBody, pts: Map<string, Vec2[]>, radi
   }
 }
 
-function proposeTangent(env: NoteEnv, a: number, b: number, pts: Map<string, Vec2[]>): void {
+function proposeTangent(env: NoteEnv, a: number, b: number, pts: Proposals): void {
   const ea = needEntity(env, a, 'tangent');
   const eb = needEntity(env, b, 'tangent');
   const ra = asRound(ea);
@@ -778,7 +829,7 @@ export function solveConstraints(draft: Draft, pins: SolvePins = { points: new M
   }
   let last = Infinity;
   for (let iter = 0; iter < MAX_SOLVE_ITERS; iter++) {
-    const pts = new Map<string, Vec2[]>();
+    const pts: Proposals = new Map();
     const radii = new Map<number, number[]>();
     for (const c of list) {
       try {
@@ -788,7 +839,7 @@ export function solveConstraints(draft: Draft, pins: SolvePins = { points: new M
       }
     }
     const averaged = new Map<string, Vec2>();
-    for (const [k, v] of pts) averaged.set(k, avg(v));
+    for (const [k, v] of pts) averaged.set(k, settle(v));
     for (const [k, p] of effective.points) averaged.set(k, p);
     const radiusOf = new Map<number, number>();
     for (const [id, v] of radii) radiusOf.set(id, mean(v));
@@ -817,14 +868,105 @@ export function solveConstraints(draft: Draft, pins: SolvePins = { points: new M
   }
 }
 
+/**
+ * The constraints a new rectangle starts with, as in a sketch in a parametric CAD program: each
+ * side held horizontal or vertical. Null when the shape is not an upright, square-cornered
+ * rectangle drawn as one closed polyline of four corners.
+ */
+export function rectanglePresets(id: number, g: Shape): ConstraintBody[] | null {
+  if (g.kind !== 'polyline' || !g.closed || g.vertices.length !== 4) return null;
+  const out: ConstraintBody[] = [];
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    const a = g.vertices[i]!;
+    const b = g.vertices[j]!;
+    if (a.bulge !== 0) return null;
+    const from: PointRef = { kind: 'vertex', id, index: i };
+    const to: PointRef = { kind: 'vertex', id, index: j };
+    if (a.y === b.y && a.x !== b.x) out.push({ kind: 'horizontal', a: from, b: to });
+    else if (a.x === b.x && a.y !== b.y) out.push({ kind: 'vertical', a: from, b: to });
+    else return null;
+  }
+  return out;
+}
+
+function refsOf(b: ConstraintBody): PointRef[] {
+  switch (b.kind) {
+    case 'coincident':
+    case 'horizontal':
+    case 'vertical':
+    case 'distance':
+      return [b.a, b.b];
+    case 'fix':
+    case 'midpoint':
+      return [b.a];
+    default:
+      return [];
+  }
+}
+
+/**
+ * Lets go of one constraint. Its dimension, if it has one, stays on the drawing in brackets and
+ * no longer holds anything, so the number is not lost.
+ */
+export function releaseConstraint(draft: Draft, c: Constraint): void {
+  const note = c.note === undefined ? undefined : draft.note(c.note);
+  if (note) {
+    const { drive: _drive, reference: _reference, ...rest } = note;
+    draft.putNote({ ...rest, reference: true });
+  }
+  draft.deleteConstraint(c.id);
+  draft.released += 1;
+}
+
+/**
+ * Constraints name a corner of a polyline by its number. When a command changed how many
+ * corners a polyline has (rounding, cutting, joining), those numbers no longer mean the same
+ * corners, so every constraint that names one of them is let go, with its dimension.
+ */
+function releaseRenumbered(draft: Draft): void {
+  for (const c of [...draft.constraints()]) {
+    const renumbered = refsOf(c.body).some((ref) => {
+      if (ref.kind !== 'vertex') return false;
+      const before = draft.base.entities.get(ref.id)?.geom;
+      const after = draft.entity(ref.id)?.geom;
+      return before?.kind === 'polyline' && after?.kind === 'polyline' && before.vertices.length !== after.vertices.length;
+    });
+    if (!renumbered) continue;
+    if (c.note !== undefined) draft.deleteNote(c.note);
+    draft.deleteConstraint(c.id);
+    draft.released += 1;
+  }
+}
+
+/**
+ * After a turn or a mirror: lets go of the horizontal, vertical and horizontal/vertical-distance
+ * constraints that were true before, are not true now, and only hold the turned shapes. Moving
+ * one end of a constraint against a part that stays put is still refused.
+ */
+export function releaseTurned(draft: Draft, moved: ReadonlySet<number>): void {
+  const before = docEnv(draft.base);
+  const now = envOf(draft);
+  for (const c of [...draft.constraints()]) {
+    const b = c.body;
+    const orientation = b.kind === 'horizontal' || b.kind === 'vertical' || (b.kind === 'distance' && b.axis !== undefined);
+    if (!orientation) continue;
+    if (!constraintEntityIds(c).every((id) => moved.has(id))) continue;
+    if (!(residualOf(before, b) <= CONSTRAINT_MET_TOL) || residualOf(now, b) <= CONSTRAINT_MET_TOL) continue;
+    releaseConstraint(draft, c);
+  }
+}
+
 /** Drops constraints whose geometry is gone, then re-solves what remains. */
 export function pruneAndSolve(draft: Draft): number {
+  releaseRenumbered(draft);
   const env = envOf(draft);
   let n = 0;
   for (const c of [...draft.constraints()]) {
     if (constraintProblem(env, c) !== null) {
       if (c.note !== undefined) draft.deleteNote(c.note);
       draft.deleteConstraint(c.id);
+      if (constraintEntityIds(c).every((id) => draft.entity(id) !== undefined)) draft.released += 1;
       n += 1;
     }
   }

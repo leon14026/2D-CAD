@@ -3,6 +3,7 @@
  * snaps and tracking, what the overlay and the box beside the cursor show, and which keys
  * the active tool takes.
  */
+import { releasedMessage } from '../core/doc';
 import { angleOf, degToRad, distance, normalizeAngle, radToDeg, sub, type Vec2 } from '../core/geom';
 import { findSnap, pickAt, type SnapHit } from '../core/spatial';
 import {
@@ -150,6 +151,7 @@ export class DraftingController {
   private commit(outcome: Outcome): void {
     const d = outcome.drafting;
     this.store.set({ session: d.session, tool: d.active, toolMemory: d.memory, toolError: outcome.error });
+    if (outcome.released) this.store.set({ message: { kind: 'info', text: releasedMessage(outcome.released) } });
   }
 
   input(i: ToolInput): void {

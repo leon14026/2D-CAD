@@ -259,7 +259,7 @@ export const rectangleTool: ToolDef = {
     if (a.x === i.point.x || a.y === i.point.y) {
       return refuse(s, 'A rectangle needs a width and a height. Move the corner off the line through the first one.');
     }
-    return next(again(s), [addShape(rectangle(a, i.point))]);
+    return next(again(s), [addShape(rectangle(a, i.point), true)]);
   },
   preview(s, cursor) {
     if (s.step === 0) return [];

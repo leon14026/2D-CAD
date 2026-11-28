@@ -319,6 +319,22 @@ as well as `.archilite`.
       small hairline marks beside what they hold. Pick a mark: the selection panel names that
       constraint and highlights the geometry. Shift+C again hides the marks.
 
+- [ ] **M13.6 A new rectangle holds its sides.** Draw a rectangle with the Rectangle tool. Shift+C
+      shows four marks (two horizontal, two vertical). Dimension the bottom side by clicking its
+      right-hand corner first, then its left-hand corner, and type 120. Expect: the corner you
+      clicked first stays and the left side moves out to make 120; the rectangle is still square
+      and the other sides keep their size. Do the same from the left corner first: the right
+      side moves instead. Ctrl+Z once: back to the start.
+- [ ] **M13.7 Rounding and turning let go, and say so.** Draw a rectangle, round two corners with
+      Fillet. Expect: a message "Let go of 4 constraints that this change made untrue…" and the
+      marks are gone. Ctrl+Z: the corners and the marks come back together. Now turn a new
+      rectangle 30° with Rotate: the same message, and the rectangle is turned. Turn it 90° with a
+      dimension on it: the dimension stays and shows in brackets.
+- [ ] **M13.8 Compare with your CAD program.** Draw the same 100 × 50 rectangle in SolidWorks (or
+      Fusion). Dimension it from the right and from the left as above. Say whether ArchiLite
+      feels the same or what is different. Things I know differ: copies of the rectangle are not
+      constrained here, and the Polygon tool has no presets.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.

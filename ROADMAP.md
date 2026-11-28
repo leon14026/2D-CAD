@@ -725,6 +725,19 @@ Method:
   This covers grips, move, rotate, scale and stretch. A user edit never leaves a compromise
   shape. (The 1e-6 "could not be met" warning from Phase 9 stays for the cases where a
   constraint was never reachable, such as ones loaded from a file.)
+- **Shape presets (added 2026-11-27 at the owner's request, as in a parametric CAD sketch).** A
+  rectangle drawn with the Rectangle tool also adds four constraints in the same undo step: each
+  side horizontal or vertical (`entity.add` with `presets: true`). They are ordinary constraints
+  on the polyline's corners, so the file format does not change. Typing a new width or height
+  works from either end of a side: the corner you clicked first stays and the far side moves.
+  A change that makes a preset untrue is not refused. It lets the constraint go and says so:
+  - turning or mirroring shapes so that horizontal, vertical or horizontal/vertical-distance
+    constraints that only hold those shapes are no longer true. A dimension among them stays,
+    in brackets, as a reference dimension;
+  - rounding, cutting, joining or exploding a polyline, which renumbers its corners. A
+    dimension on those corners is removed with them.
+  The message reads "Let go of 4 constraints that this change made untrue. Ctrl+Z brings them
+  back." Copies, arrays, offsets, and rectangles from scripts or imported files have no presets.
 - **Same rules as before.** Constraints still apply in id order and the same document gives the
   same result. Use `tolFor`; no new epsilons. Commands are named, undoable and reachable from
   scripts (`cad.setConstraint`). Marks use hairlines and keep the frame budget (run the
@@ -732,7 +745,9 @@ Method:
 
 Not in this phase: degrees-of-freedom counting or colouring ("fully constrained"), values
 written as equations (for example width = 2 × height), and auto-applied geometric constraints
-while drawing (horizontal, coincident). Each is a later stretch.
+other than the rectangle's four above (the Line, Polyline and Polygon tools add none; a polygon's
+equal sides cannot be held yet because `equal` takes line ids, not one polyline's edges). Each is
+a later stretch.
 
 Gate:
 
@@ -759,8 +774,41 @@ Gate:
       and hide. Picking a constraint in the panel highlights what it holds. A screenshot
       baseline of the marks. The performance gate still passes.
 - [x] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+- [ ] Shape presets: a rectangle drawn with the tool starts with four constraints (horizontal,
+      vertical, horizontal, vertical on its corners) in one undo step; `presets` is refused for
+      anything that is not an upright rectangle and changes nothing.
+- [ ] A new width or height typed into a dimension on a preset rectangle works from every side
+      and from either end, with the corner clicked first unmoved and exact results (eight
+      hand-worked cases, no `-0`, residual 0). Property test (`PROPERTY_PARAMS`): random
+      rectangle, side, end and value.
+- [ ] Rounding, cutting, exploding or turning a preset rectangle is not refused: the constraints
+      are let go with the message above, and one undo brings them back. A half turn and a mirror
+      across a horizontal line keep them. Turning a dimensioned rectangle keeps the dimension, in
+      brackets. Hand-calculated turn of 30°.
+- [ ] Browser (Chromium, GPU off, no console errors): draw a rectangle, dimension its bottom side
+      from the right-hand end, type 120, round two corners (message, constraints gone), Ctrl+Z
+      (constraints back); turn a new rectangle 30° (message).
 
 Implementation notes (for later phases):
+- **Shape presets.** `entity.add` takes `presets: true` for an upright, square-cornered
+  four-corner closed polyline and adds `rectanglePresets` in the same draft; anything else is
+  refused. The rectangle tool is the only caller. Constraint ids share the id space, so each
+  tool-drawn rectangle uses four ids after its own. Scripts, imports, copies and arrays make
+  plain polylines. `Executed.released` (and `Outcome.released` for tools) counts constraints let
+  go so the app can say so; constraints dropped because their shape was deleted are not counted.
+- **Corner numbers.** Constraints name a polyline corner by number. `pruneAndSolve` first lets go
+  of any constraint that names a corner of a polyline whose corner count changed in this command
+  (`releaseRenumbered`), then drops constraints whose geometry is gone. A turn or mirror calls
+  `releaseTurned` after moving the shapes. Moving only one end of a constraint away from a part
+  that stays put is still refused.
+- **Solver votes.** A constraint that controls one axis (horizontal, vertical, a distance along x
+  or y) votes on that axis only, so it is not diluted by other constraints' "stay where you
+  are". Without this a width typed on a rectangle converged to about 6e-10 instead of exactly.
+- **Typing a distance.** `constraint.setValue` on a `distance` pins the first point where it is
+  and the second at the new distance (`pinsForDistanceEdit`), so whatever is joined to the second
+  point follows, whichever way round its neighbouring constraints were written.
+- **Known gaps.** Scaling a dimensioned shape is refused (held values are not scaled). Copies of a
+  constrained shape are not constrained.
 - **File format 4.** `distance.axis` (`x` or `y`; omitted is the straight-line length), `note.drive`
   / `constraint.note` as a bidirectional link, `note.reference: true` for measure-only dimensions.
   Version 3 files open unchanged. A mismatch between `drive` and `note` is refused at load.

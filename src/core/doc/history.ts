@@ -34,6 +34,8 @@ export interface Executed<R> {
   readonly result: R;
   /** Notes removed because the geometry they measured is gone (they come back with undo). */
   readonly pruned: number;
+  /** Constraints let go because the change made them untrue (rounded corners, a turn). They come back with undo. */
+  readonly released: number;
 }
 
 /**
@@ -91,7 +93,7 @@ export function commitDraft(
   const pruned = pruneBrokenNotes(draft);
   pruneAndSolve(draft);
   const changes = draft.changes();
-  if (changes.length === 0) return { session, result, pruned };
+  if (changes.length === 0) return { session, result, pruned, released: 0 };
   const undoStack = [...session.undoStack, { command, label, changes }];
   return {
     session: {
@@ -102,6 +104,7 @@ export function commitDraft(
     },
     result,
     pruned,
+    released: draft.released,
   };
 }
 

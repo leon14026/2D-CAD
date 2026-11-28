@@ -20,7 +20,8 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   measurements (where to measure, never the stored number). Until then they are skipped.
 
 **Status:** Phases 1 to 9 are built and merged. Phase 13 (driving dimensions and editing
-constrained drawings) is in this pull request and does not wait on Phase 10, 11 or 12. Phase 11
+constrained drawings, and rectangles that start held horizontal and vertical) is in two pull
+requests and does not wait on Phase 10, 11 or 12. Phase 11
 (phone browser) and Phase 12 (live DXF dimensions) are planned independently. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
