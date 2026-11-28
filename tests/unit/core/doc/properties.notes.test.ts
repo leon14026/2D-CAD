@@ -158,7 +158,7 @@ function addAll(sc: Scene, dims: readonly Expect[]): { session: Session; ids: nu
   let s = sc.session;
   const ids: number[] = [];
   for (const d of dims) {
-    const res = execute(s, 'note.add', { body: d.body });
+    const res = execute(s, 'note.add', { body: d.body, reference: true });
     s = res.session;
     ids.push(res.result.id);
   }
@@ -187,11 +187,12 @@ describe('every dimension shows the measured value (500 random cases)', PROPERTY
           // The text is the shown value to the style's places, and it is the measured value to those places.
           const places = d.kind === 'angle' ? DEFAULT_DIM_STYLE.anglePrecision : DEFAULT_DIM_STYLE.precision;
           const half = 0.5 * 10 ** -places + 1e-9;
-          const numeric = Number(got.text.replace(/^[RØ]/, '').replace('°', ''));
+          const bare = got.text.replace(/[()]/g, '');
+          const numeric = Number(bare.replace(/^[RØ]/, '').replace('°', ''));
           const want = d.kind === 'angle' ? (d.value * 180) / Math.PI : d.value;
           if (Math.abs(numeric - want) > half) throw new Error(`seed ${s}: ${d.kind} text ${got.text} is not ${want}`);
-          if (d.kind !== 'angle' && got.text !== d.text && Math.abs(numeric - Number(d.text.replace(/^[RØ]/, ''))) > 1e-9) throw new Error(`seed ${s}: ${d.kind} text ${got.text} but ${d.text}`);
-          if (d.kind === 'linear' || d.kind === 'aligned') expect(got.text).toBe(formatLength(got.value, DEFAULT_DIM_STYLE));
+          if (d.kind !== 'angle' && bare !== d.text && Math.abs(numeric - Number(d.text.replace(/^[RØ]/, ''))) > 1e-9) throw new Error(`seed ${s}: ${d.kind} text ${got.text} but ${d.text}`);
+          if (d.kind === 'linear' || d.kind === 'aligned') expect(got.text).toBe(`(${formatLength(got.value, DEFAULT_DIM_STYLE)})`);
         });
         total += dims.length;
         angles += dims.filter((d) => d.kind === 'angle').length;
@@ -327,7 +328,7 @@ describe('dimensions follow trim, extend and other edits (hand-calculated)', () 
     s = execute(s, 'entity.add', { geom: segment(P(40, -10), P(40, 10)) }).session; // id 3
     return s;
   };
-  const dimToStart = (s: Session) => execute(s, 'note.add', { body: { kind: 'aligned', a: { kind: 'end', id: 2, end: 'end' }, b: { kind: 'free', p: P(0, 0) }, at: P(20, -10), style: STYLE } });
+  const dimToStart = (s: Session) => execute(s, 'note.add', { body: { kind: 'aligned', a: { kind: 'end', id: 2, end: 'end' }, b: { kind: 'free', p: P(0, 0) }, at: P(20, -10), style: STYLE }, reference: true });
 
   it('trimming the line back to the wall shortens the dimension from 100 to 40', () => {
     const added = dimToStart(lineAndWall());
@@ -336,7 +337,7 @@ describe('dimensions follow trim, extend and other edits (hand-calculated)', () 
     expect(trimmed.pruned).toBe(0);
     const after = shown(trimmed.session.doc, added.result.id);
     expect(after.value).toBeCloseTo(40, 9);
-    expect(after.text).toBe('40.00');
+    expect(after.text).toBe('(40.00)');
     expect(isDeepStrictEqual(undo(trimmed.session).doc, added.session.doc)).toBe(true);
   });
 
@@ -344,7 +345,7 @@ describe('dimensions follow trim, extend and other edits (hand-calculated)', () 
     let s = createSession(newDocument());
     s = execute(s, 'entity.add', { geom: segment(P(0, 0), P(30, 0)) }).session;
     s = execute(s, 'entity.add', { geom: segment(P(40, -10), P(40, 10)) }).session;
-    const added = execute(s, 'note.add', { body: { kind: 'aligned', a: { kind: 'end', id: 2, end: 'end' }, b: { kind: 'free', p: P(0, 0) }, at: P(20, -10), style: STYLE } });
+    const added = execute(s, 'note.add', { body: { kind: 'aligned', a: { kind: 'end', id: 2, end: 'end' }, b: { kind: 'free', p: P(0, 0) }, at: P(20, -10), style: STYLE }, reference: true });
     expect(shown(added.session.doc, added.result.id).value).toBe(30);
     const extended = execute(added.session, 'entity.extend', { id: 2, pick: P(29, 0) });
     expect(shown(extended.session.doc, added.result.id).value).toBeCloseTo(40, 9);
@@ -353,11 +354,11 @@ describe('dimensions follow trim, extend and other edits (hand-calculated)', () 
   it('a radius dimension follows when a circle is scaled', () => {
     let s = createSession(newDocument());
     s = execute(s, 'entity.add', { geom: circle(P(0, 0), 5) }).session;
-    const added = execute(s, 'note.add', { body: { kind: 'radius', target: 2, at: P(20, 0), style: STYLE } });
+    const added = execute(s, 'note.add', { body: { kind: 'radius', target: 2, at: P(20, 0), style: STYLE }, reference: true });
     const scaled = execute(added.session, 'entity.transform', { ids: [2], transform: { kind: 'scale', center: P(0, 0), factor: 3 } });
     const after = shown(scaled.session.doc, added.result.id);
     expect(after.value).toBe(15);
-    expect(after.text).toBe('R15.00');
+    expect(after.text).toBe('(R15.00)');
   });
 
   it('exploding a polyline removes a dimension on one of its corners, and undo brings it back', () => {

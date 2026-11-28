@@ -211,9 +211,15 @@ export interface Note {
   readonly body: NoteBody;
   /** Named sheet this annotation lives on. Omitted on the first sheet. */
   readonly sheet?: string;
+  /** Constraint this driving dimension holds. Omitted when the note only measures. */
+  readonly drive?: number;
+  /** True when this dimension only measures (drawn in brackets). Omitted otherwise. */
+  readonly reference?: true;
 }
 
-export function isDimension(b: NoteBody): boolean {
+export function isDimension(
+  b: NoteBody,
+): b is Extract<NoteBody, { kind: 'linear' | 'aligned' | 'radius' | 'diameter' | 'angle' }> {
   return b.kind === 'linear' || b.kind === 'aligned' || b.kind === 'radius' || b.kind === 'diameter' || b.kind === 'angle';
 }
 
@@ -733,6 +739,10 @@ export function pickShapes(prims: readonly Prim[]): Shape[] {
 
 // ---------- resolving ----------
 
+function primsWithText(prims: readonly Prim[], text: string): Prim[] {
+  return prims.map((p) => (p.k === 'text' ? { ...p, text } : p));
+}
+
 /** Draws a note from the geometry as it stands now. Fails, with a reason, if its geometry is gone. */
 export function resolveNote(env: NoteEnv, note: Note): ResolveResult {
   try {
@@ -768,10 +778,12 @@ export function resolveNote(env: NoteEnv, note: Note): ResolveResult {
     }
     const bounds = primsBounds(m.prims);
     if (!bounds) return { ok: false, why: 'It draws nothing.' };
+    const text = isDimension(b) ? (note.reference ? `(${m.text})` : m.text) : m.text;
+    const prims = note.reference && isDimension(b) ? primsWithText(m.prims, text) : m.prims;
     const r: Resolved = {
-      prims: m.prims,
-      bounds,
-      ...(isDimension(b) && { value: m.value, text: m.text }),
+      prims,
+      bounds: note.reference && isDimension(b) ? (primsBounds(prims) ?? bounds) : bounds,
+      ...(isDimension(b) && { value: m.value, text }),
       ...(m.area !== undefined && { area: m.area }),
     };
     return { ok: true, r };

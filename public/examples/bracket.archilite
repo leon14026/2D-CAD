@@ -1,6 +1,6 @@
 {
   "format": "archilite",
-  "version": 3,
+  "version": 4,
   "title": "Example bracket",
   "units": "mm",
   "currentLayer": 2,

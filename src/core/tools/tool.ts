@@ -74,6 +74,8 @@ export interface ToolMemory {
   readonly sheet: SheetSize;
   /** Last block name typed in the block or insert tool. */
   readonly blockName: string | null;
+  /** True when dimension tools measure only (no constraint, drawn in brackets). */
+  readonly dimReference: boolean;
 }
 
 export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
@@ -87,6 +89,7 @@ export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
   hatchAngle: 45,
   sheet: 'A4',
   blockName: null,
+  dimReference: false,
 });
 
 export interface ToolContext {

@@ -6,6 +6,7 @@
 import { saveDocument } from '../core/doc';
 import { exportDxf, exportPdf, exportSvg } from '../io';
 import { selectInBox, type BoxMode } from '../core/spatial';
+import { visibleConstraintMarks } from './store';
 import type { SceneStats } from '../render/scene';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Viewport } from '../render/viewport';
@@ -25,6 +26,7 @@ export interface TestHook {
     sheet: string;
     inserts: number;
     constraints: number;
+    showConstraints: boolean;
   };
   /** The drawing as .archilite text, for checking geometry exactly. */
   saveText(): string;
@@ -42,6 +44,7 @@ export interface TestHook {
   /** The last frame's scene statistics: entities drawn, strokes, and milliseconds spent in JavaScript. */
   sceneStats(): SceneStats | null;
   toggleScriptPanel(): void;
+  toggleConstraints(): void;
   runScript(
     language: ScriptLanguage,
     source: string,
@@ -68,6 +71,7 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
         sheet: s.session.doc.settings.currentSheet,
         inserts: s.session.doc.inserts.size,
         constraints: s.session.doc.constraints.size,
+        showConstraints: s.showConstraints,
       };
     },
     saveText: () => saveDocument(store.get().session.doc),
@@ -78,7 +82,13 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
       const vp = store.get().viewport;
       const a = screenToWorld(vp, { x: x0, y: y0 });
       const b = screenToWorld(vp, { x: x1, y: y1 });
-      return selectInBox(store.get().session.doc, { minX: Math.min(a.x, b.x), minY: Math.min(a.y, b.y), maxX: Math.max(a.x, b.x), maxY: Math.max(a.y, b.y) }, mode);
+      const s = store.get();
+      return selectInBox(
+        s.session.doc,
+        { minX: Math.min(a.x, b.x), minY: Math.min(a.y, b.y), maxX: Math.max(a.x, b.x), maxY: Math.max(a.y, b.y) },
+        mode,
+        visibleConstraintMarks(s),
+      );
     },
     timeFrames: (frames, kind) => {
       const times: number[] = [];
@@ -101,6 +111,7 @@ export function installTestHook(store: Store, view: CanvasView, actions: Actions
     lastDrawn: () => view.lastStats?.drawn ?? 0,
     sceneStats: () => view.lastStats,
     toggleScriptPanel: () => actions.toggleScriptPanel(),
+    toggleConstraints: () => actions.toggleConstraints(),
     runScript: async (language, source) => {
       const result = await actions.runScript(language, source);
       view.renderNow();

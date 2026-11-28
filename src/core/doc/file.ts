@@ -37,7 +37,7 @@ import {
 } from './validate';
 
 export const FILE_FORMAT = 'archilite';
-export const FILE_VERSION = 3;
+export const FILE_VERSION = 4;
 export const FILE_EXTENSION = '.archilite';
 
 export class FileFormatError extends Error {
@@ -87,6 +87,8 @@ function noteJson(n: Note): object {
     lineweight: n.lineweight,
     body: n.body,
     ...(n.sheet ? { sheet: n.sheet } : {}),
+    ...(n.drive !== undefined ? { drive: n.drive } : {}),
+    ...(n.reference ? { reference: true } : {}),
   };
 }
 
@@ -108,7 +110,7 @@ function insertJson(ins: Insert): object {
 }
 
 function constraintJson(c: Constraint): object {
-  return { id: c.id, body: c.body, ...(c.sheet ? { sheet: c.sheet } : {}) };
+  return { id: c.id, body: c.body, ...(c.sheet ? { sheet: c.sheet } : {}), ...(c.note !== undefined ? { note: c.note } : {}) };
 }
 
 function blockJson(b: Block): object {
@@ -243,12 +245,14 @@ function readSheet(v: unknown, path: string): Sheet {
 }
 
 function readConstraint(v: unknown, path: string): Constraint {
-  const o = readObject(v, path, ['id', 'body'], ['sheet']);
+  const o = readObject(v, path, ['id', 'body'], ['sheet', 'note']);
   const sheet = Object.hasOwn(o, 'sheet') ? readSheetName(o['sheet'], join(path, 'sheet')) : undefined;
+  const note = Object.hasOwn(o, 'note') ? readPositiveInteger(o['note'], join(path, 'note')) : undefined;
   return {
     id: readPositiveInteger(o['id'], join(path, 'id')),
     body: readConstraintBody(o['body'], join(path, 'body')),
     ...(sheet ? { sheet } : {}),
+    ...(note !== undefined ? { note } : {}),
   };
 }
 
@@ -418,6 +422,21 @@ function readDocument(data: unknown): Doc {
   constraintList.forEach((c, i) => {
     const why = constraintProblem(env, c);
     if (why) throw new ValidationError(join('constraints', i), why);
+    if (c.note !== undefined) {
+      const n = notes.get(c.note);
+      if (!n) throw new ValidationError(join(join('constraints', i), 'note'), `there is no annotation with id ${c.note}`);
+      if (n.drive !== c.id) {
+        throw new ValidationError(join(join('constraints', i), 'note'), `annotation ${c.note} is not linked back to this constraint`);
+      }
+    }
+  });
+  noteList.forEach((n, i) => {
+    if (n.drive === undefined) return;
+    const c = constraints.get(n.drive);
+    if (!c) throw new ValidationError(join(join('notes', i), 'drive'), `there is no constraint with id ${n.drive}`);
+    if (c.note !== n.id) {
+      throw new ValidationError(join(join('notes', i), 'drive'), `constraint ${n.drive} is not linked back to this annotation`);
+    }
   });
   return doc;
 }

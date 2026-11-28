@@ -23,11 +23,24 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | Planned | — | — |
+| 13. Driving dimensions and editing constrained drawings | In progress | this PR | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 13 started
+
+- Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a
+  conflicting edit, constraint marks, FILE_VERSION 4. Independent of Phases 10–12.
+- Review fix: the refusal check looked at every constraint on the sheet and pinned every
+  touched entity, whether or not its shape changed. With two constraints that could never
+  both be met, moving an unrelated line, or only changing a line's lineweight, was refused
+  with a message about the other line. An edit is now refused only for a constraint it broke
+  or made worse, and a restyle pins nothing.
+- Known and left for the owner: a rectangle is one closed polyline with no horizontal or
+  vertical constraints, so typing a new width for a dimension between two of its corners moves
+  only the second corner. Phase 13 plans no automatic horizontal/vertical constraints.
 
 ### 2026-11-27: Phase 13 planned
 

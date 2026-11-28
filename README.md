@@ -19,11 +19,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
   measurements (where to measure, never the stored number). Until then they are skipped.
 
-**Status:** Phases 1 to 9 are built and merged; Phase 9 adds blocks, sheets and constraints on top
-of scripting and import/export. Phase 11 (phone browser) is planned and does not wait on
-Phase 10. Phase 12 (live DXF dimensions) is planned and does not wait on Phase 10 or 11. Phase 13
-(driving dimensions and editing constrained drawings) is planned and does not wait on any of
-them. See
+**Status:** Phases 1 to 9 are built and merged. Phase 13 (driving dimensions and editing
+constrained drawings) is in this pull request and does not wait on Phase 10, 11 or 12. Phase 11
+(phone browser) and Phase 12 (live DXF dimensions) are planned independently. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
