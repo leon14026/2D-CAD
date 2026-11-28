@@ -312,6 +312,11 @@ describe('references follow geometry', () => {
     expect(refAt(doc, P(-0, 7))).toEqual({ kind: 'free', p: P(0, 7) });
   });
 
+  it('refAt with a tolerance binds a point that is only close', () => {
+    expect(refAt(doc, P(1e-10, 0))).toEqual({ kind: 'free', p: P(1e-10, 0) });
+    expect(refAt(doc, P(1e-10, 0), 1e-9)).toEqual({ kind: 'end', id: 2, end: 'start' });
+  });
+
   it('resolveRef reads the points now, and says what is missing', () => {
     const env = docEnv(doc);
     expectPoint(resolveRef(env, { kind: 'end', id: 2, end: 'end' }), P(10, 0));

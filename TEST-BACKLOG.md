@@ -256,7 +256,8 @@ as well as `.archilite`.
       numbers stay put. Hover a long xref layer name; the tooltip is the full name. A new
       linear dimension on a wall should measure the geometry you picked. Kitchen and bath
       fixtures that were block inserts should be there as lines, arcs and circles. Original
-      dimensions and hatches are still left out; the toast says how many.
+      dimensions that bind to geometry should appear as ArchiLite dimensions (see M12.1).
+      Hatches are still left out; the toast says how many.
 
 ### Phase 8: scripting
 
@@ -336,14 +337,26 @@ as well as `.archilite`.
       feels the same or what is different. Things I know differ: copies of the rectangle are not
       constrained here, and the Polygon tool has no presets.
 
+### Phase 12: live DXF dimensions
+
+- [ ] **M12.1 Floorplan dimensions.** Open the floorplan DXF. Treat units as inches (click the
+      unit in the status bar, or Ctrl+K "Treat drawing units as inches"). Expect: original wall
+      dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
+      walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
+      was overtyped in the other program is still left out. Hatches are still left out. The
+      toast says how many objects were left out.
+- [ ] **M12.2 The 100 mm fixture.** Open `tests/fixtures/linear-100.dxf`. Expect: one line and
+      one dimension reading 100.00. Stretch the line; the number follows. There is no second
+      set of frozen dimension graphics from the `*D` block.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
 - **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions
-  until Phase 12, paper space). Until this phase, use DXF. This can wait until after the phone
-  work.
+  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, paper space).
+  Dimensions should use the same mapper as DXF (Phase 12). Until this phase, use DXF. This can
+  wait until after the phone work.
 - **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
   Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
   `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
@@ -354,3 +367,11 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
   walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
   was overtyped in the other program is still left out. Hatches are still left out. Imported
   dimensions are reference until you switch them.
+
+- **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
+  length (a constraint appears in the selection panel). Double-click the dimension, type 120,
+  press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal
+  and vertical, and move the vertical leg: the horizontal leg follows. Try to move a fixed
+  point: expect a plain-words refusal that names the constraint and changes nothing. Toggle
+  "Show constraints" and check the marks sit next to what they hold. Place a reference
+  dimension and check it reads in brackets and does not hold anything.

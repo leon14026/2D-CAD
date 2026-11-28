@@ -458,8 +458,8 @@ Implementation notes (for later phases):
   MTEXT `\A1;` / `\F…;` / `\P` markup is dropped or becomes a newline).
   INSERT is exploded into those same types (nested inserts included; layer 0 takes the
   insert's layer). Non-uniform X/Y scale, rows-and-columns INSERT arrays, missing blocks,
-  DIMENSION, HATCH and the rest are skipped and counted (DIMENSION becomes a live note in
-  Phase 12). Explosion stops at 200,000 objects or 200,000 inserts and refuses the file in
+  HATCH and the rest are skipped and counted. DIMENSION becomes a live note in Phase 12.
+  Explosion stops at 200,000 objects or 200,000 inserts and refuses the file in
   plain words (a 3 KB file of nested blocks can ask for a million lines). Binary DXF is
   refused. After open, the status bar unit label cycles the name without scaling (a
   millimetre-tagged inch drawing becomes inches); Ctrl+K also has "Scale the drawing to …".
@@ -546,7 +546,7 @@ Method:
   Block inserts in model space are exploded into those entities, so a drawing that is only
   inserts is not empty. There is no block editing here (that is Phase 9). Paper layouts,
   hatches, splines, ellipses, solids, images and proxies are skipped and counted. Dimensions
-  use the Phase 12 mapper when that phase has merged, and are skipped until then. The toast
+  use the Phase 12 mapper in `src/io/dxf.ts` (`bindDim`). The toast
   says how many. Encrypted files, and versions outside AC1014–AC1032, are refused in plain words.
 - **Not the alternatives.** LibreDWG is GPL-3.0 and libdxfrw is GPL; either would fail the
   licence gate. A vendor SDK is not our licence and is not a static page. A cloud converter
@@ -656,7 +656,7 @@ Method:
 
 Gate:
 
-- [ ] A committed DXF fixture: a 100 mm horizontal line and a linear `DIMENSION` between
+- [x] A committed DXF fixture: a 100 mm horizontal line and a linear `DIMENSION` between
       its ends. Import is one entity and one linear note; `resolveNotes` reads 100; the
       saved document has no stored length. Moving an end to 140 mm makes the note read 140.
       A dimension whose text is `OVER` is skipped. Hand-calculated to 1e-9. The floorplan
@@ -664,6 +664,24 @@ Gate:
 - [ ] Manual: open the floorplan DXF, treat units as inches, pick an imported garage
       dimension (254 or 250), move the wall, and watch the number change (`TEST-BACKLOG.md`).
       Overridden text and hatches are still left out.
+
+Implementation notes (for later phases):
+- **`bindDim` in `src/io/dxf.ts`.** DIMENSION is parsed with LINE/CIRCLE/TEXT, not skipped at
+  the scanner. After geometry and TEXT have ids, each DIMENSION's defpoints are bound with
+  `refAt(doc, p, tolFor(...))`. A free point skips the whole dimension (counted). Group 70
+  low bits pick the note kind: 0 linear (horizontal or vertical from group 50; other angles
+  skipped), 1 aligned, 2/5 angle, 3 diameter, 4 radius. Group 42 and group 1 are never stored.
+  Group 1 set and not `<>` is an override and is skipped. Ordinate (type 6) is skipped.
+- **Anonymous `*D` blocks.** Not exploded. An INSERT whose name starts with `*D` is skipped
+  and counted. DIMENSION inside a user block is transformed with the INSERT and then bound.
+- **`at`.** Linear and aligned use group 10 (dimension-line point). Radius and diameter use
+  the first of group 11 / 15 / 10 that is away from the centre. Angle uses group 16, then 11,
+  then 10.
+- **Style.** Current dimension style (ISO). Another program's dim style, arrows and fonts are
+  not imported. Hatches stay skipped.
+- **`refAt` tolerance.** Optional third argument; 0 keeps exact equality for interactive tools.
+- **Phase 13.** Imported notes are written directly, not through `note.add`, so they do not
+  add a constraint. When driving dimensions land, mark these notes `reference: true`.
 
 ### Phase 13 — Driving dimensions and editing constrained drawings
 

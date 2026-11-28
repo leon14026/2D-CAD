@@ -1,10 +1,9 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live. DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13)
-(text codes and units), [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT),
-and [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
-The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
-([#11](https://github.com/leon14026/2D-CAD/pull/11), [#16](https://github.com/leon14026/2D-CAD/pull/16)).
+**Now:** Phases 1 to 9 are merged and live. Phase 12 (live DXF dimensions) is in this pull
+request. Phase 13 (driving dimensions) is in [#21](https://github.com/leon14026/2D-CAD/pull/21)
+and does not wait on this one. The Phase 11 phone plan is on `main`
+([#11](https://github.com/leon14026/2D-CAD/pull/11)).
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -22,7 +21,7 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
-| 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
+| 12. Live DXF dimensions | In progress | [#23](https://github.com/leon14026/2D-CAD/pull/23) | — |
 | 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) (merged), [#24](https://github.com/leon14026/2D-CAD/pull/24) (merged), rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
@@ -70,6 +69,16 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   vertical constraints, so typing a new width for a dimension between two of its corners moves
   only the second corner. Phase 13 plans no automatic horizontal/vertical constraints.
   (Resolved the same day: see "Phase 13: rectangle presets" below.)
+
+### 2026-11-27: Phase 12 started
+
+- DXF `DIMENSION` becomes an ArchiLite note bound to geometry (where to measure, never the
+  stored number). Overrides, ordinates, unbound defpoints and hatches stay skipped.
+  Independent of Phases 10, 11 and 13.
+- Review fix: a horizontal or vertical dimension inside a block insert kept its pre-turn axis,
+  so a 100 mm line inserted at 90 degrees read 0.00 (and at 45 degrees 70.71). The measuring
+  direction now travels through the insert's transform with the points. A direction that ends
+  up off both axes is skipped and counted, like any other dimension ArchiLite cannot hold.
 
 ### 2026-11-27: Phase 13 planned
 
