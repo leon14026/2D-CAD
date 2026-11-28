@@ -23,7 +23,7 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21), then rectangle presets (this PR) | — |
+| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21), then rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
@@ -32,8 +32,8 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 ### 2026-11-27: Phase 13: rectangle presets
 
 - Owner decision: shapes get preset constraints, like a sketch in a parametric CAD program.
-  Branch `phase-13-shape-presets`, built on [#21](https://github.com/leon14026/2D-CAD/pull/21);
-  that pull request must merge first.
+  Branch `phase-13-shape-presets`, pull request [#28](https://github.com/leon14026/2D-CAD/pull/28),
+  built on [#21](https://github.com/leon14026/2D-CAD/pull/21); #21 must merge first.
 - Built: a rectangle drawn with the tool holds each side horizontal or vertical (four
   constraints, one undo step). Typing a new width or height now works from every side and
   either end of it; before this, three of the four click orders were refused or grew the wrong way.

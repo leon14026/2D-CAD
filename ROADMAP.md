@@ -774,18 +774,18 @@ Gate:
       and hide. Picking a constraint in the panel highlights what it holds. A screenshot
       baseline of the marks. The performance gate still passes.
 - [x] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
-- [ ] Shape presets: a rectangle drawn with the tool starts with four constraints (horizontal,
+- [x] Shape presets: a rectangle drawn with the tool starts with four constraints (horizontal,
       vertical, horizontal, vertical on its corners) in one undo step; `presets` is refused for
       anything that is not an upright rectangle and changes nothing.
-- [ ] A new width or height typed into a dimension on a preset rectangle works from every side
+- [x] A new width or height typed into a dimension on a preset rectangle works from every side
       and from either end, with the corner clicked first unmoved and exact results (eight
       hand-worked cases, no `-0`, residual 0). Property test (`PROPERTY_PARAMS`): random
       rectangle, side, end and value.
-- [ ] Rounding, cutting, exploding or turning a preset rectangle is not refused: the constraints
+- [x] Rounding, cutting, exploding or turning a preset rectangle is not refused: the constraints
       are let go with the message above, and one undo brings them back. A half turn and a mirror
       across a horizontal line keep them. Turning a dimensioned rectangle keeps the dimension, in
       brackets. Hand-calculated turn of 30°.
-- [ ] Browser (Chromium, GPU off, no console errors): draw a rectangle, dimension its bottom side
+- [x] Browser (Chromium, GPU off, no console errors): draw a rectangle, dimension its bottom side
       from the right-hand end, type 120, round two corners (message, constraints gone), Ctrl+Z
       (constraints back); turn a new rectangle 30° (message).
 
