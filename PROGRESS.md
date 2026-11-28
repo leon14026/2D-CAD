@@ -23,7 +23,7 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21), then rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
+| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) (merged), [#24](https://github.com/leon14026/2D-CAD/pull/24) (merged), rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
@@ -50,6 +50,12 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
   scaling a dimensioned shape is still refused; the Polygon tool has no presets (its equal
   sides need constraints on one polyline's edges); lines drawn exactly horizontal or vertical
   get no constraint.
+
+### 2026-11-27: Click a dimension's number to redimension
+
+- SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
+  number now opens the entry box to type a new size. A click on the dimension lines only
+  selects. Double-click anywhere on the dimension still edits.
 
 ### 2026-11-27: Phase 13 started
 

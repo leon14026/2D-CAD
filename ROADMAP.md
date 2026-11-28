@@ -700,10 +700,12 @@ Method:
   constraint, and is drawn in brackets, for example (100). The dimension tools get a
   driving/reference switch, driving by default. Dimensions imported from DXF (Phase 12) are
   reference until the user switches them.
-- **Typing a new number.** Double-click a driving dimension, or pick it and use its row in the
-  selection panel, to get the entry box beside the cursor (`src/ui/entry.ts`). Enter sets the
-  value (`constraint.setValue`, a new command) and the drawing re-solves in the same undo step.
-  The existing Distance, Radius, Length and Angle constraint tools keep asking for a typed value.
+- **Typing a new number.** Click a driving dimension's number (SolidWorks-style), or pick it
+  and use its row in the selection panel, to get the entry box beside the cursor
+  (`src/ui/entry.ts`). A click on the dimension lines only selects. Double-click anywhere on
+  the dimension still opens the box. Enter sets the value (`constraint.setValue`, a new
+  command) and the drawing re-solves in the same undo step. The existing Distance, Radius,
+  Length and Angle constraint tools keep asking for a typed value.
 - **Horizontal and vertical distances.** A horizontal or vertical linear dimension measures the
   x or y gap, which `distance` (straight-line length) cannot hold. `distance` gets an `axis`
   (`any`, `x` or `y`; omitted means `any`). This changes the file format, so `FILE_VERSION`
@@ -769,10 +771,11 @@ Gate:
       original exactly.
 - [x] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
       opens unchanged. Coverage stays 100% on `src/core`.
-- [x] Browser (Chromium, GPU off, no console errors): place a dimension, double-click it, type
-      120, Enter, and the part resizes; Ctrl+Z restores it in one step. Constraint marks show
-      and hide. Picking a constraint in the panel highlights what it holds. A screenshot
-      baseline of the marks. The performance gate still passes.
+- [x] Browser (Chromium, GPU off, no console errors): place a dimension, click its number, type
+      120, Enter, and the part resizes; Ctrl+Z restores it in one step. A click on the
+      dimension line selects without opening the box. Constraint marks show and hide. Picking
+      a constraint in the panel highlights what it holds. A screenshot baseline of the marks.
+      The performance gate still passes.
 - [x] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
 - [x] Shape presets: a rectangle drawn with the tool starts with four constraints (horizontal,
       vertical, horizontal, vertical on its corners) in one undo step; `presets` is refused for
@@ -827,6 +830,9 @@ Implementation notes (for later phases):
   never leaves a compromise shape.
 - **Marks.** `constraintMarks` are hairline glyphs, not geometry. Snaps and modify commands ignore
   them. `pickAt` / `selectInBox` take an optional marks list. Shift+C toggles them.
+- **Click the number.** `noteTextContains` is true only inside the text box. A click there
+  starts `editConstraint`; a click on the dimension lines only selects. Double-click still
+  edits from the lines.
 
 ## Out of scope for v1
 

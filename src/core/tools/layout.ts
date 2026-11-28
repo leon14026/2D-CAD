@@ -289,7 +289,7 @@ function displayForEdit(ctx: ToolContext, id: number): number | null {
   return c.body.kind === 'angle' ? radToDeg(v) : v;
 }
 
-/** Double-click a driving dimension (or pick one) and type a new number. */
+/** Click a driving dimension's number (or pick one) and type a new value. */
 export const editConstraintTool: ToolDef = {
   id: 'editConstraint',
   label: 'Edit constraint',

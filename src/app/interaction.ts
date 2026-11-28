@@ -3,14 +3,16 @@
  *
  * - Wheel or pinch: zoom about the cursor.
  * - Middle-drag, or Space + drag: pan.
- * - Click: pick the nearest entity (Shift adds or removes it).
+ * - Click: pick the nearest entity (Shift adds or removes it). A click on a driving
+ *   dimension's number opens the box to type a new size.
  * - Drag left to right: window selection (entirely inside).
  * - Drag right to left: crossing selection (inside or touching).
  *
  * While a tool wants a point, a click places it (after snaps and tracking) and a right-click
  * is Enter. Shift held while moving forces horizontal or vertical.
  */
-import { boxFromCorners, pickAt, selectInBox, type BoxMode } from '../core/spatial';
+import { valuedConstraintOf, type Doc } from '../core/doc';
+import { boxFromCorners, noteTextContains, pickAt, selectInBox, type BoxMode } from '../core/spatial';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Point } from '../render/viewport';
 import { formatCoordinate } from '../ui/format';
@@ -37,6 +39,15 @@ export function wheelFactor(e: Pick<WheelEvent, 'deltaY' | 'deltaMode' | 'ctrlKe
 
 export function boxMode(start: Point, end: Point): BoxMode {
   return end.x >= start.x ? 'window' : 'crossing';
+}
+
+/** Opens the cursor box to type a new driving-dimension value. */
+function startValueEdit(store: Store, drafting: DraftingController, doc: Doc, id: number): boolean {
+  const constraint = valuedConstraintOf(doc, id);
+  if (!constraint) return false;
+  store.set({ selection: new Set([constraint.id]), showSelection: true });
+  drafting.start('editConstraint');
+  return true;
 }
 
 export function attachInteraction(
@@ -79,6 +90,9 @@ export function attachInteraction(
       gesture = { kind: 'pan', last: p, pointer: e.pointerId };
       view.stage.classList.add('is-panning');
     } else if (e.button === 0 && (placing() || drafting.prompt()?.accepts === 'pick')) {
+      // A number-only prompt is typed, not clicked. Ignore the click so double-clicking
+      // a dimension's number (which starts the editor on the first click) does not refuse.
+      if (drafting.prompt()?.accepts === 'number') return;
       gesture = { kind: 'tool', pointer: e.pointerId };
     } else if (e.button === 0) {
       gesture = { kind: 'press', start: p, shift: e.shiftKey, pointer: e.pointerId };
@@ -132,7 +146,8 @@ export function attachInteraction(
         else drafting.click(p);
       }
     } else if (gesture.kind === 'press') {
-      const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
+      const world = screenToWorld(s.viewport, p);
+      const id = pickAt(doc, world, PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
       if (gesture.shift) {
         if (id !== null) {
           const next = new Set(s.selection);
@@ -142,6 +157,7 @@ export function attachInteraction(
         }
       } else {
         store.set({ selection: new Set(id === null ? [] : [id]) });
+        if (id !== null && noteTextContains(doc, id, world)) startValueEdit(store, drafting, doc, id);
       }
     } else if (gesture.kind === 'box') {
       const a = screenToWorld(s.viewport, gesture.start);
@@ -172,17 +188,7 @@ export function attachInteraction(
     const p = local(e);
     const s = store.get();
     const id = pickAt(s.session.doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
-    if (id === null) return;
-    const note = s.session.doc.notes.get(id);
-    const constraint = s.session.doc.constraints.get(id) ?? (note?.drive !== undefined ? s.session.doc.constraints.get(note.drive) : undefined);
-    if (!constraint) return;
-    const valued =
-      constraint.body.kind === 'distance' ||
-      constraint.body.kind === 'radius' ||
-      constraint.body.kind === 'length' ||
-      constraint.body.kind === 'angle';
-    store.set({ selection: new Set([constraint.id]), showSelection: true });
-    if (valued) drafting.start('editConstraint');
+    if (id !== null) startValueEdit(store, drafting, s.session.doc, id);
   });
 
   target.addEventListener(

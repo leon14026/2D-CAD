@@ -10,6 +10,7 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
 | `ROADMAP.md` | The plan: decisions, constraints, budgets, accuracy model, phases and their test gates, implementation notes | Tick gate boxes as they pass in CI; add implementation notes later phases need |
 | `PROGRESS.md` | Where the project stands: phase table and dated log | Add an entry whenever a phase starts, a PR opens or merges, or a decision is made |
 | `TEST-BACKLOG.md` | Manual tests only the owner can do (real laptops, other CAD programs, rulers, legal checks) | Add the owner's tests for every phase before its PR opens; never tick a box on the owner's behalf |
+| `MINOR-BACKLOG.md` | Small features that are not a phase | Add an item when it comes up; take one when a phase is not open |
 | `CLAUDE.md` | This file | Update when a convention changes |
 
 ## Hard constraints
