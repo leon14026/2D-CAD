@@ -1074,3 +1074,86 @@ describe('refusals, diameters, files and marks of every kind', () => {
     expect([...renamed.doc.constraints.values()][0]!.sheet).toBeUndefined();
   });
 });
+
+describe('an edit is refused only for what it breaks', () => {
+  /** Line A holds a distance of 100 and a distance of 60: both can never be met. Line B is free. */
+  function conflicted(): { s: Session; a: number; b: number } {
+    const a = addLine(createSession(newDocument()), 0, 0, 100, 0);
+    const b = addLine(a.session, 0, 50, 40, 50);
+    const distance = (value: number) => ({
+      body: {
+        kind: 'distance',
+        a: { kind: 'end', id: a.id, end: 'start' },
+        b: { kind: 'end', id: a.id, end: 'end' },
+        value,
+      },
+    });
+    const s = run(run(b.session, 'constraint.add', distance(100)), 'constraint.add', distance(60));
+    expect(unmetConstraints(s.doc).length).toBeGreaterThan(0);
+    return { s, a: a.id, b: b.id };
+  }
+
+  it('moves an unrelated line while two other constraints conflict', () => {
+    const { s, b } = conflicted();
+    const moved = run(s, 'entity.transform', { ids: [b], transform: { kind: 'translate', dx: 10, dy: 0 } });
+    expectPoint((geomOf(moved, b) as { start: { x: number; y: number } }).start, { x: 10, y: 50 });
+  });
+
+  it('changes the lineweight of a line whose constraints conflict, because its shape did not change', () => {
+    const { s, a } = conflicted();
+    const styled = run(s, 'entity.setProps', { ids: [a], lineweight: 0.5 });
+    expect(styled.doc.entities.get(a)?.lineweight).toBe(0.5);
+  });
+
+  it('treats a move that leaves a shape exactly where it was as no change', () => {
+    const { s, a } = conflicted();
+    const same = run(s, 'entity.transform', { ids: [a], transform: { kind: 'translate', dx: 0, dy: 0 } });
+    expect(geomOf(same, a)).toEqual(geomOf(s, a));
+  });
+
+  it('still refuses an edit that makes the conflict worse', () => {
+    const { s, a } = conflicted();
+    expect(() =>
+      execute(s, 'entity.transform', { ids: [a], transform: { kind: 'scale', center: { x: 0, y: 0 }, factor: 3 } }),
+    ).toThrow(/is held at/);
+  });
+
+  it('moves a dimensioned rectangle whole: every corner is placed, so the number still holds', () => {
+    const rect = execute(createSession(newDocument()), 'entity.add', {
+      geom: polyline([vec(0, 0), vec(100, 0), vec(100, 50), vec(0, 50)], true),
+    });
+    const id = rect.result.id;
+    const dimensioned = execute(rect.session, 'note.add', {
+      body: {
+        kind: 'linear',
+        orient: 'horizontal',
+        a: { kind: 'vertex', id, index: 0 },
+        b: { kind: 'vertex', id, index: 1 },
+        at: { x: 50, y: -10 },
+        style: 'ISO',
+      },
+    }).session;
+    const moved = run(dimensioned, 'entity.transform', { ids: [id], transform: { kind: 'translate', dx: 5, dy: 3 } });
+    const g = geomOf(moved, id) as unknown as { vertices: { x: number; y: number }[] };
+    expectPoint(g.vertices[0]!, { x: 5, y: 3 });
+    expectPoint(g.vertices[1]!, { x: 105, y: 3 });
+    expectPoint(g.vertices[2]!, { x: 105, y: 53 });
+    expectPoint(g.vertices[3]!, { x: 5, y: 53 });
+    expect(maxResidual(moved.doc)).toBe(0);
+  });
+
+  it('still refuses an edit that breaks a constraint that was met', () => {
+    const line = addLine(createSession(newDocument()), 0, 0, 100, 0);
+    const held = run(line.session, 'constraint.add', {
+      body: {
+        kind: 'distance',
+        a: { kind: 'end', id: line.id, end: 'start' },
+        b: { kind: 'end', id: line.id, end: 'end' },
+        value: 100,
+      },
+    });
+    expect(() =>
+      execute(held, 'entity.transform', { ids: [line.id], transform: { kind: 'scale', center: { x: 0, y: 0 }, factor: 2 } }),
+    ).toThrow(/This distance is held at 100/);
+  });
+});

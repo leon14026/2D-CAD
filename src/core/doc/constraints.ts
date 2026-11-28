@@ -347,9 +347,14 @@ function entityRadius(e: Entity): number | undefined {
   return e.geom.kind === 'circle' || e.geom.kind === 'arc' ? e.geom.radius : undefined;
 }
 
+function sameGeom(a: Shape, b: Shape): boolean {
+  return a === b || JSON.stringify(a) === JSON.stringify(b);
+}
+
 /**
- * Points (and radii) the command just placed: named handles that moved on entities that
- * already existed. The solver holds these still and moves the rest.
+ * Points (and radii) the command just placed: every named handle of an entity that already
+ * existed and whose shape changed. The solver holds these still and moves the rest. An entity
+ * that was only restyled (layer, colour, lineweight) places nothing, so it pins nothing.
  */
 export function pinsFromDraft(draft: Draft): SolvePins {
   const points = new Map<string, Vec2>();
@@ -358,6 +363,7 @@ export function pinsFromDraft(draft: Draft): SolvePins {
     const before = draft.base.entities.get(id);
     const after = draft.entity(id);
     if (!before || !after) continue;
+    if (sameGeom(before.geom, after.geom)) continue;
     for (const h of namedPoints(after)) points.set(`${id}:${h.key}`, h.p);
     const r1 = entityRadius(after);
     if (r1 !== undefined) radii.set(id, r1);
@@ -822,12 +828,19 @@ export function pruneAndSolve(draft: Draft): number {
       n += 1;
     }
   }
+  if ([...draft.constraints()].length === 0) return n;
   const pins = pinsFromDraft(draft);
-  if ([...draft.constraints()].length > 0) solveConstraints(draft, pins);
+  solveConstraints(draft, pins);
   if (hasPins(pins)) {
-    const unmet = unmetOnDraft(draft);
-    if (unmet.length > 0) {
-      const c = draft.constraint(unmet[0]!.id);
+    // Refuse only what this edit broke or made worse. A constraint that could not be met before
+    // (two that conflict, say) must not stop an unrelated edit; the status warning covers it.
+    const was = new Map(unmetConstraints(draft.base).map((u) => [u.id, u.residual]));
+    const broken = unmetOnDraft(draft).filter((u) => {
+      const before = was.get(u.id);
+      return before === undefined || u.residual > before + CONSTRAINT_MET_TOL;
+    });
+    if (broken.length > 0) {
+      const c = draft.constraint(broken[0]!.id);
       throw new CommandError(c ? constraintRefuseMessage(c) : 'That change cannot keep the constraints.');
     }
   }
