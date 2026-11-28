@@ -788,6 +788,79 @@ describe('DXF import of DIMENSION', () => {
     expect(skipped).toBe(1);
   });
 
+  describe('a dimension inside a block insert', () => {
+    // A 100 mm line with a horizontal dimension, as a block. Inserting it turned must turn the
+    // dimension too, or a vertical 100 mm line reads 0.
+    const part = [
+      0, 'BLOCK', 2, 'PART', 10, 0, 20, 0,
+      0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,
+      0, 'DIMENSION', 8, '0', 10, 50, 20, 10, 13, 0, 23, 0, 14, 100, 24, 0, 70, 32, 50, 0, 1, '<>',
+      0, 'ENDBLK',
+    ] as const;
+
+    function inserted(rotation: number, scaleX = 1): string {
+      return pairs(
+        0, 'SECTION', 2, 'BLOCKS', ...part, 0, 'ENDSEC',
+        0, 'SECTION', 2, 'ENTITIES',
+        0, 'INSERT', 8, '0', 2, 'PART', 10, 0, 20, 0, 41, scaleX, 42, 1, 43, 1, 50, rotation,
+        0, 'ENDSEC', 0, 'EOF',
+      );
+    }
+
+    function only(doc: ReturnType<typeof importDxf>['doc']) {
+      const note = [...doc.notes.values()].find((n) => n.body.kind === 'linear');
+      return note && note.body.kind === 'linear' ? note.body.orient : undefined;
+    }
+
+    it('keeps a horizontal dimension horizontal when the insert is not turned', () => {
+      const { doc, skipped } = importDxf(inserted(0));
+      expect(skipped).toBe(0);
+      expect(only(doc)).toBe('horizontal');
+      expectClose(measured(doc) ?? NaN, 100);
+    });
+
+    it('makes it vertical when the insert is turned a quarter, and still reads 100', () => {
+      const { doc, skipped } = importDxf(inserted(90));
+      expect(skipped).toBe(0);
+      expect(only(doc)).toBe('vertical');
+      expectClose(measured(doc) ?? NaN, 100);
+    });
+
+    it('keeps it horizontal after a half turn or a mirror', () => {
+      for (const dxf of [inserted(180), inserted(0, -1)]) {
+        const { doc } = importDxf(dxf);
+        expect(only(doc)).toBe('horizontal');
+        expectClose(measured(doc) ?? NaN, 100);
+      }
+    });
+
+    it('skips it, and says so, when the insert is turned to an angle a linear dimension cannot hold', () => {
+      const { doc, skipped } = importDxf(inserted(45));
+      expect(doc.entities.size).toBe(1);
+      expect(doc.notes.size).toBe(0);
+      expect(skipped).toBe(1);
+    });
+
+    it('carries the turn through nested blocks, whichever level turns', () => {
+      for (const [innerTurn, outerTurn] of [[90, 0], [0, 90]] as const) {
+        const dxf = pairs(
+          0, 'SECTION', 2, 'BLOCKS', ...part,
+          0, 'BLOCK', 2, 'OUTER', 10, 0, 20, 0,
+          0, 'INSERT', 8, '0', 2, 'PART', 10, 0, 20, 0, 50, innerTurn,
+          0, 'ENDBLK',
+          0, 'ENDSEC',
+          0, 'SECTION', 2, 'ENTITIES',
+          0, 'INSERT', 8, '0', 2, 'OUTER', 10, 0, 20, 0, 50, outerTurn,
+          0, 'ENDSEC', 0, 'EOF',
+        );
+        const { doc, skipped } = importDxf(dxf);
+        expect(skipped).toBe(0);
+        expect(only(doc)).toBe('vertical');
+        expectClose(measured(doc) ?? NaN, 100);
+      }
+    });
+  });
+
   it('skips an ordinate dimension', () => {
     const dxf = entities(
       0, 'LINE', 8, '0', 10, 0, 20, 0, 11, 100, 21, 0,

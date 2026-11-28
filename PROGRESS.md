@@ -33,6 +33,10 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 - DXF `DIMENSION` becomes an ArchiLite note bound to geometry (where to measure, never the
   stored number). Overrides, ordinates, unbound defpoints and hatches stay skipped.
   Independent of Phases 10, 11 and 13.
+- Review fix: a horizontal or vertical dimension inside a block insert kept its pre-turn axis,
+  so a 100 mm line inserted at 90 degrees read 0.00 (and at 45 degrees 70.71). The measuring
+  direction now travels through the insert's transform with the points. A direction that ends
+  up off both axes is skipped and counted, like any other dimension ArchiLite cannot hold.
 
 ### 2026-11-27: Phase 13 planned
 

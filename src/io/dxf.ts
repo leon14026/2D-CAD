@@ -776,9 +776,18 @@ function dimPiece(e: DxfEntity): DimPiece | null {
   };
 }
 
+/**
+ * Moves a dimension through a block insert. The measuring direction (group 50) turns with the
+ * insert, so a horizontal dimension in a block inserted at 90 degrees becomes a vertical one. It is
+ * carried through the same map as the points, which also covers mirroring and uneven scales; a
+ * direction that ends up off both axes is left for `bindDim` to skip.
+ */
 function mapDim(p: DimPiece, layer: string, mapPt: (v: Vec2) => Vec2): DimPiece {
   const pt = (v: Vec2 | null): Vec2 | null => (v ? mapPt(v) : null);
-  return { ...p, layer, dimLine: mapPt(p.dimLine), textAt: pt(p.textAt), a: pt(p.a), b: pt(p.b), c: pt(p.c), d: pt(p.d) };
+  const from = mapPt(p.dimLine);
+  const along = mapPt({ x: p.dimLine.x + Math.cos(p.angle), y: p.dimLine.y + Math.sin(p.angle) });
+  const angle = Math.atan2(along.y - from.y, along.x - from.x) + 0;
+  return { ...p, layer, angle, dimLine: from, textAt: pt(p.textAt), a: pt(p.a), b: pt(p.b), c: pt(p.c), d: pt(p.d) };
 }
 
 type FlatPiece =
