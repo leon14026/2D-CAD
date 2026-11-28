@@ -93,6 +93,52 @@ function pyodideRuntime(): Plugin {
   };
 }
 
+/** cadkit-wasm files copied into dist/cadkit/ and served at /cadkit/ in `vite dev`. */
+const CADKIT_FILES = ['cadkit_wasm.js', 'cadkit_wasm_bg.wasm'] as const;
+
+function cadkitRoot(): string {
+  return fileURLToPath(new URL('./node_modules/cadkit-wasm/web/', import.meta.url));
+}
+
+function cadkitMime(name: string): string {
+  if (name.endsWith('.js')) return 'text/javascript';
+  if (name.endsWith('.wasm')) return 'application/wasm';
+  return 'application/octet-stream';
+}
+
+function cadkitRuntime(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'archilite-cadkit',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    configureServer(server) {
+      const root = cadkitRoot();
+      server.middlewares.use((req, res, next) => {
+        const raw = req.url?.split('?')[0] ?? '';
+        if (!raw.startsWith('/cadkit/')) return next();
+        const name = decodeURIComponent(raw.slice('/cadkit/'.length));
+        if (!(CADKIT_FILES as readonly string[]).includes(name)) return next();
+        const file = join(root, name);
+        if (!existsSync(file)) return next();
+        const stat = statSync(file);
+        res.setHeader('Content-Type', cadkitMime(name));
+        res.setHeader('Content-Length', String(stat.size));
+        createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      const dest = join(outDir, 'cadkit');
+      mkdirSync(dest, { recursive: true });
+      const root = cadkitRoot();
+      for (const name of CADKIT_FILES) {
+        copyFileSync(join(root, name), join(dest, name));
+      }
+    },
+  };
+}
+
 function brandHtml(): Plugin {
   return {
     name: 'archilite-brand-html',
@@ -106,7 +152,7 @@ function brandHtml(): Plugin {
 export default defineConfig({
   // Relative asset URLs: the site works at a domain root or under /<repo>/ on GitHub Pages.
   base: './',
-  plugins: [brandHtml(), largeExample(), pyodideRuntime()],
+  plugins: [brandHtml(), largeExample(), pyodideRuntime(), cadkitRuntime()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __BUILD_SHA__: JSON.stringify(buildSha()),

@@ -1,9 +1,11 @@
 # ArchiLite progress
 
-**Now:** Phases 1 to 9 are merged and live. Phase 12 (live DXF dimensions) is in this pull
-request. Phase 13 (driving dimensions) is in [#21](https://github.com/leon14026/2D-CAD/pull/21)
-and does not wait on this one. The Phase 11 phone plan is on `main`
-([#11](https://github.com/leon14026/2D-CAD/pull/11)).
+**Now:** Phase 10 (DWG import, read only) is in review ([#27](https://github.com/leon14026/2D-CAD/pull/27)).
+Phase 11 (phone browser) merged in [#26](https://github.com/leon14026/2D-CAD/pull/26).
+Phase 12 (live DXF dimensions) merged in [#23](https://github.com/leon14026/2D-CAD/pull/23).
+Phase 13 (driving dimensions) merged in [#21](https://github.com/leon14026/2D-CAD/pull/21);
+click-the-number in [#24](https://github.com/leon14026/2D-CAD/pull/24); rectangle presets in
+[#28](https://github.com/leon14026/2D-CAD/pull/28). Phases 1 to 9 and 11 to 13 are live.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -19,14 +21,24 @@ and does not wait on this one. The Phase 11 phone plan is on `main`
 | 7. Import and export | Done | [#8](https://github.com/leon14026/2D-CAD/pull/8) | 2026-11-26 |
 | 8. Scripting (JavaScript, Python via Pyodide) | Done | [#9](https://github.com/leon14026/2D-CAD/pull/9) | 2026-11-26 |
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
-| 10. DWG import (read only) | Not started | — | — |
-| 11. Phone browser | In progress | [#26](https://github.com/leon14026/2D-CAD/pull/26) | — |
+| 10. DWG import (read only) | In review | [#27](https://github.com/leon14026/2D-CAD/pull/27) | — |
+| 11. Phone browser | Done | [#26](https://github.com/leon14026/2D-CAD/pull/26) | 2026-11-27 |
 | 12. Live DXF dimensions | Done | [#23](https://github.com/leon14026/2D-CAD/pull/23) | 2026-11-27 |
-| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) (merged), [#24](https://github.com/leon14026/2D-CAD/pull/24) (merged), rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
+| 13. Driving dimensions and editing constrained drawings | Done | [#21](https://github.com/leon14026/2D-CAD/pull/21) | 2026-11-27 |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 11 merged
+
+- PR [#26](https://github.com/leon14026/2D-CAD/pull/26) merged to `main`. Same site at 700px
+  and under. Independent of Phase 10.
+
+### 2026-11-27: Phase 12 merged
+
+- PR [#23](https://github.com/leon14026/2D-CAD/pull/23) merged to `main`. A DXF `DIMENSION`
+  becomes a live note. DWG import uses the same mapper.
 
 ### 2026-11-27: Phase 11 (phone browser) started
 
@@ -61,7 +73,35 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 - SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
   number now opens the entry box to type a new size. A click on the dimension lines only
-  selects. Double-click anywhere on the dimension still edits.
+  selects. Double-click anywhere on the dimension still edits. Merged as
+  [#24](https://github.com/leon14026/2D-CAD/pull/24).
+
+### 2026-11-27: Phase 13 merged
+
+- PR [#21](https://github.com/leon14026/2D-CAD/pull/21) merged to `main`. Driving dimensions,
+  `constraint.setValue`, and constraint marks are live. Independent of Phase 10.
+
+### 2026-11-27: Phase 10 gate passed in CI
+
+- Phase gate on [#27](https://github.com/leon14026/2D-CAD/pull/27) is green (Ubuntu runner:
+  82 browser tests; pan avg 9.6 ms, zoom avg 14.2 ms per frame on 20,000 entities; size
+  124.5 KB of 300 KB, DWG decoder 999.6 KB gzipped of 3 MB). Owner tests M10.1 and M10.2
+  stay open.
+
+### 2026-11-27: Phase 10 PR opened
+
+- PR [#27](https://github.com/leon14026/2D-CAD/pull/27) on `cursor/phase-10-dwg-487f`, against
+  `main`. Independent of the other open phase PRs.
+
+### 2026-11-27: Phase 10 (DWG import) started
+
+- Branch `cursor/phase-10-dwg-487f` from `main`. Read-only DWG import through on-demand
+  `cadkit-wasm` 0.5.4 (MIT OR Apache-2.0). Mapping reuses DXF import after exploding inserts.
+  Paper layouts, hatches, splines, ellipses, solids, images, proxies and dimensions are skipped
+  and counted. Encrypted files and versions outside AC1014–AC1032 are refused in plain words.
+- Fixtures: AC1015 and AC1027 of a 100 mm line, a circle, an arc and a closed polyline with a
+  bulge, import to 1e-6 mm. The decoder is not in the 300 KB base budget (own 3 MB gzipped
+  transfer cap). Opening the example does not fetch it.
 
 ### 2026-11-27: Phase 13 started
 

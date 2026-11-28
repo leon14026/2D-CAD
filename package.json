@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@fontsource/b612": "5.3.0",
+    "cadkit-wasm": "0.5.4",
     "pyodide": "0.29.5"
   }
 }

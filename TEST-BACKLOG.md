@@ -300,6 +300,19 @@ as well as `.archilite`.
       a circle of radius about 3.5. Undo the second constraint: the message goes away and the
       radius is 3.
 
+### Phase 10: DWG import (read only)
+
+- [ ] **M10.1 A DWG from another program.** On the work laptop, export a simple drawing from
+      LibreCAD (or Onshape or SolidWorks) as DWG, 2013 or 2018 if you can choose. Include a
+      known length, a circle, an arc and a closed polyline. Open it in ArchiLite. Expect: the
+      four shapes are there. Measure the same five features as M7.1 in the selection panel;
+      they should agree with the other program to 0.001 mm. Note what the toast says was left
+      out (hatches, paper space). A dimension in the DWG should bind like a DXF dimension.
+      Opening the example first should not download the decoder; opening this file should.
+- [ ] **M10.2 Encrypted or old DWG.** If you have a password-protected DWG, Open it. Expect: a
+      plain-words refusal about encryption, and an empty drawing. A very old DWG (R12 / AC1009)
+      should name the version and refuse without fetching the decoder.
+
 ### Phase 13: driving dimensions and editing constrained drawings
 
 - [ ] **M13.1 Type a new number.** On the work laptop, draw a 100 mm line and an aligned
@@ -363,28 +376,4 @@ as well as `.archilite`.
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, paper space).
-  Dimensions should use the same mapper as DXF (Phase 12). Until this phase, use DXF. This can
-  wait until after the phone work.
-- **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
-  Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
-  `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
-  where the save went (Files, the share sheet, or a download). Phase 10 is not required for
-  this.
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions
-  until Phase 12, paper space). Until this phase, use DXF. This can wait until after the phone
-  work.
-- **Phase 12:** open the floorplan DXF. Treat units as inches. Expect: original wall
-  dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
-  walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
-  was overtyped in the other program is still left out. Hatches are still left out. Imported
-  dimensions are reference until you switch them.
-
-- **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
-  length (a constraint appears in the selection panel). Double-click the dimension, type 120,
-  press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal
-  and vertical, and move the vertical leg: the horizontal leg follows. Try to move a fixed
-  point: expect a plain-words refusal that names the constraint and changes nothing. Toggle
-  "Show constraints" and check the marks sit next to what they hold. Place a reference
-  dimension and check it reads in brackets and does not hold anything.
+(Nothing waiting. Phases 10 to 13 have steps in “Ready to test now”.)

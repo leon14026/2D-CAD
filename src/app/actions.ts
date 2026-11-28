@@ -19,7 +19,18 @@ import {
 } from '../core/doc';
 import { LENGTH_UNITS, type LengthUnit } from '../core/geom';
 import { applyJavaScript, applyPython, type ScriptLanguage } from '../script';
-import { exportDxf, exportPdf, exportSvg, importDxf, IoError, looksLikeDxf } from '../io';
+import {
+  assertDwgHeader,
+  exportDxf,
+  exportPdf,
+  exportSvg,
+  importDwg,
+  importDxf,
+  IoError,
+  looksLikeDwg,
+  looksLikeDxf,
+} from '../io';
+import { ensureCadkit } from './cadkit';
 import { ensurePython } from './python';
 import { isSelectable, type SnapKind } from '../core/spatial';
 import { exportPng } from '../render/png';
@@ -379,18 +390,13 @@ export class Actions {
       return false;
     };
     try {
+      if (/^AC10/i.test(text.trimStart())) {
+        return fail('This is a DWG file. Open it with Open, rather than pasting the text.');
+      }
       if (looksLikeDxf(text) || name.toLowerCase().endsWith('.dxf')) {
         const { doc, skipped } = importDxf(text);
         this.show(doc, fileName);
-        this.store.set({
-          message: {
-            kind: 'info',
-            text:
-              skipped === 0
-                ? `Opened ${name}`
-                : `Opened ${name}. ${skipped === 1 ? 'One object' : `${skipped} objects`} of a kind ArchiLite does not draw ${skipped === 1 ? 'was' : 'were'} left out.`,
-          },
-        });
+        this.store.set({ message: { kind: 'info', text: openedMessage(name, skipped) } });
         return true;
       }
       this.show(loadDocument(text), fileName);
@@ -401,9 +407,32 @@ export class Actions {
     }
   }
 
-  async openFile(file: File): Promise<void> {
-    if (!this.confirmDiscard()) return;
-    this.openText(await file.text(), file.name);
+  async openFile(file: File): Promise<boolean> {
+    if (!this.confirmDiscard()) return false;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (looksLikeDwg(bytes) || file.name.toLowerCase().endsWith('.dwg')) {
+      return this.openDwg(bytes, file.name);
+    }
+    return this.openText(new TextDecoder().decode(bytes), file.name);
+  }
+
+  private async openDwg(bytes: Uint8Array, fileName: string): Promise<boolean> {
+    const fail = (detail: string): false => {
+      this.store.set({ message: { kind: 'error', text: `${fileName} could not be opened.`, detail } });
+      return false;
+    };
+    try {
+      assertDwgHeader(bytes);
+      this.store.set({ message: { kind: 'info', text: `Opening ${fileName}…` } });
+      const decoder = await ensureCadkit();
+      const { doc, skipped } = importDwg(bytes, decoder);
+      this.show(doc, fileName);
+      this.store.set({ message: { kind: 'info', text: openedMessage(fileName, skipped) } });
+      return true;
+    } catch (err) {
+      if (err instanceof IoError) return fail(err.message);
+      return fail('The DWG decoder could not be loaded from this site.');
+    }
   }
 
   async loadExample(large = false): Promise<void> {
@@ -485,4 +514,11 @@ export function slug(title: string): string {
 function nativeName(fileName: string | null, title: string): string {
   if (fileName && fileName.toLowerCase().endsWith(FILE_EXTENSION)) return fileName;
   return `${slug(title)}${FILE_EXTENSION}`;
+}
+
+function openedMessage(name: string, skipped: number): string {
+  if (skipped === 0) return `Opened ${name}`;
+  const objects = skipped === 1 ? 'One object' : `${skipped} objects`;
+  const verb = skipped === 1 ? 'was' : 'were';
+  return `Opened ${name}. ${objects} of a kind ArchiLite does not draw ${verb} left out.`;
 }

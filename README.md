@@ -11,17 +11,19 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 - **Blocks, sheets and constraints.** Reusable blocks, extra paper sheets, and constraints that
-  re-solve after every edit (Phase 9).
-- **DWG later.** This build does not open DWG. Phase 10 will, read only, and only after you
-  open one. Until then, export DXF from the other program and open that.
+  re-solve after every edit (Phase 9). A dimension you place also holds the drawing (Phase 13).
+- **DWG, read only.** Open a `.dwg` the same way as a DXF. The decoder loads only then, from
+  this site, and stays off the 300 KB budget. Paper layouts, hatches, splines, ellipses,
+  solids, images and proxies are left out (the toast says how many). Dimensions use the same
+  mapper as DXF. There is no DWG export.
 - **Phone.** The same site at 700px and under: drawing full screen, tools along the bottom,
-  layers and selection as sheets, two-finger pan and pinch. It does not need DWG.
-- **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
-  measurements (where to measure, never the stored number). Until then they are skipped.
+  layers and selection as sheets, two-finger pan and pinch.
+- **Live DXF dimensions.** A DXF `DIMENSION` becomes an ArchiLite measurement (where to
+  measure, never the stored number). Hatches stay skipped.
 
-**Status:** Phases 1 to 9, 12 (live DXF dimensions) and 13 (driving dimensions and rectangle
-presets) are built and merged. Phase 11 (phone browser) is in
-[#26](https://github.com/leon14026/2D-CAD/pull/26) and does not wait on Phase 10. See
+**Status:** Phases 1 to 9 and 11 to 13 are merged. Phase 10 (read-only DWG import) is in this
+pull request.
+See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.
@@ -35,7 +37,7 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | To | Do this |
 |---|---|
 | Find any command | Ctrl+K, then type |
-| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite or DXF) |
+| Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite, DXF or DWG) |
 | Export | Export button, or Ctrl+K then "Export as DXF / SVG / PDF / PNG" |
 | Zoom | Mouse wheel or pinch (about the cursor); F fits the drawing. On a phone, pinch with two fingers |
 | Pan | Middle-drag, or hold Space and drag; arrow keys. On a phone, one finger (or two) drags |

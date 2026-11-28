@@ -13,6 +13,8 @@ describe('size budget', () => {
     writeFileSync(join(dir, 'app.js'), js);
     mkdirSync(join(dir, 'pyodide'));
     writeFileSync(join(dir, 'pyodide', 'big.wasm'), randomBytes(BUDGET_BYTES * 2));
+    mkdirSync(join(dir, 'cadkit'));
+    writeFileSync(join(dir, 'cadkit', 'cadkit_wasm_bg.wasm'), randomBytes(BUDGET_BYTES * 2));
 
     const { files, totalGzip } = measure(dir);
     expect(files.map((f) => f.path)).toEqual(['app.js']);
