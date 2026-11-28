@@ -1,7 +1,8 @@
 # ArchiLite progress
 
 **Now:** Phase 10 (DWG import, read only) is in review ([#27](https://github.com/leon14026/2D-CAD/pull/27)).
-Phase 13 (driving dimensions) merged in [#21](https://github.com/leon14026/2D-CAD/pull/21). Phases 1 to 9 and 13 are live.
+Phase 13 (driving dimensions) merged in [#21](https://github.com/leon14026/2D-CAD/pull/21);
+click-the-number in [#24](https://github.com/leon14026/2D-CAD/pull/24). Phases 1 to 9 and 13 are live.
 DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13) (text codes and units),
 [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT), and
 [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
@@ -30,6 +31,13 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Click a dimension's number to redimension
+
+- SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
+  number now opens the entry box to type a new size. A click on the dimension lines only
+  selects. Double-click anywhere on the dimension still edits. Merged as
+  [#24](https://github.com/leon14026/2D-CAD/pull/24).
 
 ### 2026-11-27: Phase 13 merged
 

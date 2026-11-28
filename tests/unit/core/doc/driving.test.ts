@@ -28,6 +28,7 @@ import {
   undo,
   unmetOnDraft,
   unmetConstraints,
+  valuedConstraintOf,
   type Constraint,
   type Session,
 } from '../../../../src/core/doc';
@@ -654,6 +655,9 @@ describe('refusals, diameters, files and marks of every kind', () => {
     const cid = added.session.doc.notes.get(added.result.id)!.drive!;
     const c = added.session.doc.constraints.get(cid)!;
     expect(drivingNoteOf(added.session.doc, added.result.id)?.constraint.id).toBe(cid);
+    expect(valuedConstraintOf(added.session.doc, added.result.id)?.id).toBe(cid);
+    expect(valuedConstraintOf(added.session.doc, cid)?.id).toBe(cid);
+    expect(valuedConstraintOf(added.session.doc, 99)).toBeNull();
     expect(drivingNoteOf(added.session.doc, 99)).toBeNull();
     expect(
       drivingNoteOf(
@@ -686,6 +690,11 @@ describe('refusals, diameters, files and marks of every kind', () => {
     expect(constraintDisplayValue(dnote.session.doc, dc)).toBe(8);
     expect(constraintStoredValue(dnote.session.doc, dc, 10)).toBe(5);
     expect(constraintDisplayValue(added.session.doc, { id: 1, body: { kind: 'horizontal', a: { kind: 'end', id: 2, end: 'start' }, b: { kind: 'end', id: 2, end: 'end' } } })).toBeNull();
+    const horiz = execute(added.session, 'constraint.add', {
+      body: { kind: 'horizontal', a: { kind: 'end', id: line.id, end: 'start' }, b: { kind: 'end', id: line.id, end: 'end' } },
+    });
+    const hid = [...horiz.session.doc.constraints.values()].find((x) => x.body.kind === 'horizontal')!.id;
+    expect(valuedConstraintOf(horiz.session.doc, hid)).toBeNull();
 
     expect(() =>
       execute(line.session, 'note.add', {

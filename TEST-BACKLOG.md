@@ -315,9 +315,10 @@ as well as `.archilite`.
 ### Phase 13: driving dimensions and editing constrained drawings
 
 - [ ] **M13.1 Type a new number.** On the work laptop, draw a 100 mm line and an aligned
-      dimension. Expect: the selection panel lists a Distance constraint at 100. Double-click
-      the dimension, type 120, press Enter. Expect: the line is 120 mm and the dimension reads
-      120.00. Ctrl+Z once: both are 100 again.
+      dimension. Expect: the selection panel lists a Distance constraint at 100. Click the
+      dimension's number, type 120, press Enter. Expect: the line is 120 mm and the dimension
+      reads 120.00. Click the dimension line (not the number): it selects and the entry box
+      does not open. Ctrl+Z once: both are 100 again.
 - [ ] **M13.2 Reference dimension.** With a dimension selected, set "Holds the drawing" to
       "No (reference)". Expect: the number is in brackets, for example (100.00), and scaling
       the line changes the number. Place a new dimension with **R** (Measure only) and check it
