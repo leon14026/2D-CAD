@@ -11,7 +11,7 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   geometry, checked against an independent Python oracle (hatch areas from Phase 6, exports from Phase 7).
 - **Scriptable.** JavaScript and Python (via Pyodide, loaded only when needed) from Phase 8.
 - **Blocks, sheets and constraints.** Reusable blocks, extra paper sheets, and constraints that
-  re-solve after every edit (Phase 9).
+  re-solve after every edit (Phase 9). A dimension you place also holds the drawing (Phase 13).
 - **DWG, read only.** Open a `.dwg` the same way as a DXF. The decoder loads only then, from
   this site, and stays off the 300 KB budget. Paper layouts, hatches, splines, ellipses,
   solids, images, proxies and dimensions are left out (the toast says how many). There is no
@@ -21,11 +21,9 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
 - **Live DXF dimensions later.** Phase 12 turns other CAD dimensions into ArchiLite
   measurements (where to measure, never the stored number). Until then they are skipped.
 
-**Status:** Phases 1 to 10 are built; Phase 10 adds read-only DWG import on top of blocks,
-sheets, constraints and scripting. Phase 11 (phone browser) is planned and does not wait on
-Phase 10. Phase 12 (live DXF dimensions) is planned and does not wait on Phase 10 or 11. Phase 13
-(driving dimensions and editing constrained drawings) is planned and does not wait on any of
-them. See
+**Status:** Phases 1 to 9 and 13 are merged. Phase 10 (read-only DWG import) is in this pull
+request. Phase 11 (phone browser) and Phase 12 (live DXF dimensions) are planned independently.
+See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
 [TEST-BACKLOG.md](TEST-BACKLOG.md) for manual tests.

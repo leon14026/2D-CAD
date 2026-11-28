@@ -3,6 +3,7 @@ import { COMMANDS, isCommandId, type CommandDef, type CommandId, type ParamsOf, 
 import { pruneAndSolve } from './constraints';
 import { CommandError, Draft } from './draft';
 import { newDocument, type Doc } from './model';
+import { deleteNotePair } from './driving';
 import { noteEntityIds, noteProblem } from './notes';
 
 export interface Transaction {
@@ -48,7 +49,7 @@ function pruneBrokenNotes(draft: Draft): number {
   for (const note of [...draft.notes()]) {
     if (!noteEntityIds(note).some((id) => touched.has(id))) continue;
     if (noteProblem(env, note) !== null) {
-      draft.deleteNote(note.id);
+      deleteNotePair(draft, note.id);
       count += 1;
     }
   }

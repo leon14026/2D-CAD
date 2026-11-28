@@ -754,29 +754,49 @@ while drawing (horizontal, coincident). Each is a later stretch.
 
 Gate:
 
-- [ ] A 100 mm line with a driving aligned dimension: placing it adds exactly one constraint of
+- [x] A 100 mm line with a driving aligned dimension: placing it adds exactly one constraint of
       100 and no coordinate changes (compared to 1e-9). A reference dimension adds none and
       draws as (100).
-- [ ] `constraint.setValue` to 120 leaves the line exactly 120 long (1e-9) and moves what is
+- [x] `constraint.setValue` to 120 leaves the line exactly 120 long (1e-9) and moves what is
       attached to it. On the constrained plate in `tests/unit/core/doc/constrained-plate.ts`,
       widening 80 to 100 moves the right edge and the holes that are constrained to it.
       Hand-calculated values.
-- [ ] A value the other constraints forbid (radius 3 and radius 4 on one circle) is refused,
+- [x] A value the other constraints forbid (radius 3 and radius 4 on one circle) is refused,
       the document is unchanged, and the message names the constraint.
-- [ ] The three misbehaviours above are fixed, with hand-calculated results: scaling the
+- [x] The three misbehaviours above are fixed, with hand-calculated results: scaling the
       length-10 line by 2 is refused and the line is unchanged; moving the fixed-start line is
       refused and the line is unchanged; moving the vertical leg of the joined L by 4 gives a
       horizontal leg from (0, 0) to (14, 0) and a vertical leg from (14, 0) to (14, 10).
-- [ ] Property test (fast-check, `PROPERTY_PARAMS`): a random constrained rectangle given a new
+- [x] Property test (fast-check, `PROPERTY_PARAMS`): a random constrained rectangle given a new
       width has that width to `tolFor`, every constraint is met, and undo restores the
       original exactly.
-- [ ] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
+- [x] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
       opens unchanged. Coverage stays 100% on `src/core`.
-- [ ] Browser (Chromium, GPU off, no console errors): place a dimension, double-click it, type
+- [x] Browser (Chromium, GPU off, no console errors): place a dimension, double-click it, type
       120, Enter, and the part resizes; Ctrl+Z restores it in one step. Constraint marks show
       and hide. Picking a constraint in the panel highlights what it holds. A screenshot
       baseline of the marks. The performance gate still passes.
-- [ ] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+- [x] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+
+Implementation notes (for later phases):
+- **File format 4.** `distance.axis` (`x` or `y`; omitted is the straight-line length), `note.drive`
+  / `constraint.note` as a bidirectional link, `note.reference: true` for measure-only dimensions.
+  Version 3 files open unchanged. A mismatch between `drive` and `note` is refused at load.
+- **Driving by default.** `note.add` on a linear, aligned, radius, diameter or angle dimension
+  also adds the matching constraint at the value measured now, unless `reference: true`. Free
+  points cannot drive. A diameter stores a radius; the UI shows twice that. Angle driving needs
+  two line ids and a sweep in (0, π).
+- **Solver pins.** `pinsFromDraft` holds every named handle of entities the command touched (not
+  only the points that moved), so scale-around-an-endpoint cannot slide the unmoved end. Fix
+  constraints join the pin set unless a user pin already holds that handle. `propose` for
+  coincident, horizontal, vertical, distance, length and concentric is pin-aware: one pin moves
+  the other handle; both pins skip. With neither pin, those constraints move only the second
+  handle so a driving dimension can stretch a rectangle instead of averaging both ends. Pins
+  overwrite averaged proposals. `pruneAndSolve` refuses if pins leave a constraint unmet.
+  `constraint.setValue` / `setFix` re-solve without user pins and refuse if unmet. A user edit
+  never leaves a compromise shape.
+- **Marks.** `constraintMarks` are hairline glyphs, not geometry. Snaps and modify commands ignore
+  them. `pickAt` / `selectInBox` take an optional marks list. Shift+C toggles them.
 
 ## Out of scope for v1
 

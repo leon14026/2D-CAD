@@ -84,15 +84,15 @@ describe('linear and aligned dimensions', () => {
   });
 
   it('placing the line beside the points makes it vertical', () => {
-    const d = run(begin('dimLinear'), P(0, 0), P(0, 25), P(-10, 12));
+    const d = run(begin('dimLinear'), O('r'), P(0, 0), P(0, 25), P(-10, 12));
     expect(lastNote(d).body).toMatchObject({ kind: 'linear', orient: 'vertical', a: { kind: 'free', p: { x: 0, y: 0 } } });
   });
 
   it('aligned dimensions follow the points', () => {
-    const d = run(begin('dimAligned'), P(0, 0), P(30, 40), P(-8, 6));
+    const d = run(begin('dimAligned'), O('r'), P(0, 0), P(30, 40), P(-8, 6));
     expect(lastNote(d).body).toMatchObject({ kind: 'aligned', at: { x: -8, y: 6 } });
     const r = resolveNotes(d.session.doc).get(lastNote(d).id);
-    expect(r?.ok && r.r.text).toBe('50.00');
+    expect(r?.ok && r.r.text).toBe('(50.00)');
   });
 
   it('refuses a second point on the first, and anything but a point', () => {
@@ -125,6 +125,17 @@ describe('linear and aligned dimensions', () => {
     refused(d, N(5), NOT_HERE_TEXT);
     expect(feedTyped(d, '10,0', null).error).toBeNull();
   });
+
+  it('option r switches the tool between driving and measuring only', () => {
+    let d = wall();
+    expect(currentPrompt(d)?.options).toEqual([{ key: 'r', label: 'Measure only' }]);
+    d = run(d, O('r'));
+    expect(d.memory.dimReference).toBe(true);
+    expect(currentPrompt(d)?.options).toEqual([{ key: 'r', label: 'Hold the drawing' }]);
+    d = run(d, P(0, 0), P(40, 0), P(20, 8));
+    expect(lastNote(d).reference).toBe(true);
+    expect(d.session.doc.constraints.size).toBe(0);
+  });
 });
 
 describe('radius and diameter dimensions', () => {
@@ -132,7 +143,12 @@ describe('radius and diameter dimensions', () => {
 
   it('pick a circle, then say where it goes', () => {
     let d = round('dimRadius');
-    expect(currentPrompt(d)).toEqual({ text: 'Pick a circle or an arc', accepts: 'pick', options: [], enter: 'finish' });
+    expect(currentPrompt(d)).toEqual({
+      text: 'Pick a circle or an arc',
+      accepts: 'pick',
+      options: [{ key: 'r', label: 'Measure only' }],
+      enter: 'finish',
+    });
     d = run(d, PICK(2));
     expect(promptText(d)).toBe('Where the dimension goes');
     expect(currentBase(d)).toBeNull();
@@ -161,6 +177,7 @@ describe('radius and diameter dimensions', () => {
     refused(d, PICK(2), NOT_HERE_TEXT);
     expect(run(d, ENTER).active).toBeNull();
     expect(run(round('dimRadius'), ENTER).active).toBeNull();
+    expect(run(round('dimRadius'), O('r')).memory.dimReference).toBe(true);
   });
 
   it('previews', () => {
@@ -179,10 +196,10 @@ describe('angle dimension', () => {
       [promptText(d), promptText((d = run(d, P(0, 0)))), promptText((d = run(d, P(10, 0)))), promptText((d = run(d, P(0, 10))))],
     );
     expect(currentBase(d)).toEqual({ x: 0, y: 0 });
-    d = run(d, P(7, 7));
+    d = run(d, O('r'), P(7, 7));
     expect(lastNote(d).body).toMatchObject({ kind: 'angle', at: { x: 7, y: 7 } });
     const r = resolveNotes(d.session.doc).get(lastNote(d).id);
-    expect(r?.ok && r.r.text).toBe('90.0°');
+    expect(r?.ok && r.r.text).toBe('(90.0°)');
     expect(currentBase(d)).toBeNull();
   });
 

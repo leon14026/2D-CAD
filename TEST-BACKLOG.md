@@ -312,6 +312,26 @@ as well as `.archilite`.
       plain-words refusal about encryption, and an empty drawing. A very old DWG (R12 / AC1009)
       should name the version and refuse without fetching the decoder.
 
+### Phase 13: driving dimensions and editing constrained drawings
+
+- [ ] **M13.1 Type a new number.** On the work laptop, draw a 100 mm line and an aligned
+      dimension. Expect: the selection panel lists a Distance constraint at 100. Double-click
+      the dimension, type 120, press Enter. Expect: the line is 120 mm and the dimension reads
+      120.00. Ctrl+Z once: both are 100 again.
+- [ ] **M13.2 Reference dimension.** With a dimension selected, set "Holds the drawing" to
+      "No (reference)". Expect: the number is in brackets, for example (100.00), and scaling
+      the line changes the number. Place a new dimension with **R** (Measure only) and check it
+      never held the drawing.
+- [ ] **M13.3 Joined L follows.** Draw a horizontal line and a vertical line that meet. Horizontal
+      and vertical constraints on the legs, coincident at the corner. Move the vertical leg
+      sideways. Expect: the horizontal leg grows or shrinks so they still meet, and both stay
+      straight. Undo once: the move comes back.
+- [ ] **M13.4 A fixed point refuses to move.** Fix the start of a line. Move the whole line.
+      Expect: a plain-words message that names the constraint, and the line does not move.
+- [ ] **M13.5 Show constraints.** Shift+C (or the command palette "Show constraints"). Expect:
+      small hairline marks beside what they hold. Pick a mark: the selection panel names that
+      constraint and highlights the geometry. Shift+C again hides the marks.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
@@ -324,11 +344,5 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
 - **Phase 12:** open the floorplan DXF. Treat units as inches. Expect: original wall
   dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
   walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
-  was overtyped in the other program is still left out. Hatches are still left out.
-- **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
-  length (a constraint appears in the selection panel). Double-click the dimension, type 120,
-  press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal
-  and vertical, and move the vertical leg: the horizontal leg follows. Try to move a fixed
-  point: expect a plain-words refusal that names the constraint and changes nothing. Toggle
-  "Show constraints" and check the marks sit next to what they hold. Place a reference
-  dimension and check it reads in brackets and does not hold anything.
+  was overtyped in the other program is still left out. Hatches are still left out. Imported
+  dimensions are reference until you switch them.

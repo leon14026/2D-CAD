@@ -33,7 +33,23 @@ import {
   type ToolState,
 } from './tool';
 
-const addNote = (body: NoteBody): CommandCall => ({ id: 'note.add', params: { body } });
+const addNote = (body: NoteBody, reference = false): CommandCall => ({
+  id: 'note.add',
+  params: { body, ...(reference ? { reference: true } : {}) },
+});
+
+function dimOptions(ctx: ToolContext): ToolOption[] {
+  return [{ key: 'r', label: ctx.memory.dimReference ? 'Hold the drawing' : 'Measure only' }];
+}
+
+function dimCall(body: NoteBody, ctx: ToolContext): CommandCall {
+  return addNote(body, ctx.memory.dimReference);
+}
+
+function takeDimOption(s: ToolState, i: { readonly kind: string; readonly key?: string }, ctx: ToolContext) {
+  if (i.kind === 'option' && i.key === 'r') return next(s, [], { memory: { dimReference: !ctx.memory.dimReference } });
+  return null;
+}
 
 /** The lines of a note about to be made, for the rubber band. */
 function previewBody(doc: Doc, body: NoteBody): Shape[] {
@@ -67,14 +83,16 @@ function twoPointDimension(id: 'dimLinear' | 'dimAligned', label: string): ToolD
     id,
     label,
     start: () => EMPTY_STATE,
-    prompt: (s) => ({
+    prompt: (s, ctx) => ({
       text: ['First point', 'Second point', 'Where the dimension line goes'][s.step] as string,
       accepts: 'point',
-      options: [],
+      options: dimOptions(ctx),
       enter: 'finish',
     }),
     base: (s) => (s.points.length > 0 ? last(s.points) : null),
     input(s, i, ctx) {
+      const opt = takeDimOption(s, i, ctx);
+      if (opt) return opt;
       if (i.kind === 'enter') return next(null);
       if (i.kind !== 'point') return refuse(s, NOT_HERE);
       if (s.step === 0) return next({ ...s, step: 1, points: [i.point] });
@@ -82,7 +100,7 @@ function twoPointDimension(id: 'dimLinear' | 'dimAligned', label: string): ToolD
         if (samePoint(last(s.points), i.point)) return refuse(s, SAME);
         return next({ ...s, step: 2, points: [...s.points, i.point] });
       }
-      return next(again(s), [addNote(body(ctx.doc, s.points, i.point))]);
+      return next(again(s), [dimCall(body(ctx.doc, s.points, i.point), ctx)]);
     },
     preview(s, cursor, ctx) {
       if (s.step === 1) return samePoint(last(s.points), cursor) ? [] : [segment(last(s.points), cursor)];
@@ -104,19 +122,21 @@ function roundDimension(id: 'dimRadius' | 'dimDiameter', label: string): ToolDef
     id,
     label,
     start: () => EMPTY_STATE,
-    prompt: (s): Prompt =>
+    prompt: (s, ctx): Prompt =>
       s.step === 0
-        ? { text: 'Pick a circle or an arc', accepts: 'pick', options: [], enter: 'finish' }
-        : { text: kind === 'radius' ? 'Where the dimension goes' : 'Direction of the dimension line', accepts: 'point', options: [], enter: 'finish' },
+        ? { text: 'Pick a circle or an arc', accepts: 'pick', options: dimOptions(ctx), enter: 'finish' }
+        : { text: kind === 'radius' ? 'Where the dimension goes' : 'Direction of the dimension line', accepts: 'point', options: dimOptions(ctx), enter: 'finish' },
     base: () => null,
     input(s, i, ctx) {
+      const opt = takeDimOption(s, i, ctx);
+      if (opt) return opt;
       if (i.kind === 'enter') return next(null);
       if (s.step === 0 && i.kind === 'pick') {
         const g = ctx.doc.entities.get(i.id)?.geom;
         if (!g || (g.kind !== 'circle' && g.kind !== 'arc')) return refuse(s, ROUND_ONLY);
         return next({ ...s, step: 1, picks: [i] });
       }
-      if (s.step === 1 && i.kind === 'point') return next(again(s), [addNote(body(ctx, (s.picks[0] as { id: number }).id, i.point))]);
+      if (s.step === 1 && i.kind === 'point') return next(again(s), [dimCall(body(ctx, (s.picks[0] as { id: number }).id, i.point), ctx)]);
       return refuse(s, NOT_HERE);
     },
     preview: (s, cursor, ctx) => (s.step === 1 ? previewBody(ctx.doc, body(ctx, (s.picks[0] as { id: number }).id, cursor)) : []),
@@ -132,14 +152,16 @@ export const dimAngleTool: ToolDef = {
   id: 'dimAngle',
   label: 'Angle dimension',
   start: () => EMPTY_STATE,
-  prompt: (s) => ({
+  prompt: (s, ctx) => ({
     text: ['Corner of the angle', 'A point on the first side', 'A point on the second side', 'Where the arc goes'][s.step] as string,
     accepts: 'point',
-    options: [],
+    options: dimOptions(ctx),
     enter: 'finish',
   }),
   base: (s) => (s.points.length > 0 ? s.points[0] ?? null : null),
   input(s, i, ctx) {
+    const opt = takeDimOption(s, i, ctx);
+    if (opt) return opt;
     if (i.kind === 'enter') return next(null);
     if (i.kind !== 'point') return refuse(s, NOT_HERE);
     if (s.step < 3) {
@@ -147,7 +169,7 @@ export const dimAngleTool: ToolDef = {
       return next({ ...s, step: s.step + 1, points: [...s.points, i.point] });
     }
     const [vertex, a, b] = refs(ctx.doc, s.points) as [PointRef, PointRef, PointRef];
-    return next(again(s), [addNote({ kind: 'angle', vertex, a, b, at: i.point, style: ctx.doc.settings.currentDimStyle })]);
+    return next(again(s), [dimCall({ kind: 'angle', vertex, a, b, at: i.point, style: ctx.doc.settings.currentDimStyle }, ctx)]);
   },
   preview(s, cursor, ctx) {
     const v = s.points[0];

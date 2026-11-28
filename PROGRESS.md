@@ -1,6 +1,7 @@
 # ArchiLite progress
 
-**Now:** Phase 10 (DWG import, read only) is in review ([#27](https://github.com/leon14026/2D-CAD/pull/27)). Phases 1 to 9 are merged and live.
+**Now:** Phase 10 (DWG import, read only) is in review ([#27](https://github.com/leon14026/2D-CAD/pull/27)).
+Phase 13 (driving dimensions) merged in [#21](https://github.com/leon14026/2D-CAD/pull/21). Phases 1 to 9 and 13 are live.
 DXF import follow-ups [#13](https://github.com/leon14026/2D-CAD/pull/13) (text codes and units),
 [#15](https://github.com/leon14026/2D-CAD/pull/15) (explode INSERT), and
 [#17](https://github.com/leon14026/2D-CAD/pull/17) (MTEXT markup and `\U+XXXX`) are on `main`.
@@ -24,11 +25,16 @@ The Phase 11 phone plan and the Phase 12 live-DXF-dimensions plan are on `main`
 | 10. DWG import (read only) | In review | [#27](https://github.com/leon14026/2D-CAD/pull/27) | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
 | 12. Live DXF dimensions | Planned | [#16](https://github.com/leon14026/2D-CAD/pull/16) | — |
-| 13. Driving dimensions and editing constrained drawings | Planned | — | — |
+| 13. Driving dimensions and editing constrained drawings | Done | [#21](https://github.com/leon14026/2D-CAD/pull/21) | 2026-11-27 |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 13 merged
+
+- PR [#21](https://github.com/leon14026/2D-CAD/pull/21) merged to `main`. Driving dimensions,
+  `constraint.setValue`, and constraint marks are live. Independent of Phase 10.
 
 ### 2026-11-27: Phase 10 gate passed in CI
 
@@ -51,6 +57,19 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 - Fixtures: AC1015 and AC1027 of a 100 mm line, a circle, an arc and a closed polyline with a
   bulge, import to 1e-6 mm. The decoder is not in the 300 KB base budget (own 3 MB gzipped
   transfer cap). Opening the example does not fetch it.
+
+### 2026-11-27: Phase 13 started
+
+- Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a
+  conflicting edit, constraint marks, FILE_VERSION 4. Independent of Phases 10–12.
+- Review fix: the refusal check looked at every constraint on the sheet and pinned every
+  touched entity, whether or not its shape changed. With two constraints that could never
+  both be met, moving an unrelated line, or only changing a line's lineweight, was refused
+  with a message about the other line. An edit is now refused only for a constraint it broke
+  or made worse, and a restyle pins nothing.
+- Known and left for the owner: a rectangle is one closed polyline with no horizontal or
+  vertical constraints, so typing a new width for a dimension between two of its corners moves
+  only the second corner. Phase 13 plans no automatic horizontal/vertical constraints.
 
 ### 2026-11-27: Phase 13 planned
 

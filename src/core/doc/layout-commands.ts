@@ -4,12 +4,21 @@
 import type { Vec2 } from '../geom';
 import { explodeInsert, findBlock, membersFromEntities, MAX_BLOCK_MEMBERS, MAX_BLOCKS, type Block, type Insert } from './blocks';
 import { define, optional, readIds, readStyleProps, requireEditable, requireUnlocked, type StyleProps } from './command-kit';
-import { CONSTRAINT_KINDS, constraintProblem, type Constraint, type ConstraintBody } from './constraints';
+import {
+  CONSTRAINT_KINDS,
+  constraintProblem,
+  constraintRefuseMessage,
+  solveConstraints,
+  unmetOnDraft,
+  type Constraint,
+  type ConstraintBody,
+} from './constraints';
 import { CommandError, type Draft } from './draft';
 import { MAX_NAME_LENGTH } from './model';
 import { readPointRef } from './note-validate';
 import { SHEET_SIZES, type PointRef } from './notes';
 import { MAX_SHEETS, findSheet, type Sheet } from './sheets';
+import { deleteConstraintPair } from './driving';
 import { BY_LAYER, readName } from './styles';
 import { join, readBoolean, readNumber, readObject, readOneOf, readPoint, readPositiveInteger, ValidationError } from './validate';
 
@@ -31,7 +40,7 @@ function boundRef(ref: PointRef, path: string): PointRef {
 }
 
 function readConstraintBody(v: unknown, path: string): ConstraintBody {
-  const head = readObject(v, path, ['kind'], ['a', 'b', 'value', 'p', 'of', 'target']);
+  const head = readObject(v, path, ['kind'], ['a', 'b', 'value', 'p', 'of', 'target', 'axis']);
   const kind = readOneOf(head['kind'], join(path, 'kind'), CONSTRAINT_KINDS);
   const pos = (n: unknown, p: string) => {
     const x = readNumber(n, p);
@@ -46,12 +55,14 @@ function readConstraintBody(v: unknown, path: string): ConstraintBody {
       return { kind, a: boundRef(readPointRef(o['a'], join(path, 'a')), join(path, 'a')), b: boundRef(readPointRef(o['b'], join(path, 'b')), join(path, 'b')) };
     }
     case 'distance': {
-      const o = readObject(v, path, ['kind', 'a', 'b', 'value']);
+      const o = readObject(v, path, ['kind', 'a', 'b', 'value'], ['axis']);
+      const axis = Object.hasOwn(o, 'axis') ? readOneOf(o['axis'], join(path, 'axis'), ['x', 'y'] as const) : undefined;
       return {
         kind,
         a: boundRef(readPointRef(o['a'], join(path, 'a')), join(path, 'a')),
         b: boundRef(readPointRef(o['b'], join(path, 'b')), join(path, 'b')),
         value: pos(o['value'], join(path, 'value')),
+        ...(axis ? { axis } : {}),
       };
     }
     case 'fix': {
@@ -334,7 +345,7 @@ const renameSheet = define<RenameSheetParams, Record<string, never>>({
     }
     for (const n of [...draft.notes()]) {
       if (n.sheet !== from) continue;
-      draft.putNote(assigned ? { ...n, sheet: assigned } : { id: n.id, layer: n.layer, z: n.z, color: n.color, lineweight: n.lineweight, body: n.body });
+      draft.putNote(assigned ? { ...n, sheet: assigned } : omitSheet(n));
     }
     for (const ins of [...draft.inserts()]) {
       if (ins.sheet !== from) continue;
@@ -342,7 +353,7 @@ const renameSheet = define<RenameSheetParams, Record<string, never>>({
     }
     for (const c of [...draft.constraints()]) {
       if (c.sheet !== from) continue;
-      draft.putConstraint(assigned ? { ...c, sheet: assigned } : { id: c.id, body: c.body });
+      draft.putConstraint(assigned ? { ...c, sheet: assigned } : omitSheet(c));
     }
     if (draft.settings.currentSheet === from) draft.setSettings({ ...draft.settings, currentSheet: to });
     return {};
@@ -351,6 +362,11 @@ const renameSheet = define<RenameSheetParams, Record<string, never>>({
 
 function sheetOfName(sheet: string | undefined, first: string): string {
   return sheet ?? first;
+}
+
+function omitSheet<T extends { readonly sheet?: string }>(obj: T): T {
+  const { sheet: _s, ...rest } = obj;
+  return rest as T;
 }
 
 const deleteSheet = define<SheetNameParams, Record<string, never>>({
@@ -434,7 +450,7 @@ const deleteConstraints = define<DeleteConstraintParams, { deleted: number }>({
     for (const id of p.ids) {
       if (!draft.constraint(id)) throw new CommandError(`There is no constraint with id ${id}.`);
     }
-    for (const id of p.ids) draft.deleteConstraint(id);
+    for (const id of p.ids) deleteConstraintPair(draft, id);
     return { deleted: p.ids.length };
   },
 });
@@ -449,6 +465,74 @@ const solveNow = define<Record<string, never>, Record<string, never>>({
   run() {
     // commitDraft always re-solves; this command exists so a script can force a pass.
     return {};
+  },
+});
+
+export interface SetConstraintValueParams {
+  readonly id: number;
+  readonly value: number;
+}
+
+const setConstraintValue = define<SetConstraintValueParams, { id: number }>({
+  id: 'constraint.setValue',
+  label: 'Set constraint value',
+  parse(raw) {
+    const o = readObject(raw, '', ['id', 'value']);
+    const value = readNumber(o['value'], 'value');
+    return { id: readPositiveInteger(o['id'], 'id'), value };
+  },
+  run(draft, p) {
+    const c = draft.constraint(p.id);
+    if (!c) throw new CommandError(`There is no constraint with id ${p.id}.`);
+    const b = c.body;
+    let next: ConstraintBody;
+    if (b.kind === 'distance' || b.kind === 'radius' || b.kind === 'length') {
+      if (!(p.value > 0)) throw new CommandError('The value must be more than 0.');
+      next = { ...b, value: p.value };
+    } else if (b.kind === 'angle') {
+      if (!(p.value > 0) || p.value >= Math.PI) throw new CommandError('The angle must be between 0 and 180°, not including the ends.');
+      next = { ...b, value: p.value };
+    } else {
+      throw new CommandError('This constraint has no value to change.');
+    }
+    requireConstraintApplies(draft, next);
+    draft.putConstraint({ ...c, body: next });
+    solveConstraints(draft);
+    const unmet = unmetOnDraft(draft);
+    if (unmet.length > 0) {
+      const bad = draft.constraint(unmet[0]!.id) ?? { ...c, body: next };
+      throw new CommandError(constraintRefuseMessage(bad));
+    }
+    return { id: c.id };
+  },
+});
+
+export interface SetConstraintFixParams {
+  readonly id: number;
+  readonly p: { readonly x: number; readonly y: number };
+}
+
+const setConstraintFix = define<SetConstraintFixParams, { id: number }>({
+  id: 'constraint.setFix',
+  label: 'Set fixed point',
+  parse(raw) {
+    const o = readObject(raw, '', ['id', 'p']);
+    return { id: readPositiveInteger(o['id'], 'id'), p: readPoint(o['p'], 'p') };
+  },
+  run(draft, p) {
+    const c = draft.constraint(p.id);
+    if (!c) throw new CommandError(`There is no constraint with id ${p.id}.`);
+    if (c.body.kind !== 'fix') throw new CommandError('That constraint does not hold a point still.');
+    const next: ConstraintBody = { ...c.body, p: p.p };
+    requireConstraintApplies(draft, next);
+    draft.putConstraint({ ...c, body: next });
+    solveConstraints(draft);
+    const unmet = unmetOnDraft(draft);
+    if (unmet.length > 0) {
+      const bad = draft.constraint(unmet[0]!.id) ?? { ...c, body: next };
+      throw new CommandError(constraintRefuseMessage(bad));
+    }
+    return { id: c.id };
   },
 });
 
@@ -467,4 +551,6 @@ export const LAYOUT_COMMANDS = {
   'constraint.add': addConstraint,
   'constraint.delete': deleteConstraints,
   'constraint.solve': solveNow,
+  'constraint.setValue': setConstraintValue,
+  'constraint.setFix': setConstraintFix,
 } as const;

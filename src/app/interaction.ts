@@ -15,7 +15,7 @@ import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Point } from '../render/viewport';
 import { formatCoordinate } from '../ui/format';
 import type { DraftingController } from './drafting';
-import type { Store } from './store';
+import { visibleConstraintMarks, type Store } from './store';
 
 /** How far the pointer must move, in CSS pixels, before a press becomes a box. */
 const DRAG_THRESHOLD = 4;
@@ -67,7 +67,7 @@ export function attachInteraction(
     if (!lastPoint || gesture.kind !== 'idle' || placing()) return;
     const s = store.get();
     const world = screenToWorld(s.viewport, lastPoint);
-    const hover = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit);
+    const hover = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
     if (hover !== s.hover) store.set({ hover });
   };
 
@@ -132,7 +132,7 @@ export function attachInteraction(
         else drafting.click(p);
       }
     } else if (gesture.kind === 'press') {
-      const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit);
+      const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
       if (gesture.shift) {
         if (id !== null) {
           const next = new Set(s.selection);
@@ -146,7 +146,7 @@ export function attachInteraction(
     } else if (gesture.kind === 'box') {
       const a = screenToWorld(s.viewport, gesture.start);
       const b = screenToWorld(s.viewport, p);
-      const ids = selectInBox(doc, boxFromCorners(a, b), boxMode(gesture.start, p));
+      const ids = selectInBox(doc, boxFromCorners(a, b), boxMode(gesture.start, p), visibleConstraintMarks(s));
       store.set({ selection: new Set(gesture.shift ? [...s.selection, ...ids] : ids) });
       view.setBox(null);
     }
@@ -164,6 +164,25 @@ export function attachInteraction(
     view.setCursor(null);
     drafting.move(null);
     if (gesture.kind === 'idle' && store.get().hover !== null) store.set({ hover: null });
+  });
+
+  target.addEventListener('dblclick', (e) => {
+    if (placing() || drafting.prompt()?.accepts === 'pick') return;
+    e.preventDefault();
+    const p = local(e);
+    const s = store.get();
+    const id = pickAt(s.session.doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
+    if (id === null) return;
+    const note = s.session.doc.notes.get(id);
+    const constraint = s.session.doc.constraints.get(id) ?? (note?.drive !== undefined ? s.session.doc.constraints.get(note.drive) : undefined);
+    if (!constraint) return;
+    const valued =
+      constraint.body.kind === 'distance' ||
+      constraint.body.kind === 'radius' ||
+      constraint.body.kind === 'length' ||
+      constraint.body.kind === 'angle';
+    store.set({ selection: new Set([constraint.id]), showSelection: true });
+    if (valued) drafting.start('editConstraint');
   });
 
   target.addEventListener(
