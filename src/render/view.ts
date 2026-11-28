@@ -289,7 +289,8 @@ export class CanvasView {
       const w = ctx.measureText(label).width + 8 * dpr;
       const h = 16 * dpr;
       const lx = Math.round(x + 9 * dpr);
-      const ly = Math.round(y - 9 * dpr - h);
+      const finger = document.body.classList.contains('al-phone') ? 36 * dpr : 0;
+      const ly = Math.round(y - 9 * dpr - h - finger);
       ctx.fillStyle = palette.paper;
       ctx.fillRect(lx, ly, w, h);
       ctx.strokeStyle = palette.rulerLine;

@@ -26,6 +26,11 @@ export interface AppState {
   readonly showLayers: boolean;
   readonly showSelection: boolean;
   readonly showScript: boolean;
+  /**
+   * Next drag is a window/crossing box. Used on a phone, where a drag otherwise pans.
+   * A completed box, a new tool, or Esc clears it.
+   */
+  readonly boxSelect: boolean;
   readonly showConstraints: boolean;
   readonly message: Message | null;
   /** The drawing or editing tool in use, or null when selecting. */
@@ -99,6 +104,7 @@ export function initialState(viewport: Viewport): AppState {
     showLayers: true,
     showSelection: true,
     showScript: false,
+    boxSelect: false,
     showConstraints: false,
     message: null,
     tool: null,

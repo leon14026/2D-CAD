@@ -995,3 +995,230 @@ body.al-show-script .al-script {
     }
   }
 }
+
+/* Phone tabs: the desk rail is a column; these only show in the phone strip. */
+.al-rail-tabs {
+  display: none;
+}
+
+.al-rail-tools {
+  display: contents;
+}
+
+.al-sheet-backdrop {
+  display: none;
+}
+
+/* ---------- phone (700px and under) ---------- */
+
+/*
+ * A phone is the same page. The class is set from matchMedia in src/app/phone.ts.
+ * 701–900px is still the desk layout squeezed (panels gone, no sheets).
+ */
+@media (max-width: 700px) {
+  body.al-phone {
+    --al-status-h: 36px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--al-bar-h) minmax(0, 1fr) var(--al-status-h);
+    grid-template-areas:
+      'bar'
+      'stage'
+      'status';
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body.al-phone.al-show-script {
+    grid-template-rows: var(--al-bar-h) minmax(0, 1fr) var(--al-status-h);
+    grid-template-areas:
+      'bar'
+      'stage'
+      'status';
+  }
+
+  body.al-phone .al-bar {
+    gap: 8px;
+    padding: 0 8px 0 10px;
+  }
+
+  body.al-phone #al-name,
+  body.al-phone #al-file-actions {
+    display: none;
+  }
+
+  body.al-phone .al-doc {
+    padding-left: 0;
+    border-left: 0;
+    min-width: 0;
+  }
+
+  body.al-phone .al-search {
+    min-width: 0;
+    flex: 1;
+  }
+
+  body.al-phone .al-icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  body.al-phone .al-rail {
+    left: 6px;
+    right: 6px;
+    top: auto;
+    bottom: 6px;
+    flex-flow: column nowrap;
+    max-height: none;
+    padding: 4px;
+    z-index: 3;
+  }
+
+  body.al-phone .al-rail-tabs {
+    display: flex;
+    gap: 2px;
+  }
+
+  body.al-phone .al-rail-tab {
+    flex: 1;
+    min-height: 36px;
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: var(--al-radius);
+    background: none;
+    color: var(--al-ink-muted);
+    cursor: pointer;
+  }
+
+  body.al-phone .al-rail-tab[aria-selected='true'] {
+    border-color: var(--al-rule);
+    background: var(--al-steel);
+    color: var(--al-ink);
+    font-weight: 700;
+  }
+
+  body.al-phone .al-rail-tools {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 2px;
+    overflow-x: auto;
+    touch-action: pan-x;
+  }
+
+  body.al-phone .al-rail-group {
+    display: none;
+    flex-direction: row;
+    gap: 2px;
+    margin-top: 0;
+    padding-top: 0;
+    padding-left: 6px;
+    margin-left: 4px;
+    border-top: 0;
+    border-left: 1px solid var(--al-rule);
+  }
+
+  body.al-phone .al-rail-group.is-current {
+    display: flex;
+  }
+
+  body.al-phone .al-rail-button {
+    width: 44px;
+    height: 44px;
+    flex: none;
+  }
+
+  body.al-phone .al-status {
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  body.al-phone .al-status .al-pill,
+  body.al-phone .al-status-link,
+  body.al-phone #al-count,
+  body.al-phone #al-grid-toggle,
+  body.al-phone #al-weight-toggle,
+  body.al-phone #al-snap-toggle,
+  body.al-phone #al-ortho-toggle,
+  body.al-phone #al-polar-toggle,
+  body.al-phone #al-build {
+    display: none;
+  }
+
+  body.al-phone .al-coords output {
+    min-width: 7ch;
+  }
+
+  body.al-phone:not(.al-hide-left) .al-side-left,
+  body.al-phone:not(.al-hide-right) .al-side-right {
+    display: flex;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--al-status-h) + env(safe-area-inset-bottom) + 8px);
+    top: auto;
+    max-height: min(70vh, 520px);
+    border: 1px solid var(--al-rule);
+    border-radius: 10px 10px 6px 6px;
+    box-shadow: 0 -8px 28px rgb(29 42 51 / 0.18);
+    z-index: 15;
+  }
+
+  body.al-phone.al-show-script .al-script {
+    display: flex;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--al-status-h) + env(safe-area-inset-bottom) + 8px);
+    top: auto;
+    height: min(70vh, 520px);
+    border: 1px solid var(--al-rule);
+    border-radius: 10px 10px 6px 6px;
+    box-shadow: 0 -8px 28px rgb(29 42 51 / 0.18);
+    z-index: 15;
+  }
+
+  body.al-phone .al-sheet-backdrop:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgb(29 42 51 / 0.28);
+    z-index: 14;
+  }
+
+  body.al-phone .al-layer {
+    height: 44px;
+  }
+
+  body.al-phone .al-entry {
+    position: fixed;
+    pointer-events: auto;
+    z-index: 6;
+  }
+
+  body.al-phone .al-entry-input {
+    font-size: 16px;
+    height: 36px;
+  }
+
+  body.al-phone .al-toast {
+    bottom: calc(var(--al-status-h) + 72px + env(safe-area-inset-bottom));
+  }
+
+  body.al-phone .al-empty {
+    top: 42%;
+  }
+
+  body.al-phone .al-palette-backdrop {
+    padding-top: 8vh;
+    align-items: flex-start;
+  }
+
+  body.al-phone .al-palette li {
+    min-height: 44px;
+  }
+}
