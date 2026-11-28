@@ -74,6 +74,8 @@ export interface ToolMemory {
   readonly sheet: SheetSize;
   /** Last block name typed in the block or insert tool. */
   readonly blockName: string | null;
+  /** True when dimension tools measure only (no constraint, drawn in brackets). */
+  readonly dimReference: boolean;
 }
 
 export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
@@ -87,6 +89,7 @@ export const DEFAULT_MEMORY: ToolMemory = Object.freeze({
   hatchAngle: 45,
   sheet: 'A4',
   blockName: null,
+  dimReference: false,
 });
 
 export interface ToolContext {
@@ -132,8 +135,9 @@ export function refuse(state: ToolState, error: string): ToolResult {
 
 export const NOT_HERE = 'That does not apply at this step.';
 
-export function addShape(geom: Shape): CommandCall {
-  return { id: 'entity.add', params: { geom } };
+/** `presets` adds a rectangle's horizontal and vertical constraints in the same step. */
+export function addShape(geom: Shape, presets = false): CommandCall {
+  return { id: 'entity.add', params: presets ? { geom, presets } : { geom } };
 }
 
 export function samePoint(a: Vec2, b: Vec2): boolean {

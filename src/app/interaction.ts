@@ -3,19 +3,21 @@
  *
  * - Wheel or pinch: zoom about the cursor.
  * - Middle-drag, or Space + drag: pan.
- * - Click: pick the nearest entity (Shift adds or removes it).
+ * - Click: pick the nearest entity (Shift adds or removes it). A click on a driving
+ *   dimension's number opens the box to type a new size.
  * - Drag left to right: window selection (entirely inside).
  * - Drag right to left: crossing selection (inside or touching).
  *
  * While a tool wants a point, a click places it (after snaps and tracking) and a right-click
  * is Enter. Shift held while moving forces horizontal or vertical.
  */
-import { boxFromCorners, pickAt, selectInBox, type BoxMode } from '../core/spatial';
+import { valuedConstraintOf, type Doc } from '../core/doc';
+import { boxFromCorners, noteTextContains, pickAt, selectInBox, type BoxMode } from '../core/spatial';
 import type { CanvasView } from '../render/view';
 import { panBy, screenToWorld, zoomAt, type Point } from '../render/viewport';
 import { formatCoordinate } from '../ui/format';
 import type { DraftingController } from './drafting';
-import type { Store } from './store';
+import { visibleConstraintMarks, type Store } from './store';
 
 /** How far the pointer must move, in CSS pixels, before a press becomes a box. */
 const DRAG_THRESHOLD = 4;
@@ -37,6 +39,15 @@ export function wheelFactor(e: Pick<WheelEvent, 'deltaY' | 'deltaMode' | 'ctrlKe
 
 export function boxMode(start: Point, end: Point): BoxMode {
   return end.x >= start.x ? 'window' : 'crossing';
+}
+
+/** Opens the cursor box to type a new driving-dimension value. */
+function startValueEdit(store: Store, drafting: DraftingController, doc: Doc, id: number): boolean {
+  const constraint = valuedConstraintOf(doc, id);
+  if (!constraint) return false;
+  store.set({ selection: new Set([constraint.id]), showSelection: true });
+  drafting.start('editConstraint');
+  return true;
 }
 
 export function attachInteraction(
@@ -67,7 +78,7 @@ export function attachInteraction(
     if (!lastPoint || gesture.kind !== 'idle' || placing()) return;
     const s = store.get();
     const world = screenToWorld(s.viewport, lastPoint);
-    const hover = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit);
+    const hover = pickAt(s.session.doc, world, PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
     if (hover !== s.hover) store.set({ hover });
   };
 
@@ -79,6 +90,9 @@ export function attachInteraction(
       gesture = { kind: 'pan', last: p, pointer: e.pointerId };
       view.stage.classList.add('is-panning');
     } else if (e.button === 0 && (placing() || drafting.prompt()?.accepts === 'pick')) {
+      // A number-only prompt is typed, not clicked. Ignore the click so double-clicking
+      // a dimension's number (which starts the editor on the first click) does not refuse.
+      if (drafting.prompt()?.accepts === 'number') return;
       gesture = { kind: 'tool', pointer: e.pointerId };
     } else if (e.button === 0) {
       gesture = { kind: 'press', start: p, shift: e.shiftKey, pointer: e.pointerId };
@@ -132,7 +146,8 @@ export function attachInteraction(
         else drafting.click(p);
       }
     } else if (gesture.kind === 'press') {
-      const id = pickAt(doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit);
+      const world = screenToWorld(s.viewport, p);
+      const id = pickAt(doc, world, PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
       if (gesture.shift) {
         if (id !== null) {
           const next = new Set(s.selection);
@@ -142,11 +157,12 @@ export function attachInteraction(
         }
       } else {
         store.set({ selection: new Set(id === null ? [] : [id]) });
+        if (id !== null && noteTextContains(doc, id, world)) startValueEdit(store, drafting, doc, id);
       }
     } else if (gesture.kind === 'box') {
       const a = screenToWorld(s.viewport, gesture.start);
       const b = screenToWorld(s.viewport, p);
-      const ids = selectInBox(doc, boxFromCorners(a, b), boxMode(gesture.start, p));
+      const ids = selectInBox(doc, boxFromCorners(a, b), boxMode(gesture.start, p), visibleConstraintMarks(s));
       store.set({ selection: new Set(gesture.shift ? [...s.selection, ...ids] : ids) });
       view.setBox(null);
     }
@@ -164,6 +180,15 @@ export function attachInteraction(
     view.setCursor(null);
     drafting.move(null);
     if (gesture.kind === 'idle' && store.get().hover !== null) store.set({ hover: null });
+  });
+
+  target.addEventListener('dblclick', (e) => {
+    if (placing() || drafting.prompt()?.accepts === 'pick') return;
+    e.preventDefault();
+    const p = local(e);
+    const s = store.get();
+    const id = pickAt(s.session.doc, screenToWorld(s.viewport, p), PICK_RADIUS / s.viewport.pxPerUnit, visibleConstraintMarks(s));
+    if (id !== null) startValueEdit(store, drafting, s.session.doc, id);
   });
 
   target.addEventListener(

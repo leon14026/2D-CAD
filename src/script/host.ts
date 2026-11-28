@@ -35,6 +35,11 @@ export interface CadApi {
   sheet(name: string, size?: string): void;
   /** Switches the current sheet. */
   useSheet(name: string): void;
+  /**
+   * Sets a constraint's value. Lengths, distances and radii are drawing units; angles are
+   * degrees. Same as `constraint.setValue`, with angles converted from degrees.
+   */
+  setConstraint(id: number, value: number): void;
   print(...args: unknown[]): void;
 }
 
@@ -127,6 +132,14 @@ export function createCad(draft: Draft, log: string[]): CadApi {
     },
     useSheet(name) {
       runCommandOnDraft(draft, 'sheet.setCurrent', { name: String(name) });
+    },
+    setConstraint(id, value) {
+      const cid = num(id, 'id');
+      const c = draft.constraint(cid);
+      if (!c) throw new CommandError(`There is no constraint with id ${cid}.`);
+      const raw = num(value, 'value');
+      const stored = c.body.kind === 'angle' ? degToRad(raw) : raw;
+      runCommandOnDraft(draft, 'constraint.setValue', { id: cid, value: stored });
     },
     print(...args) {
       log.push(args.map(formatPrint).join(' '));

@@ -1,4 +1,4 @@
-# ArchiLite drawing file format (version 3)
+# ArchiLite drawing file format (version 4)
 
 ArchiLite saves drawings as UTF-8 JSON text with the extension `.archilite`. The format is plain and
 documented so you can read, diff, generate and repair drawings with any text editor or script.
@@ -12,7 +12,7 @@ contains.
 ```json
 {
   "format": "archilite",
-  "version": 3,
+  "version": 4,
   "title": "Example bracket",
   "units": "mm",
   "currentLayer": 2,
@@ -50,7 +50,7 @@ All fields are required. Any field not listed here is rejected.
 | Field | Type | Meaning |
 |---|---|---|
 | `format` | `"archilite"` | Identifies the file. |
-| `version` | whole number | File format version. This document describes version **3**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. Version 1 and 2 files still open. |
+| `version` | whole number | File format version. This document describes version **4**. A file with a higher version is refused with a message saying a newer ArchiLite saved it. Version 1, 2 and 3 files still open. |
 | `title` | text, 1–200 characters | Drawing title. Leading and trailing spaces are removed. |
 | `units` | `"mm"`, `"cm"`, `"m"`, `"in"` or `"ft"` | What one drawing unit means. All coordinates and radii are in these units. |
 | `currentLayer` | layer id | The layer new entities go on. |
@@ -72,7 +72,9 @@ styles: they do not take ids.
 
 A version 1 file has none of the fields marked *(version 2)* or *(version 3)*. A version 2 file has
 none of the fields marked *(version 3)*. Older files open with the default `ISO` style, one A4 sheet
-called `Sheet 1`, and no blocks, inserts or constraints, and are saved as version 3 the next time.
+called `Sheet 1`, and no blocks, inserts or constraints, and are saved as version 4 the next time.
+Version 3 files open unchanged: a `distance` constraint with no `axis` is the straight-line length,
+and notes with no `drive` or `reference` are measurements only.
 
 ## Layer
 
@@ -134,6 +136,8 @@ and a `body` that says what it is.
 | `lineweight` | `"byLayer"` or a lineweight | |
 | `body` | note body (below) | |
 | `sheet` | sheet name | Which sheet this note lives on. Omitted when it is the first sheet. *(version 3)* |
+| `drive` | constraint id | The constraint this driving dimension holds. Omitted when the note is not a driving dimension. The constraint's `note` must name this note. *(version 4)* |
+| `reference` | `true` | The dimension measures only, is drawn in brackets, and has no `drive`. Omitted when false. Only allowed on a dimension. *(version 4)* |
 
 ### Dimension styles
 
@@ -234,9 +238,11 @@ A placed copy of a block. Inserts share the id space with entities and notes.
 
 ## Constraints
 
-Relations that drive geometry. They are not measured dimensions: a distance constraint moves the
-geometry, while a dimension note only displays a length. After every edit ArchiLite re-solves them
-in id order until the residual stops shrinking. The same document always produces the same result.
+Relations that drive geometry. A distance constraint moves the geometry. A dimension note displays
+a length; when it is a driving dimension the two are linked by id (`note.drive` / `constraint.note`)
+and the number lives on the constraint. After every edit ArchiLite re-solves them in id order until
+the residual stops shrinking. The same document always produces the same result. A user edit that
+cannot keep the constraints is refused and the drawing is unchanged.
 
 A constraint's point references must name a point on a drawn shape, not a free point.
 
@@ -245,13 +251,14 @@ A constraint's point references must name a point on a drawn shape, not a free p
 | `id` | whole number | Unique id. |
 | `body` | constraint body (below) | |
 | `sheet` | sheet name | Omitted when it is the first sheet. |
+| `note` | note id | The driving dimension that holds this constraint. Omitted when it is not linked. The note's `drive` must name this constraint. *(version 4)* |
 
 | `kind` | Other fields | Meaning |
 |---|---|---|
 | `"coincident"` | `a`, `b` (point references) | The two points occupy the same place. |
 | `"horizontal"` | `a`, `b` | The two points share a y. |
 | `"vertical"` | `a`, `b` | The two points share an x. |
-| `"distance"` | `a`, `b`, `value` (more than 0) | The distance between the two points. |
+| `"distance"` | `a`, `b`, `value` (more than 0), `axis` (`"x"` or `"y"`, omitted for the straight-line length) | The distance between the two points. `axis` is new in version 4; a version 3 file has no `axis` and means the same as omitting it. |
 | `"fix"` | `a`, `p` | Point `a` stays at `p`. |
 | `"midpoint"` | `a`, `of` (line id) | Point `a` stays at the middle of that line. |
 | `"parallel"` | `a`, `b` (line ids) | The two lines stay parallel. |

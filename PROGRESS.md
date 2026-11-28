@@ -21,12 +21,54 @@ and does not wait on this one. The Phase 11 phone plan is on `main`
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | Not started | — | — |
 | 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
-| 12. Live DXF dimensions | In progress | this PR | — |
-| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) | — |
+| 12. Live DXF dimensions | In progress | [#23](https://github.com/leon14026/2D-CAD/pull/23) | — |
+| 13. Driving dimensions and editing constrained drawings | In progress | [#21](https://github.com/leon14026/2D-CAD/pull/21) (merged), [#24](https://github.com/leon14026/2D-CAD/pull/24) (merged), rectangle presets [#28](https://github.com/leon14026/2D-CAD/pull/28) | — |
 
 Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
+
+### 2026-11-27: Phase 13: rectangle presets
+
+- Owner decision: shapes get preset constraints, like a sketch in a parametric CAD program.
+  Branch `phase-13-shape-presets`, pull request [#28](https://github.com/leon14026/2D-CAD/pull/28),
+  built on [#21](https://github.com/leon14026/2D-CAD/pull/21); #21 must merge first.
+- Built: a rectangle drawn with the tool holds each side horizontal or vertical (four
+  constraints, one undo step). Typing a new width or height now works from every side and
+  either end of it; before this, three of the four click orders were refused or grew the wrong way.
+- Solver fix found on the way: a one-axis constraint (horizontal, vertical, a distance along x
+  or y) now votes on its own axis only. Before, a typed width landed about 6e-10 short
+  (`-19.999999999418` for `-20`); now it is exact.
+- Rounding, cutting, joining, exploding, turning and mirroring a preset rectangle are not
+  refused. They let the constraints go and say so; Ctrl+Z brings them back. A turned
+  dimension stays, in brackets.
+- Reference drawings: the plate in both is drawn with the Rectangle tool, so every later id is
+  four higher. Same geometry, same notes; the hand-worked checks and the two approved files
+  were renumbered and compared with the old ones first.
+- Not done, for the owner to decide: copies, arrays and offsets of a rectangle are plain;
+  scaling a dimensioned shape is still refused; the Polygon tool has no presets (its equal
+  sides need constraints on one polyline's edges); lines drawn exactly horizontal or vertical
+  get no constraint.
+
+### 2026-11-27: Click a dimension's number to redimension
+
+- SolidWorks-style: placing a dimension already holds the drawing (Phase 13). A click on the
+  number now opens the entry box to type a new size. A click on the dimension lines only
+  selects. Double-click anywhere on the dimension still edits.
+
+### 2026-11-27: Phase 13 started
+
+- Driving dimensions, `constraint.setValue`, distance `axis`, solver pins that refuse a
+  conflicting edit, constraint marks, FILE_VERSION 4. Independent of Phases 10–12.
+- Review fix: the refusal check looked at every constraint on the sheet and pinned every
+  touched entity, whether or not its shape changed. With two constraints that could never
+  both be met, moving an unrelated line, or only changing a line's lineweight, was refused
+  with a message about the other line. An edit is now refused only for a constraint it broke
+  or made worse, and a restyle pins nothing.
+- Known and left for the owner: a rectangle is one closed polyline with no horizontal or
+  vertical constraints, so typing a new width for a dimension between two of its corners moves
+  only the second corner. Phase 13 plans no automatic horizontal/vertical constraints.
+  (Resolved the same day: see "Phase 13: rectangle presets" below.)
 
 ### 2026-11-27: Phase 12 started
 

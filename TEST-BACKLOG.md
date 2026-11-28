@@ -300,6 +300,43 @@ as well as `.archilite`.
       a circle of radius about 3.5. Undo the second constraint: the message goes away and the
       radius is 3.
 
+### Phase 13: driving dimensions and editing constrained drawings
+
+- [ ] **M13.1 Type a new number.** On the work laptop, draw a 100 mm line and an aligned
+      dimension. Expect: the selection panel lists a Distance constraint at 100. Click the
+      dimension's number, type 120, press Enter. Expect: the line is 120 mm and the dimension
+      reads 120.00. Click the dimension line (not the number): it selects and the entry box
+      does not open. Ctrl+Z once: both are 100 again.
+- [ ] **M13.2 Reference dimension.** With a dimension selected, set "Holds the drawing" to
+      "No (reference)". Expect: the number is in brackets, for example (100.00), and scaling
+      the line changes the number. Place a new dimension with **R** (Measure only) and check it
+      never held the drawing.
+- [ ] **M13.3 Joined L follows.** Draw a horizontal line and a vertical line that meet. Horizontal
+      and vertical constraints on the legs, coincident at the corner. Move the vertical leg
+      sideways. Expect: the horizontal leg grows or shrinks so they still meet, and both stay
+      straight. Undo once: the move comes back.
+- [ ] **M13.4 A fixed point refuses to move.** Fix the start of a line. Move the whole line.
+      Expect: a plain-words message that names the constraint, and the line does not move.
+- [ ] **M13.5 Show constraints.** Shift+C (or the command palette "Show constraints"). Expect:
+      small hairline marks beside what they hold. Pick a mark: the selection panel names that
+      constraint and highlights the geometry. Shift+C again hides the marks.
+
+- [ ] **M13.6 A new rectangle holds its sides.** Draw a rectangle with the Rectangle tool. Shift+C
+      shows four marks (two horizontal, two vertical). Dimension the bottom side by clicking its
+      right-hand corner first, then its left-hand corner, and type 120. Expect: the corner you
+      clicked first stays and the left side moves out to make 120; the rectangle is still square
+      and the other sides keep their size. Do the same from the left corner first: the right
+      side moves instead. Ctrl+Z once: back to the start.
+- [ ] **M13.7 Rounding and turning let go, and say so.** Draw a rectangle, round two corners with
+      Fillet. Expect: a message "Let go of 4 constraints that this change made untrue…" and the
+      marks are gone. Ctrl+Z: the corners and the marks come back together. Now turn a new
+      rectangle 30° with Rotate: the same message, and the rectangle is turned. Turn it 90° with a
+      dimension on it: the dimension stays and shows in brackets.
+- [ ] **M13.8 Compare with your CAD program.** Draw the same 100 × 50 rectangle in SolidWorks (or
+      Fusion). Dimension it from the right and from the left as above. Say whether ArchiLite
+      feels the same or what is different. Things I know differ: copies of the rectangle are not
+      constrained here, and the Polygon tool has no presets.
+
 ### Phase 12: live DXF dimensions
 
 - [ ] **M12.1 Floorplan dimensions.** Open the floorplan DXF. Treat units as inches (click the
@@ -325,6 +362,12 @@ Claude moves these into "Ready to test now", with exact steps, when each phase l
   `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
   where the save went (Files, the share sheet, or a download). Phase 10 is not required for
   this.
+- **Phase 12:** open the floorplan DXF. Treat units as inches. Expect: original wall
+  dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
+  walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
+  was overtyped in the other program is still left out. Hatches are still left out. Imported
+  dimensions are reference until you switch them.
+
 - **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
   length (a constraint appears in the selection panel). Double-click the dimension, type 120,
   press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal

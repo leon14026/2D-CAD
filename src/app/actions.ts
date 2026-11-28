@@ -6,6 +6,7 @@ import {
   CommandError,
   createSession,
   executeUnchecked,
+  releasedMessage,
   FILE_EXTENSION,
   FileFormatError,
   findLayer,
@@ -83,6 +84,10 @@ export class Actions {
 
   toggleScriptPanel(): void {
     this.store.set((s) => ({ showScript: !s.showScript }));
+  }
+
+  toggleConstraints(): void {
+    this.store.set((s) => ({ showConstraints: !s.showConstraints }));
   }
 
   showScriptPanel(): void {
@@ -199,6 +204,10 @@ export class Actions {
     if (this.store.get().selection.size > 0) this.store.set({ selection: new Set() });
   }
 
+  selectIds(ids: readonly number[]): void {
+    this.store.set({ selection: new Set(ids) });
+  }
+
   // ---------- editing ----------
 
   undo(): void {
@@ -214,6 +223,7 @@ export class Actions {
     try {
       const r = executeUnchecked(this.store.get().session, id, params);
       this.store.set({ session: r.session });
+      if (r.released > 0) this.store.set({ message: { kind: 'info', text: releasedMessage(r.released) } });
       return true;
     } catch (err) {
       if (err instanceof CommandError) {
@@ -259,6 +269,22 @@ export class Actions {
 
   useDimStyle(name: string): void {
     this.run('dimstyle.use', { name });
+  }
+
+  setNoteReference(id: number, reference: boolean): void {
+    this.run('note.setReference', { id, reference });
+  }
+
+  setConstraintValue(id: number, value: number): void {
+    this.run('constraint.setValue', { id, value });
+  }
+
+  setConstraintFix(id: number, p: { readonly x: number; readonly y: number }): void {
+    this.run('constraint.setFix', { id, p });
+  }
+
+  removeConstraint(id: number): void {
+    this.run('constraint.delete', { ids: [id] });
   }
 
   setLayerVisible(id: number, visible: boolean): void {

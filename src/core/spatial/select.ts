@@ -23,7 +23,24 @@ import {
   type Shape,
   type Vec2,
 } from '../geom';
-import { compareDrawOrder, docEnv, findLayer, hatchLoops, insertBounds, insertShapes, onCurrentSheet, pickShapes, resolveNotes, textBox, type Doc, type Entity, type Note, type Resolved } from '../doc';
+import {
+  compareDrawOrder,
+  distanceToMark,
+  docEnv,
+  findLayer,
+  hatchLoops,
+  insertBounds,
+  insertShapes,
+  onCurrentSheet,
+  pickShapes,
+  resolveNotes,
+  textBox,
+  type ConstraintMark,
+  type Doc,
+  type Entity,
+  type Note,
+  type Resolved,
+} from '../doc';
 import { DocIndex, entityBounds } from './doc-index';
 
 export type BoxMode = 'window' | 'crossing';
@@ -88,8 +105,8 @@ export function shapeTouchesBox(s: Shape, box: Bounds, bounds: Bounds): boolean 
   return false;
 }
 
-/** Ids selected by a box, in drawing order. */
-export function selectInBox(doc: Doc, box: Bounds, mode: BoxMode): number[] {
+/** Ids selected by a box, in drawing order. Constraint marks are included when supplied. */
+export function selectInBox(doc: Doc, box: Bounds, mode: BoxMode, marks: readonly ConstraintMark[] = []): number[] {
   const tol = tolFor(box.minX, box.minY, box.maxX, box.maxY);
   const index = DocIndex.of(doc);
   // Widen the index query by the largest tolerance any shape here could use, so shapes that sit
@@ -127,6 +144,13 @@ export function selectInBox(doc: Doc, box: Bounds, mode: BoxMode): number[] {
             : pickShapes(r.r.prims).some((s) => shapeTouchesBox(s, box, shapeBounds(s))));
     if (hit) hits.push(n);
   }
+  for (const m of marks) {
+    const hit =
+      mode === 'window'
+        ? boxContains(box, m.bounds, tol)
+        : boxContains(box, m.bounds, tol) || m.segs.some(([a, b]) => shapeTouchesBox(segment(a, b), box, m.bounds));
+    if (hit) hits.push({ id: m.id, z: Number.NEGATIVE_INFINITY });
+  }
   return hits.sort(compareDrawOrder).map((e) => e.id);
 }
 
@@ -135,15 +159,25 @@ export function distanceToShape(s: Shape, p: Vec2): number {
   return Math.min(...curvesOf(s).map((c) => distanceToCurve(c, p)));
 }
 
+/** True when `p` sits inside a note's text box (the number on a dimension, not its lines). */
+export function noteTextContains(doc: Doc, id: number, p: Vec2): boolean {
+  const r = resolveNotes(doc).get(id);
+  return r?.ok === true && pointInNoteText(r.r, p);
+}
+
+function pointInNoteText(resolved: Resolved, p: Vec2): boolean {
+  for (const prim of resolved.prims) {
+    if (prim.k !== 'text') continue;
+    const box = textBox(prim);
+    if (pointInLoop({ kind: 'polyline', vertices: box.map((v) => ({ x: v.x, y: v.y, bulge: 0 })), closed: true }, p)) return true;
+  }
+  return false;
+}
+
 /** How far a click at `p` is from a note: 0 inside a text box, `radius` inside a hatch, else the distance to its lines. */
 function noteDistance(doc: Doc, n: Note, resolved: Resolved, p: Vec2, radius: number): number {
   let best = Infinity;
-  for (const prim of resolved.prims) {
-    if (prim.k === 'text') {
-      const box = textBox(prim);
-      if (pointInLoop({ kind: 'polyline', vertices: box.map((v) => ({ x: v.x, y: v.y, bulge: 0 })), closed: true }, p)) return 0;
-    }
-  }
+  if (pointInNoteText(resolved, p)) return 0;
   for (const s of pickShapes(resolved.prims)) best = Math.min(best, distanceToShape(s, p));
   if (n.body.kind === 'hatch') {
     const loops = hatchLoops(docEnv(doc), n.body);
@@ -157,8 +191,8 @@ function noteDistance(doc: Doc, n: Note, resolved: Resolved, p: Vec2, radius: nu
   return best;
 }
 
-/** The entity or note nearest to `p` within `radius` (drawing units), or null. Ties go to the one drawn on top. */
-export function pickAt(doc: Doc, p: Vec2, radius: number): number | null {
+/** The entity, note or constraint mark nearest to `p` within `radius` (drawing units), or null. Ties go to the one drawn on top. */
+export function pickAt(doc: Doc, p: Vec2, radius: number, marks: readonly ConstraintMark[] = []): number | null {
   const box = { minX: p.x - radius, minY: p.y - radius, maxX: p.x + radius, maxY: p.y + radius };
   let best: { id: number; z: number } | null = null;
   let bestDistance = Infinity;
@@ -184,5 +218,6 @@ export function pickAt(doc: Doc, p: Vec2, radius: number): number | null {
     const r = resolved.get(n.id);
     if (r?.ok && isSelectable(doc, n) && onCurrentSheet(doc, n)) consider(n, noteDistance(doc, n, r.r, p, radius));
   }
+  for (const m of marks) consider({ id: m.id, z: Number.NEGATIVE_INFINITY }, distanceToMark(m, p));
   return best ? (best as { id: number }).id : null;
 }

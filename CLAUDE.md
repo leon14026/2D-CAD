@@ -10,6 +10,7 @@ drawings. It is a personal project. Live site: https://leon14026.github.io/2D-CA
 | `ROADMAP.md` | The plan: decisions, constraints, budgets, accuracy model, phases and their test gates, implementation notes | Tick gate boxes as they pass in CI; add implementation notes later phases need |
 | `PROGRESS.md` | Where the project stands: phase table and dated log | Add an entry whenever a phase starts, a PR opens or merges, or a decision is made |
 | `TEST-BACKLOG.md` | Manual tests only the owner can do (real laptops, other CAD programs, rulers, legal checks) | Add the owner's tests for every phase before its PR opens; never tick a box on the owner's behalf |
+| `MINOR-BACKLOG.md` | Small features that are not a phase | Add an item when it comes up; take one when a phase is not open |
 | `CLAUDE.md` | This file | Update when a convention changes |
 
 ## Hard constraints
@@ -147,6 +148,13 @@ scripts/       licence gate, brand guard, size budget (plain .mjs with JSDoc typ
 - Sheets, blocks and constraints (Phase 9) are document data: `pruneAndSolve` runs in
   `commitDraft` after every command. Bound point references only. Optional `sheet` is omitted
   on the first sheet. Inserts share the entity id space; sheets and blocks are named.
+- A rectangle drawn with the Rectangle tool starts with four constraints (`entity.add` with
+  `presets: true`, nothing else passes it). Constraints name polyline corners by number, so a
+  command that changes a polyline's corner count lets those constraints go (`releaseRenumbered`),
+  and a turn or mirror lets go the horizontal and vertical ones it made untrue (`releaseTurned`).
+  Both count in `Executed.released` (tools: `Outcome.released`) and the app says so with
+  `releasedMessage`. Constraint ids share the entity id space, so a tool-drawn rectangle uses the
+  four ids after its own.
 - Refusals are explained in plain words and change nothing: tools return `refuse(state, why)`,
   commands throw `CommandError`.
 - Commands that split or rebuild an entity keep its layer, style and draw order, and the first

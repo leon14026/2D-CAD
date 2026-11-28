@@ -28,7 +28,7 @@ export const ANNOTATE_STEPS: readonly ModifyStep[] = [
   { tool: 'line' }, t('80,0'), t('110,0'), ENTER,
   { tool: 'line' }, t('80,0'), t('100,20'), ENTER,
   // Dimensions: across the plate, along the angled line, the 45° between the lines, and the holes.
-  { tool: 'dimLinear' }, t('0,0'), t('60,0'), t('30,-10'), ENTER,
+  { tool: 'dimLinear' }, { option: 'r' }, t('0,0'), t('60,0'), t('30,-10'), ENTER,
   { tool: 'dimAligned' }, t('80,0'), t('100,20'), t('82,22'), ENTER,
   { tool: 'dimAngle' }, t('80,0'), t('110,0'), t('100,20'), t('105,8'), ENTER,
   { tool: 'dimDiameter' }, pick(...RIM_A), t('15,35'), ENTER,

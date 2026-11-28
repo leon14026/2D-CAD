@@ -1,8 +1,14 @@
 /**
  * Tools for blocks, inserts and constraints. Sheets are switched from the command palette.
  */
-import { refAt } from '../doc';
-import { degToRad, type Vec2 } from '../geom';
+import {
+  constraintDisplayValue,
+  constraintHasValue,
+  constraintStoredValue,
+  drivingNoteOf,
+  refAt,
+} from '../doc';
+import { degToRad, radToDeg, type Vec2 } from '../geom';
 import { EMPTY_STATE, NOT_HERE, next, refuse, type Prompt, type ToolContext, type ToolDef, type ToolInput, type ToolResult, type ToolState } from './tool';
 
 const ask = (text: string, accepts: Prompt['accepts'], extra: Partial<Prompt> = {}): Prompt => ({
@@ -264,5 +270,51 @@ export const midpointTool: ToolDef = {
     const a = refAt(ctx.doc, s.points[0] as Vec2);
     return next(null, [{ id: 'constraint.add', params: { body: { kind: 'midpoint', a, of: i.id } } }]);
   },
-    preview: () => [],
+  preview: () => [],
+};
+
+function constraintToEdit(ctx: ToolContext): number | null {
+  for (const id of ctx.selection) {
+    const c = ctx.doc.constraints.get(id) ?? drivingNoteOf(ctx.doc, id)?.constraint;
+    if (c && constraintHasValue(c.body)) return c.id;
+  }
+  return null;
+}
+
+function displayForEdit(ctx: ToolContext, id: number): number | null {
+  const c = ctx.doc.constraints.get(id);
+  if (!c) return null;
+  const v = constraintDisplayValue(ctx.doc, c);
+  if (v === null) return null;
+  return c.body.kind === 'angle' ? radToDeg(v) : v;
+}
+
+/** Click a driving dimension's number (or pick one) and type a new value. */
+export const editConstraintTool: ToolDef = {
+  id: 'editConstraint',
+  label: 'Edit constraint',
+  start: (ctx) => {
+    const id = constraintToEdit(ctx);
+    return id === null ? EMPTY_STATE : { ...EMPTY_STATE, ids: [id] };
+  },
+  prompt: (s, ctx) => {
+    const id = s.ids[0];
+    const shown = id !== undefined ? displayForEdit(ctx, id) : null;
+    return ask(shown === null ? 'Nothing to edit. Pick a driving dimension first.' : 'New value', 'number', {
+      ...(shown !== null ? { defaultValue: shown } : {}),
+      enter: 'finish',
+    });
+  },
+  base: () => null,
+  input(s, i, ctx) {
+    if (i.kind === 'enter') return next(null);
+    const id = s.ids[0] ?? constraintToEdit(ctx);
+    if (id === undefined || id === null) return refuse(s, 'Pick a driving dimension, then type a new number.');
+    if (i.kind !== 'number') return refuse(s, NOT_HERE);
+    const c = ctx.doc.constraints.get(id);
+    if (!c || !constraintHasValue(c.body)) return refuse(s, 'This constraint has no value to change.');
+    const value = c.body.kind === 'angle' ? degToRad(i.value) : constraintStoredValue(ctx.doc, c, i.value);
+    return next(null, [{ id: 'constraint.setValue', params: { id, value } }]);
+  },
+  preview: () => [],
 };

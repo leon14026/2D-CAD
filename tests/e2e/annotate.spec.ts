@@ -40,22 +40,22 @@ test('the reference drawing made with every annotation tool matches the approved
 test('a dimension shows what its geometry measures, and changes when the geometry does', async ({ page }) => {
   const errors = watchErrors(page);
   await newDrawing(page);
-  await drawReference(page, [...PLATE, { tool: 'dimLinear' }, { type: '0,0' }, { type: '60,0' }, { type: '30,-10' }, { enter: true }]);
+  await drawReference(page, [...PLATE, { tool: 'dimLinear' }, { option: 'r' }, { type: '0,0' }, { type: '60,0' }, { type: '30,-10' }, { enter: true }]);
   let doc = await docOf(page);
   const [dim] = notesInDrawOrder(doc) as [Note];
   expect(dim.body.kind).toBe('linear');
-  expect(shown(doc, dim)).toBe('60.00');
+  expect(shown(doc, dim)).toBe('(60.00)');
 
   // Selecting the dimension names what it measures.
   const p = await toPage(page, 12, -10);
   await page.mouse.click(p.x, p.y);
   await expect(panel(page)).toContainText('Linear dimension');
-  await expect(panel(page)).toContainText('60.00');
+  await expect(panel(page)).toContainText('(60.00)');
 
   // Scaling the plate to twice its size makes the dimension read 120.00 without touching it.
   await drawReference(page, [{ select: [[30, 40]] }, { tool: 'scale' }, { type: '0,0' }, { type: '2' }]);
   doc = await docOf(page);
-  expect(shown(doc, (notesInDrawOrder(doc) as [Note])[0])).toBe('120.00');
+  expect(shown(doc, (notesInDrawOrder(doc) as [Note])[0])).toBe('(120.00)');
   expect(errors).toEqual([]);
 });
 
@@ -89,7 +89,8 @@ test('a hatch leaves islands clear and reports its area in the panel', async ({ 
   await expect(panel(page)).toContainText('Hatch');
   await expect(panel(page)).toContainText(/2,?321\.4/); // 60 × 40 − 25π = 2321.46
   const [hatch] = await notesOf(page);
-  expect(hatch?.body).toMatchObject({ kind: 'hatch', loops: [[2], [3]] });
+  // The plate is entity 2, its four constraints are 3 to 6, so the circle is entity 7.
+  expect(hatch?.body).toMatchObject({ kind: 'hatch', loops: [[2], [7]] });
 });
 
 test('the dimension style is edited in the panel, saved under a new name, and used by the next dimension', async ({ page }) => {

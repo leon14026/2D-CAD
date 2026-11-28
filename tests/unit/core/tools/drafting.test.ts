@@ -43,6 +43,21 @@ describe('drafting driver', () => {
     expect(currentPreview(d, { x: 4, y: 6 })).toEqual([segment({ x: 1, y: 2 }, { x: 4, y: 6 })]);
   });
 
+  it('a rectangle starts with its four constraints; turning it reports the ones it let go', () => {
+    let d = startTool(fresh(), 'rectangle');
+    d = feed(d, { kind: 'point', point: { x: 0, y: 0 } }).drafting;
+    const drawn = feed(d, { kind: 'point', point: { x: 100, y: 50 } });
+    expect(drawn.released).toBe(0);
+    expect(drawn.drafting.session.doc.constraints.size).toBe(4);
+    const id = [...drawn.drafting.session.doc.entities.keys()][0] as number;
+    let r = startTool(drawn.drafting, 'rotate', [id]);
+    r = feedTyped(r, '0,0', null, [id]).drafting;
+    const turned = feedTyped(r, '30', null, [id]);
+    expect(turned.error).toBeNull();
+    expect(turned.released).toBe(4);
+    expect(turned.drafting.session.doc.constraints.size).toBe(0);
+  });
+
   it('typed text goes through the step’s rules; mistakes are explained and change nothing', () => {
     const d = startTool(fresh(), 'line');
     const bad = feedTyped(d, '@5,5', null);

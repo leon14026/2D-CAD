@@ -718,10 +718,12 @@ Method:
   constraint, and is drawn in brackets, for example (100). The dimension tools get a
   driving/reference switch, driving by default. Dimensions imported from DXF (Phase 12) are
   reference until the user switches them.
-- **Typing a new number.** Double-click a driving dimension, or pick it and use its row in the
-  selection panel, to get the entry box beside the cursor (`src/ui/entry.ts`). Enter sets the
-  value (`constraint.setValue`, a new command) and the drawing re-solves in the same undo step.
-  The existing Distance, Radius, Length and Angle constraint tools keep asking for a typed value.
+- **Typing a new number.** Click a driving dimension's number (SolidWorks-style), or pick it
+  and use its row in the selection panel, to get the entry box beside the cursor
+  (`src/ui/entry.ts`). A click on the dimension lines only selects. Double-click anywhere on
+  the dimension still opens the box. Enter sets the value (`constraint.setValue`, a new
+  command) and the drawing re-solves in the same undo step. The existing Distance, Radius,
+  Length and Angle constraint tools keep asking for a typed value.
 - **Horizontal and vertical distances.** A horizontal or vertical linear dimension measures the
   x or y gap, which `distance` (straight-line length) cannot hold. `distance` gets an `axis`
   (`any`, `x` or `y`; omitted means `any`). This changes the file format, so `FILE_VERSION`
@@ -743,6 +745,19 @@ Method:
   This covers grips, move, rotate, scale and stretch. A user edit never leaves a compromise
   shape. (The 1e-6 "could not be met" warning from Phase 9 stays for the cases where a
   constraint was never reachable, such as ones loaded from a file.)
+- **Shape presets (added 2026-11-27 at the owner's request, as in a parametric CAD sketch).** A
+  rectangle drawn with the Rectangle tool also adds four constraints in the same undo step: each
+  side horizontal or vertical (`entity.add` with `presets: true`). They are ordinary constraints
+  on the polyline's corners, so the file format does not change. Typing a new width or height
+  works from either end of a side: the corner you clicked first stays and the far side moves.
+  A change that makes a preset untrue is not refused. It lets the constraint go and says so:
+  - turning or mirroring shapes so that horizontal, vertical or horizontal/vertical-distance
+    constraints that only hold those shapes are no longer true. A dimension among them stays,
+    in brackets, as a reference dimension;
+  - rounding, cutting, joining or exploding a polyline, which renumbers its corners. A
+    dimension on those corners is removed with them.
+  The message reads "Let go of 4 constraints that this change made untrue. Ctrl+Z brings them
+  back." Copies, arrays, offsets, and rectangles from scripts or imported files have no presets.
 - **Same rules as before.** Constraints still apply in id order and the same document gives the
   same result. Use `tolFor`; no new epsilons. Commands are named, undoable and reachable from
   scripts (`cad.setConstraint`). Marks use hairlines and keep the frame budget (run the
@@ -750,33 +765,92 @@ Method:
 
 Not in this phase: degrees-of-freedom counting or colouring ("fully constrained"), values
 written as equations (for example width = 2 × height), and auto-applied geometric constraints
-while drawing (horizontal, coincident). Each is a later stretch.
+other than the rectangle's four above (the Line, Polyline and Polygon tools add none; a polygon's
+equal sides cannot be held yet because `equal` takes line ids, not one polyline's edges). Each is
+a later stretch.
 
 Gate:
 
-- [ ] A 100 mm line with a driving aligned dimension: placing it adds exactly one constraint of
+- [x] A 100 mm line with a driving aligned dimension: placing it adds exactly one constraint of
       100 and no coordinate changes (compared to 1e-9). A reference dimension adds none and
       draws as (100).
-- [ ] `constraint.setValue` to 120 leaves the line exactly 120 long (1e-9) and moves what is
+- [x] `constraint.setValue` to 120 leaves the line exactly 120 long (1e-9) and moves what is
       attached to it. On the constrained plate in `tests/unit/core/doc/constrained-plate.ts`,
       widening 80 to 100 moves the right edge and the holes that are constrained to it.
       Hand-calculated values.
-- [ ] A value the other constraints forbid (radius 3 and radius 4 on one circle) is refused,
+- [x] A value the other constraints forbid (radius 3 and radius 4 on one circle) is refused,
       the document is unchanged, and the message names the constraint.
-- [ ] The three misbehaviours above are fixed, with hand-calculated results: scaling the
+- [x] The three misbehaviours above are fixed, with hand-calculated results: scaling the
       length-10 line by 2 is refused and the line is unchanged; moving the fixed-start line is
       refused and the line is unchanged; moving the vertical leg of the joined L by 4 gives a
       horizontal leg from (0, 0) to (14, 0) and a vertical leg from (14, 0) to (14, 10).
-- [ ] Property test (fast-check, `PROPERTY_PARAMS`): a random constrained rectangle given a new
+- [x] Property test (fast-check, `PROPERTY_PARAMS`): a random constrained rectangle given a new
       width has that width to `tolFor`, every constraint is met, and undo restores the
       original exactly.
-- [ ] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
+- [x] Round trip: a version 4 file with an axis distance reads back the same; a version 3 file
       opens unchanged. Coverage stays 100% on `src/core`.
-- [ ] Browser (Chromium, GPU off, no console errors): place a dimension, double-click it, type
-      120, Enter, and the part resizes; Ctrl+Z restores it in one step. Constraint marks show
-      and hide. Picking a constraint in the panel highlights what it holds. A screenshot
-      baseline of the marks. The performance gate still passes.
-- [ ] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+- [x] Browser (Chromium, GPU off, no console errors): place a dimension, click its number, type
+      120, Enter, and the part resizes; Ctrl+Z restores it in one step. A click on the
+      dimension line selects without opening the box. Constraint marks show and hide. Picking
+      a constraint in the panel highlights what it holds. A screenshot baseline of the marks.
+      The performance gate still passes.
+- [x] Manual tests in `TEST-BACKLOG.md` (M13) are written for the owner.
+- [x] Shape presets: a rectangle drawn with the tool starts with four constraints (horizontal,
+      vertical, horizontal, vertical on its corners) in one undo step; `presets` is refused for
+      anything that is not an upright rectangle and changes nothing.
+- [x] A new width or height typed into a dimension on a preset rectangle works from every side
+      and from either end, with the corner clicked first unmoved and exact results (eight
+      hand-worked cases, no `-0`, residual 0). Property test (`PROPERTY_PARAMS`): random
+      rectangle, side, end and value.
+- [x] Rounding, cutting, exploding or turning a preset rectangle is not refused: the constraints
+      are let go with the message above, and one undo brings them back. A half turn and a mirror
+      across a horizontal line keep them. Turning a dimensioned rectangle keeps the dimension, in
+      brackets. Hand-calculated turn of 30°.
+- [x] Browser (Chromium, GPU off, no console errors): draw a rectangle, dimension its bottom side
+      from the right-hand end, type 120, round two corners (message, constraints gone), Ctrl+Z
+      (constraints back); turn a new rectangle 30° (message).
+
+Implementation notes (for later phases):
+- **Shape presets.** `entity.add` takes `presets: true` for an upright, square-cornered
+  four-corner closed polyline and adds `rectanglePresets` in the same draft; anything else is
+  refused. The rectangle tool is the only caller. Constraint ids share the id space, so each
+  tool-drawn rectangle uses four ids after its own. Scripts, imports, copies and arrays make
+  plain polylines. `Executed.released` (and `Outcome.released` for tools) counts constraints let
+  go so the app can say so; constraints dropped because their shape was deleted are not counted.
+- **Corner numbers.** Constraints name a polyline corner by number. `pruneAndSolve` first lets go
+  of any constraint that names a corner of a polyline whose corner count changed in this command
+  (`releaseRenumbered`), then drops constraints whose geometry is gone. A turn or mirror calls
+  `releaseTurned` after moving the shapes. Moving only one end of a constraint away from a part
+  that stays put is still refused.
+- **Solver votes.** A constraint that controls one axis (horizontal, vertical, a distance along x
+  or y) votes on that axis only, so it is not diluted by other constraints' "stay where you
+  are". Without this a width typed on a rectangle converged to about 6e-10 instead of exactly.
+- **Typing a distance.** `constraint.setValue` on a `distance` pins the first point where it is
+  and the second at the new distance (`pinsForDistanceEdit`), so whatever is joined to the second
+  point follows, whichever way round its neighbouring constraints were written.
+- **Known gaps.** Scaling a dimensioned shape is refused (held values are not scaled). Copies of a
+  constrained shape are not constrained.
+- **File format 4.** `distance.axis` (`x` or `y`; omitted is the straight-line length), `note.drive`
+  / `constraint.note` as a bidirectional link, `note.reference: true` for measure-only dimensions.
+  Version 3 files open unchanged. A mismatch between `drive` and `note` is refused at load.
+- **Driving by default.** `note.add` on a linear, aligned, radius, diameter or angle dimension
+  also adds the matching constraint at the value measured now, unless `reference: true`. Free
+  points cannot drive. A diameter stores a radius; the UI shows twice that. Angle driving needs
+  two line ids and a sweep in (0, π).
+- **Solver pins.** `pinsFromDraft` holds every named handle of entities the command touched (not
+  only the points that moved), so scale-around-an-endpoint cannot slide the unmoved end. Fix
+  constraints join the pin set unless a user pin already holds that handle. `propose` for
+  coincident, horizontal, vertical, distance, length and concentric is pin-aware: one pin moves
+  the other handle; both pins skip. With neither pin, those constraints move only the second
+  handle so a driving dimension can stretch a rectangle instead of averaging both ends. Pins
+  overwrite averaged proposals. `pruneAndSolve` refuses if pins leave a constraint unmet.
+  `constraint.setValue` / `setFix` re-solve without user pins and refuse if unmet. A user edit
+  never leaves a compromise shape.
+- **Marks.** `constraintMarks` are hairline glyphs, not geometry. Snaps and modify commands ignore
+  them. `pickAt` / `selectInBox` take an optional marks list. Shift+C toggles them.
+- **Click the number.** `noteTextContains` is true only inside the text box. A click there
+  starts `editConstraint`; a click on the dimension lines only selects. Double-click still
+  edits from the lines.
 
 ## Out of scope for v1
 

@@ -20,8 +20,7 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   measure, never the stored number). Hatches stay skipped.
 
 **Status:** Phases 1 to 9 are built and merged. Phase 12 (live DXF dimensions) is in this
-pull request and does not wait on Phase 10, 11 or 13. Phase 13 (driving dimensions) is in
-[#21](https://github.com/leon14026/2D-CAD/pull/21) independently. Phase 11 (phone browser) is
+pull request and does not wait on Phase 10, 11 or 13. Phase 13 (driving dimensions and rectangle presets) is merged. Phase 11 (phone browser) is
 planned. See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and

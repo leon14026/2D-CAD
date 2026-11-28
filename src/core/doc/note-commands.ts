@@ -6,10 +6,11 @@
 import { intersect, loopCurves, pointInLoop, type Curve, type Loop, type Vec2 } from '../geom';
 import { define, optional, readStyleProps, requireUnlocked, type StyleProps } from './command-kit';
 import { CommandError, type Draft } from './draft';
-import { hatchLoops, resolveNote, MAX_DIM_STYLES, type DimStyle, type Note, type NoteBody } from './notes';
+import { drivingBodyFor } from './driving';
+import { hatchLoops, isDimension, resolveNote, MAX_DIM_STYLES, type DimStyle, type Note, type NoteBody } from './notes';
 import { readDimStyle, readNoteBody } from './note-validate';
 import { BY_LAYER } from './styles';
-import { readObject, readPositiveInteger, readString, ValidationError } from './validate';
+import { readBoolean, readObject, readPositiveInteger, readString, ValidationError } from './validate';
 
 function anEdgePoint(l: Loop): Vec2 {
   const c = loopCurves(l)[0] as Curve; // a loop always has at least one edge
@@ -45,23 +46,51 @@ function requireDrawable(draft: Draft, note: Note): void {
 export interface AddNoteParams extends StyleProps {
   readonly body: NoteBody;
   readonly layer?: number;
+  /** True to measure only (no constraint, drawn in brackets). Dimensions drive when this is omitted. */
+  readonly reference?: boolean;
+}
+
+function withoutDrive(n: Note): Note {
+  const { drive: _d, reference: _r, ...rest } = n;
+  return rest;
+}
+
+function addDrivingConstraint(draft: Draft, note: Note): Note {
+  const drive = draft.allocateId();
+  const body = drivingBodyFor(draft.env(), note);
+  const next: Note = { ...withoutDrive(note), drive };
+  draft.putNote(next);
+  draft.putConstraint({ id: drive, body, note: note.id, ...draft.sheetField() });
+  return next;
 }
 
 const addNote = define<AddNoteParams, { id: number }>({
   id: 'note.add',
   label: 'Add annotation',
   parse(raw) {
-    const o = readObject(raw, '', ['body'], ['layer', 'color', 'lineweight']);
+    const o = readObject(raw, '', ['body'], ['layer', 'color', 'lineweight', 'reference']);
     const layer = optional(o, 'layer', readPositiveInteger);
-    return { body: readNoteBody(o['body'], 'body'), ...(layer !== undefined && { layer }), ...readStyleProps(o) };
+    const reference = optional(o, 'reference', readBoolean);
+    return { body: readNoteBody(o['body'], 'body'), ...(layer !== undefined && { layer }), ...(reference !== undefined && { reference }), ...readStyleProps(o) };
   },
   run(draft, p) {
     const layer = p.layer ?? draft.settings.currentLayer;
     requireUnlocked(draft, layer);
+    if (p.reference && !isDimension(p.body)) throw new CommandError('Only a dimension can be a reference dimension.');
     const id = draft.allocateId();
-    const note: Note = { id, layer, z: id, color: p.color ?? BY_LAYER, lineweight: p.lineweight ?? BY_LAYER, body: p.body, ...draft.sheetField() };
+    const note: Note = {
+      id,
+      layer,
+      z: id,
+      color: p.color ?? BY_LAYER,
+      lineweight: p.lineweight ?? BY_LAYER,
+      body: p.body,
+      ...draft.sheetField(),
+      ...(p.reference ? { reference: true as const } : {}),
+    };
     requireDrawable(draft, note);
-    draft.putNote(note);
+    if (isDimension(p.body) && !p.reference) addDrivingConstraint(draft, note);
+    else draft.putNote(note);
     return { id };
   },
 });
@@ -142,9 +171,39 @@ const useDimStyle = define<UseDimStyleParams, Record<string, never>>({
   },
 });
 
+export interface SetNoteReferenceParams {
+  readonly id: number;
+  readonly reference: boolean;
+}
+
+const setNoteReference = define<SetNoteReferenceParams, { id: number }>({
+  id: 'note.setReference',
+  label: 'Set reference dimension',
+  parse(raw) {
+    const o = readObject(raw, '', ['id', 'reference']);
+    return { id: readPositiveInteger(o['id'], 'id'), reference: readBoolean(o['reference'], 'reference') };
+  },
+  run(draft, p) {
+    const note = draft.note(p.id);
+    if (!note) throw new CommandError(`There is no annotation with id ${p.id}.`);
+    requireUnlocked(draft, note.layer);
+    if (!isDimension(note.body)) throw new CommandError('Only a dimension can be a reference dimension.');
+    const isRef = note.reference === true;
+    if (isRef === p.reference) return { id: note.id };
+    if (p.reference) {
+      if (note.drive !== undefined) draft.deleteConstraint(note.drive);
+      draft.putNote({ ...withoutDrive(note), reference: true });
+    } else {
+      addDrivingConstraint(draft, withoutDrive(note));
+    }
+    return { id: note.id };
+  },
+});
+
 export const NOTE_COMMANDS = {
   'note.add': addNote,
   'note.edit': editNote,
+  'note.setReference': setNoteReference,
   'dimstyle.set': setDimStyle,
   'dimstyle.use': useDimStyle,
 } as const;

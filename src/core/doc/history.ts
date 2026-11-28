@@ -3,6 +3,7 @@ import { COMMANDS, isCommandId, type CommandDef, type CommandId, type ParamsOf, 
 import { pruneAndSolve } from './constraints';
 import { CommandError, Draft } from './draft';
 import { newDocument, type Doc } from './model';
+import { deleteNotePair } from './driving';
 import { noteEntityIds, noteProblem } from './notes';
 
 export interface Transaction {
@@ -33,6 +34,8 @@ export interface Executed<R> {
   readonly result: R;
   /** Notes removed because the geometry they measured is gone (they come back with undo). */
   readonly pruned: number;
+  /** Constraints let go because the change made them untrue (rounded corners, a turn). They come back with undo. */
+  readonly released: number;
 }
 
 /**
@@ -48,7 +51,7 @@ function pruneBrokenNotes(draft: Draft): number {
   for (const note of [...draft.notes()]) {
     if (!noteEntityIds(note).some((id) => touched.has(id))) continue;
     if (noteProblem(env, note) !== null) {
-      draft.deleteNote(note.id);
+      deleteNotePair(draft, note.id);
       count += 1;
     }
   }
@@ -90,7 +93,7 @@ export function commitDraft(
   const pruned = pruneBrokenNotes(draft);
   pruneAndSolve(draft);
   const changes = draft.changes();
-  if (changes.length === 0) return { session, result, pruned };
+  if (changes.length === 0) return { session, result, pruned, released: 0 };
   const undoStack = [...session.undoStack, { command, label, changes }];
   return {
     session: {
@@ -101,6 +104,7 @@ export function commitDraft(
     },
     result,
     pruned,
+    released: draft.released,
   };
 }
 
