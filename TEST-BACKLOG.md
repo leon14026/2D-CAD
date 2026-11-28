@@ -279,8 +279,9 @@ as well as `.archilite`.
 
 ### Phase 9: blocks, sheets, constraints
 
-- [ ] **M9.1 A real part, start to finish.** On the work laptop, draw a plate with a rectangular
-      outline, hold the sides horizontal and vertical and the width and height with constraints,
+- [ ] **M9.1 A real part, start to finish.** On the work laptop, draw a plate with the Rectangle
+      tool (it now holds its sides horizontal and vertical by itself; check with Shift+C), hold
+      the width and height with dimensions,
       turn one hole into a block, and insert the other holes. Add a second sheet and put another
       insert of the hole on it. Expect: dragging a corner keeps the rectangle a rectangle of the
       same size; switching sheets in the status bar hides the other sheet; exploding one insert
@@ -299,6 +300,62 @@ as well as `.archilite`.
       3, then another of 4. Expect: a red message "2 constraints could not be met (radius)" and
       a circle of radius about 3.5. Undo the second constraint: the message goes away and the
       radius is 3.
+
+### Phase 11: phone browser
+
+- [ ] **M11.1 iPhone, Safari.** On your iPhone, open the live site. Load the example, pan with
+      one finger, pinch to zoom, and draw a line by typing `0,0` then `100,0`. Open the
+      selection sheet (search commands, then "Show or hide the selection panel"). Expect length
+      100.000. Save, then open that file again. Note where the save went (Files, the share
+      sheet, or a download). Phase 10 is not required for this.
+- [ ] **M11.2 Android, Chrome.** Repeat M11.1 on an Android phone in Chrome. Expect the same
+      numbers. Note if save used a different channel than Safari.
+- [ ] **M11.3 Narrow desktop window.** On the laptop, make the browser window 600 px wide (or
+      use the developer tools' phone mode). Expect: the tool strip along the bottom, no side
+      panels, the top bar with undo, redo and search. At 800 px: the squeezed desk layout with
+      no panels. At 1000 px and wider: the full desk layout.
+- [ ] **M11.4 Tool strip with a thumb.** On the phone, tap Draw, Modify and Annotate in turn.
+      Are the buttons easy to hit with one thumb, with no mis-taps? Pick the Line tool, tap two
+      points: a line appears. While the tool is on, use two fingers to pan and pinch: the
+      view moves and no point is placed.
+- [ ] **M11.5 Box select.** Search commands, "Select with a box", drag across part of the
+      example. Expect the objects inside to be selected and the next drag to pan again.
+- [ ] **M11.6 Sheets.** Open Layers, Selection and Script from the command search. Each opens
+      as a sheet; tapping outside it (or the close control) shuts it. Hide a layer from the
+      layers sheet: it disappears from the drawing.
+- [ ] **M11.7 Keyboard and screen edges.** Start a line and type `0,0` then `100,0` on the
+      phone's keyboard. Expect: the box where you type stays visible above the keyboard. Check
+      the status line is not hidden by the home bar or a notch.
+- [ ] **M11.8 No browser surprises.** Pan with one finger from the top of the drawing: the page
+      must not refresh. Press and hold on the drawing: no browser menu or text selection.
+      Rotate the phone: the drawing refits and nothing breaks.
+- [ ] **M11.9 Python on a phone.** Open the script sheet, choose Python, Run. Expect: a message
+      that it downloads about 12 MB from this site, then the drawing. On mobile data, say
+      whether the wait is acceptable.
+
+### Phase 12: live DXF dimensions
+
+- [ ] **M12.1 Floorplan dimensions.** Open the floorplan DXF. Treat units as inches (click the
+      unit in the status bar, or Ctrl+K "Treat drawing units as inches"). Expect: original wall
+      dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
+      walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
+      was overtyped in the other program is still left out. Hatches are still left out. The
+      toast says how many objects were left out.
+- [ ] **M12.2 The 100 mm fixture.** Open `tests/fixtures/linear-100.dxf`. Expect: one line and
+      one dimension reading 100.00. Stretch the line; the number follows. There is no second
+      set of frozen dimension graphics from the `*D` block.
+- [ ] **M12.3 Compare a number with the other program.** In LibreCAD (or another CAD program)
+      draw a 250 mm line and a linear dimension, save as DXF, open it in ArchiLite. Expect: one
+      dimension reading 250.00, bound to the line. Stretch the line; the number follows. Repeat
+      with an aligned dimension on a slanted line and a radius or diameter dimension on a circle.
+      Say which kinds come across and which the toast says were left out.
+- [ ] **M12.4 Imported dimensions and driving.** Select an imported dimension. Expect: the panel
+      says whether it holds the drawing. Switch "Holds the drawing" and type a new number. Say
+      whether the default (reference or driving) is what you want for imported drawings.
+- [ ] **M12.5 Dimension inside a turned block.** In your CAD program, make a block containing a
+      100 mm line with a dimension, insert it turned 90°, save as DXF, open it. Expect: the
+      dimension reads 100.00, not 0.00. (A dimension turned to an angle that is not 0° or 90°
+      is skipped and counted in the toast.)
 
 ### Phase 13: driving dimensions and editing constrained drawings
 
@@ -336,55 +393,51 @@ as well as `.archilite`.
       Fusion). Dimension it from the right and from the left as above. Say whether ArchiLite
       feels the same or what is different. Things I know differ: copies of the rectangle are not
       constrained here, and the Polygon tool has no presets.
+- [ ] **M13.9 Dimension a line from either end.** Draw a slanted line and an aligned
+      dimension. Click the dimension's number and type 80. Expect: the line is exactly 80 long
+      and still points the same way. Undo, then dimension the same line by clicking its other
+      end first and type 80: the end you clicked first stays, the other end moves.
+- [ ] **M13.10 Refusals read in plain words.** Draw a rectangle and dimension its width 100.
+      Add a second width dimension on the same side and type 90 into it. Expect: a message in
+      plain words that names the conflict, and nothing changes. Ctrl+Z and the drawing is as
+      before. Try Scale on the dimensioned rectangle: say whether the refusal explains what to
+      do next.
+- [ ] **M13.11 Save and reopen a held drawing.** Draw a rectangle, dimension width 120 and
+      height 60, Ctrl+S, open the file again (or reload and Open). Expect: both dimensions and
+      the four marks (Shift+C) are still there; type 130 into the width and the rectangle
+      follows. Also press "Load example": it still loads.
+- [ ] **M13.12 Presets, decisions.** Copy a rectangle: the copy has no marks. Draw a polygon
+      with the Polygon tool: it has no marks. Draw a line that is exactly horizontal: it holds
+      nothing. Is each acceptable for now, or should it hold its shape like a SolidWorks
+      sketch? Tell Claude which.
 
-### Phase 12: live DXF dimensions
+### All merged phases together
 
-- [ ] **M12.1 Floorplan dimensions.** Open the floorplan DXF. Treat units as inches (click the
-      unit in the status bar, or Ctrl+K "Treat drawing units as inches"). Expect: original wall
-      dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
-      walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
-      was overtyped in the other program is still left out. Hatches are still left out. The
-      toast says how many objects were left out.
-- [ ] **M12.2 The 100 mm fixture.** Open `tests/fixtures/linear-100.dxf`. Expect: one line and
-      one dimension reading 100.00. Stretch the line; the number follows. There is no second
-      set of frozen dimension graphics from the `*D` block.
+Run these last, on the work laptop, once the phase tests above are done. They check that the
+phases still work as one program.
 
-### Phase 11: phone browser
-
-- [ ] **M11.1 iPhone, Safari.** On your iPhone, open the live site. Load the example, pan with
-      one finger, pinch to zoom, and draw a line by typing `0,0` then `100,0`. Open the
-      selection sheet (search commands, then "Show or hide the selection panel"). Expect length
-      100.000. Save, then open that file again. Note where the save went (Files, the share
-      sheet, or a download). Phase 10 is not required for this.
-- [ ] **M11.2 Android, Chrome.** Repeat M11.1 on an Android phone in Chrome. Expect the same
-      numbers. Note if save used a different channel than Safari.
+- [ ] **MX.1 Smoothness again.** Phases 9 to 13 added constraints and phone code since M3.1.
+      Ctrl+K → "Load the large test drawing (20,000 entities)" and pan and zoom around it.
+      Expect the same smoothness as before. Note anything slower.
+- [ ] **MX.2 A part from sketch to export.** Draw a plate with the Rectangle tool, add holes,
+      dimension every feature, type a new overall width, fillet two corners, hatch it, add a
+      title block. Save, export DXF and PDF, open the DXF in LibreCAD and print the PDF at
+      100%. Expect every dimension to agree with your own working and with the other program.
+- [ ] **MX.3 Undo and redo all the way.** On that part, press Ctrl+Z until the drawing is empty,
+      then Ctrl+Y until it is back. Expect no message about a constraint, no leftover marks and
+      the same numbers as before.
+- [ ] **MX.4 Console and network.** Open the browser's developer tools on the live site, do a
+      few things (draw, dimension, export, run a script) and look at the Console and Network
+      tabs. Expect no red errors and no request to any site except leon14026.github.io.
+- [ ] **MX.5 Fresh machine.** On a computer or browser profile that has never opened the site,
+      open it and draw one line with `0,0` then `100,0`. Expect length 100.000 and a working
+      Save. Note the load time on the work laptop's Wi-Fi.
 
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 10:** open a DWG from LibreCAD or from Onshape or SolidWorks. Measure the same five
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, paper space).
-  Dimensions should use the same mapper as DXF (Phase 12). Until this phase, use DXF. This can
-  wait until after the phone work.
-- **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
-  Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
-  `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
-  where the save went (Files, the share sheet, or a download). Phase 10 is not required for
-  this.
-  features as M7.1, to 0.001 mm. Note what the toast says was left out (hatches, dimensions
-  until Phase 12, paper space). Until this phase, use DXF. This can wait until after the phone
-  work.
-- **Phase 12:** open the floorplan DXF. Treat units as inches. Expect: original wall
-  dimensions that bind to geometry appear as ArchiLite dimensions (the garage 21′2″ × 20′10″
-  walls read 254 and 250). Pick one, move the wall, and the number changes. A dimension that
-  was overtyped in the other program is still left out. Hatches are still left out. Imported
-  dimensions are reference until you switch them.
-
-- **Phase 13:** draw a 100 mm line and dimension it. Expect: the dimension also holds the
-  length (a constraint appears in the selection panel). Double-click the dimension, type 120,
-  press Enter, and the line becomes 120 mm. Draw a joined L, constrain the legs horizontal
-  and vertical, and move the vertical leg: the horizontal leg follows. Try to move a fixed
-  point: expect a plain-words refusal that names the constraint and changes nothing. Toggle
-  "Show constraints" and check the marks sit next to what they hold. Place a reference
-  dimension and check it reads in brackets and does not hold anything.
+- **Phase 10 (PR #27, not merged):** open a DWG from LibreCAD or from Onshape or SolidWorks.
+  Measure the same five features as M7.1, to 0.001 mm. Note what the toast says was left out
+  (hatches, paper space). Dimensions use the same mapper as DXF (Phase 12). Also confirm where
+  the test DWG fixture came from (licence) before the PR merges. Until this phase, use DXF.
