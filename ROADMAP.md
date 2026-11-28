@@ -633,16 +633,34 @@ Method:
 
 Gate:
 
-- [ ] Playwright with a 390×844 touch viewport: the example opens fitted, one finger pans, a
+- [x] Playwright with a 390×844 touch viewport: the example opens fitted, one finger pans, a
       pinch zooms about the fingers, a tap selects the outline, the line tool places a point,
       the layers sheet hides a layer, and Save writes the same `.archilite` bytes as the desk.
       No console errors and no request to another origin.
-- [ ] The desk screenshots and the 20,000-entity frame budget are unchanged. The phone layout
+- [x] The desk screenshots and the 20,000-entity frame budget are unchanged. The phone layout
       adds no per-entity work in the frame loop. The download stays ≤ 300 KB, with no new
       runtime package.
 - [ ] Manual: on an iPhone in Safari and on an Android phone in Chrome, type a 100 mm line,
       read 100.000 in the selection sheet, save, and open that file again
       (`TEST-BACKLOG.md`).
+
+Implementation notes (for later phases):
+- **One page.** `src/app/phone.ts` watches `(max-width: 700px)` and toggles `body.al-phone`.
+  701–900px is still the squeezed desk (panels gone). Geometry, commands and the file format
+  do not change.
+- **Chrome.** `src/ui/theme.css` lays the tool rail along the bottom (`ToolRail` shows one
+  group at a time, 44px targets). Layers, selection and script open as overlay sheets with a
+  backdrop. Fit uses the rail's height (`chromeInsets` in `actions.ts`) instead of its width.
+- **Gestures.** `interaction.ts` tracks several pointers. One finger pans when no tool is
+  active (a tap still picks). Two fingers pan and pinch about the midpoint (`pinchViewport` →
+  `zoomAt`). Box selection is the palette command "Select with a box" (`store.boxSelect`).
+  The snap square stays on the touch; its label is drawn higher so a finger does not cover it.
+- **Save.** `src/app/save.ts`: on a phone, File System Access picker, then the share sheet,
+  then the same `<a download>` the desk uses. A toast names the channel. Desk save is still
+  the download.
+- **Entry.** `CursorEntry` is `position: fixed` on a phone and follows `visualViewport`, so
+  the on-screen keyboard does not cover it. The first Python run on a phone says it downloads
+  about 12 MB from this site.
 
 ### Phase 12 — Live DXF dimensions
 

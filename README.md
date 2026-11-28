@@ -16,13 +16,13 @@ A lightweight, browser-based 2D CAD application for engineering drawings.
   this site, and stays off the 300 KB budget. Paper layouts, hatches, splines, ellipses,
   solids, images and proxies are left out (the toast says how many). Dimensions use the same
   mapper as DXF. There is no DWG export.
-- **Phone later.** This build is the desk layout. Phase 11 is the same site in a phone
-  browser. It does not need DWG, so it can land before or after Phase 10.
+- **Phone.** The same site at 700px and under: drawing full screen, tools along the bottom,
+  layers and selection as sheets, two-finger pan and pinch.
 - **Live DXF dimensions.** A DXF `DIMENSION` becomes an ArchiLite measurement (where to
   measure, never the stored number). Hatches stay skipped.
 
-**Status:** Phases 1 to 9, 12 and 13 are merged. Phase 10 (read-only DWG import) is in this
-pull request. Phase 11 (phone browser) is planned independently.
+**Status:** Phases 1 to 9 and 11 to 13 are merged. Phase 10 (read-only DWG import) is in this
+pull request.
 See
 [PROGRESS.md](PROGRESS.md)
 for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests each must pass, and
@@ -39,12 +39,12 @@ for the current state, [ROADMAP.md](ROADMAP.md) for the phases and the tests eac
 | Find any command | Ctrl+K, then type |
 | Open or save | Open / Save buttons, Ctrl+O / Ctrl+S, or drop a file on the drawing (.archilite, DXF or DWG) |
 | Export | Export button, or Ctrl+K then "Export as DXF / SVG / PDF / PNG" |
-| Zoom | Mouse wheel or pinch (about the cursor); F fits the drawing |
-| Pan | Middle-drag, or hold Space and drag; arrow keys |
-| Select | Click; Shift+click adds or removes |
-| Select by box | Drag left to right (entirely inside) or right to left (inside or touching) |
+| Zoom | Mouse wheel or pinch (about the cursor); F fits the drawing. On a phone, pinch with two fingers |
+| Pan | Middle-drag, or hold Space and drag; arrow keys. On a phone, one finger (or two) drags |
+| Select | Click; Shift+click adds or removes. On a phone, tap |
+| Select by box | Drag left to right (entirely inside) or right to left (inside or touching). On a phone, Ctrl+K then "Select with a box" |
 | Show, hide or lock layers | Eye and padlock in the Layers panel; Ctrl+Z undoes |
-| Draw | Tool rail on the left, or L line, P polyline, C circle, A arc, R rectangle, N polygon |
+| Draw | Tool rail on the left (along the bottom on a phone), or L line, P polyline, C circle, A arc, R rectangle, N polygon |
 | Type a point | Just start typing: `x,y`, `@dx,dy` (from the last point), `@length<angle`, or one distance along the cursor direction; Enter |
 | Finish or stop a tool | Enter or right-click finishes; Esc stops |
 | Snaps, ortho, tracking | Status bar, or Shift+S, Shift+O, Shift+T; hold Shift for horizontal or vertical |

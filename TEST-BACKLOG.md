@@ -362,12 +362,18 @@ as well as `.archilite`.
       one dimension reading 100.00. Stretch the line; the number follows. There is no second
       set of frozen dimension graphics from the `*D` block.
 
+### Phase 11: phone browser
+
+- [ ] **M11.1 iPhone, Safari.** On your iPhone, open the live site. Load the example, pan with
+      one finger, pinch to zoom, and draw a line by typing `0,0` then `100,0`. Open the
+      selection sheet (search commands, then "Show or hide the selection panel"). Expect length
+      100.000. Save, then open that file again. Note where the save went (Files, the share
+      sheet, or a download). Phase 10 is not required for this.
+- [ ] **M11.2 Android, Chrome.** Repeat M11.1 on an Android phone in Chrome. Expect the same
+      numbers. Note if save used a different channel than Safari.
+
 ## Coming with later phases
 
 Claude moves these into "Ready to test now", with exact steps, when each phase lands.
 
-- **Phase 11:** on your iPhone (Safari) and on an Android phone (Chrome), open the live site.
-  Load the example, pan with one finger, pinch to zoom, and draw a line by typing `0,0` then
-  `100,0`. The selection sheet should read 100.000. Save, then open that file again. Note
-  where the save went (Files, the share sheet, or a download). Phase 10 is not required for
-  this.
+(Nothing waiting. Phases 10 to 13 have steps in “Ready to test now”.)

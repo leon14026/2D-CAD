@@ -38,6 +38,8 @@ import { RULER } from '../render/rulers';
 import type { CanvasView } from '../render/view';
 import { fitRect, panBy, zoomAt } from '../render/viewport';
 import { EXAMPLE_FILE, LARGE_EXAMPLE_FILE } from './examples';
+import { isPhone } from './phone';
+import { saveToast, writeLocalFile, type SaveHost } from './save';
 import { doRedo, doUndo, isDirty, type Store } from './store';
 
 const FIT_MARGIN = 28;
@@ -48,6 +50,16 @@ export const RAIL_WIDTH = 42;
 function railWidth(): number {
   const rail = document.getElementById('al-tools');
   return rail && rail.offsetWidth > 0 ? rail.offsetWidth + (RAIL_WIDTH - 36) : RAIL_WIDTH;
+}
+
+/** Space the rail occupies: a left column on the desk, a bottom strip on a phone. */
+function chromeInsets(): { left: number; bottom: number } {
+  if (isPhone()) {
+    const rail = document.getElementById('al-tools');
+    const bottom = rail && rail.offsetHeight > 0 ? rail.offsetHeight + 8 : 56;
+    return { left: RULER, bottom };
+  }
+  return { left: RULER + railWidth(), bottom: 0 };
 }
 
 export class Actions {
@@ -63,8 +75,8 @@ export class Actions {
     const ext = this.view.extents();
     if (!ext) return;
     const { width, height } = this.view;
-    const left = RULER + railWidth();
-    const vp = fitRect(ext, width - left, height - RULER, FIT_MARGIN, this.store.get().viewport);
+    const { left, bottom } = chromeInsets();
+    const vp = fitRect(ext, width - left, height - RULER - bottom, FIT_MARGIN, this.store.get().viewport);
     this.store.set({ viewport: { ...vp, originX: vp.originX + left, originY: vp.originY + RULER } });
   }
 
@@ -86,15 +98,24 @@ export class Actions {
   }
 
   toggleLayersPanel(): void {
-    this.store.set((s) => ({ showLayers: !s.showLayers }));
+    this.store.set((s) => {
+      const open = !s.showLayers;
+      return { showLayers: open, ...(open && isPhone() ? { showSelection: false, showScript: false } : {}) };
+    });
   }
 
   toggleSelectionPanel(): void {
-    this.store.set((s) => ({ showSelection: !s.showSelection }));
+    this.store.set((s) => {
+      const open = !s.showSelection;
+      return { showSelection: open, ...(open && isPhone() ? { showLayers: false, showScript: false } : {}) };
+    });
   }
 
   toggleScriptPanel(): void {
-    this.store.set((s) => ({ showScript: !s.showScript }));
+    this.store.set((s) => {
+      const open = !s.showScript;
+      return { showScript: open, ...(open && isPhone() ? { showLayers: false, showSelection: false } : {}) };
+    });
   }
 
   toggleConstraints(): void {
@@ -102,7 +123,27 @@ export class Actions {
   }
 
   showScriptPanel(): void {
-    this.store.set({ showScript: true });
+    this.store.set(isPhone() ? { showScript: true, showLayers: false, showSelection: false } : { showScript: true });
+  }
+
+  closeSheets(): void {
+    this.store.set({ showLayers: false, showSelection: false, showScript: false });
+  }
+
+  /**
+   * Next drag is a selection box. On a phone a drag otherwise pans, so this is how you
+   * window-select. Left to right takes what is inside; right to left also takes what it touches.
+   */
+  beginBoxSelect(): void {
+    this.store.set({
+      boxSelect: true,
+      tool: null,
+      toolError: null,
+      message: {
+        kind: 'info',
+        text: 'Drag a box to select. Left to right takes what is inside; right to left also takes what it touches.',
+      },
+    });
   }
 
   /**
@@ -120,7 +161,14 @@ export class Actions {
         if (session.doc !== this.store.get().savedDoc) this.fit();
         return { ok: true, log };
       }
-      this.store.set({ message: { kind: 'info', text: 'Loading Python…' } });
+      this.store.set({
+        message: {
+          kind: 'info',
+          text: isPhone()
+            ? 'Loading Python… This downloads about 12 MB from this site, then runs from files on this page.'
+            : 'Loading Python…',
+        },
+      });
       const py = await ensurePython();
       const { session, log } = await applyPython(this.store.get().session, source, py);
       this.store.set({
@@ -397,12 +445,25 @@ export class Actions {
     this.openText(await response.text(), null);
   }
 
-  /** Downloads the drawing as an .archilite file. Nothing is uploaded anywhere. */
-  save(): void {
+  /** Writes the drawing as an .archilite file on this device. Nothing is uploaded. */
+  async save(): Promise<void> {
     const s = this.store.get();
     const name = nativeName(s.fileName, s.session.doc.settings.title);
-    this.download(name, new Blob([saveDocument(s.session.doc)], { type: 'application/json' }));
-    this.store.set({ savedDoc: s.session.doc, fileName: name, message: { kind: 'info', text: `Saved ${name}` } });
+    const blob = new Blob([saveDocument(s.session.doc)], { type: 'application/json' });
+    const channel = await writeLocalFile(name, blob, this.saveHost());
+    if (channel === null) return;
+    this.store.set({ savedDoc: s.session.doc, fileName: name, message: { kind: 'info', text: saveToast(name, channel) } });
+  }
+
+  /** On a phone: picker, then share, then the same download the desk uses. */
+  private saveHost(): SaveHost {
+    const w = window as Window & { showSaveFilePicker?: SaveHost['showSaveFilePicker'] };
+    return {
+      ...(isPhone() && w.showSaveFilePicker ? { showSaveFilePicker: w.showSaveFilePicker.bind(w) } : {}),
+      ...(isPhone() && navigator.canShare ? { canShare: (data) => navigator.canShare!(data) } : {}),
+      ...(isPhone() && navigator.share ? { share: (data) => navigator.share!(data) } : {}),
+      download: (name, blob) => this.download(name, blob),
+    };
   }
 
   exportDxf(): void {

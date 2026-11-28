@@ -1,11 +1,11 @@
 # ArchiLite progress
 
 **Now:** Phase 10 (DWG import, read only) is in review ([#27](https://github.com/leon14026/2D-CAD/pull/27)).
+Phase 11 (phone browser) merged in [#26](https://github.com/leon14026/2D-CAD/pull/26).
 Phase 12 (live DXF dimensions) merged in [#23](https://github.com/leon14026/2D-CAD/pull/23).
 Phase 13 (driving dimensions) merged in [#21](https://github.com/leon14026/2D-CAD/pull/21);
 click-the-number in [#24](https://github.com/leon14026/2D-CAD/pull/24); rectangle presets in
-[#28](https://github.com/leon14026/2D-CAD/pull/28). Phases 1 to 9, 12 and 13 are live.
-The Phase 11 phone plan is on `main` ([#11](https://github.com/leon14026/2D-CAD/pull/11)).
+[#28](https://github.com/leon14026/2D-CAD/pull/28). Phases 1 to 9 and 11 to 13 are live.
 
 **Live site:** https://leon14026.github.io/2D-CAD/ (shows the last merged phase)
 
@@ -22,7 +22,7 @@ The Phase 11 phone plan is on `main` ([#11](https://github.com/leon14026/2D-CAD/
 | 8. Scripting (JavaScript, Python via Pyodide) | Done | [#9](https://github.com/leon14026/2D-CAD/pull/9) | 2026-11-26 |
 | 9. Blocks, sheets, constraints (stretch) | Done | [#12](https://github.com/leon14026/2D-CAD/pull/12) | 2026-11-26 |
 | 10. DWG import (read only) | In review | [#27](https://github.com/leon14026/2D-CAD/pull/27) | — |
-| 11. Phone browser | Planned | [#11](https://github.com/leon14026/2D-CAD/pull/11) | — |
+| 11. Phone browser | Done | [#26](https://github.com/leon14026/2D-CAD/pull/26) | 2026-11-27 |
 | 12. Live DXF dimensions | Done | [#23](https://github.com/leon14026/2D-CAD/pull/23) | 2026-11-27 |
 | 13. Driving dimensions and editing constrained drawings | Done | [#21](https://github.com/leon14026/2D-CAD/pull/21) | 2026-11-27 |
 
@@ -30,10 +30,22 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Phase 11 merged
+
+- PR [#26](https://github.com/leon14026/2D-CAD/pull/26) merged to `main`. Same site at 700px
+  and under. Independent of Phase 10.
+
 ### 2026-11-27: Phase 12 merged
 
 - PR [#23](https://github.com/leon14026/2D-CAD/pull/23) merged to `main`. A DXF `DIMENSION`
   becomes a live note. DWG import uses the same mapper.
+
+### 2026-11-27: Phase 11 (phone browser) started
+
+- Same site at 700px and under: bottom tool strip, sheets, one-finger pan, two-finger pinch.
+  Independent of Phase 10, 12 and 13; branched from `main`. PR [#26](https://github.com/leon14026/2D-CAD/pull/26).
+- Local gate: 1,214 unit tests, 80 browser tests (including 390×844 phone), 125.6 KB gzipped.
+  20,000-entity pan 8.4 ms avg (119 fps), zoom 12.3 ms avg (82 fps).
 
 ### 2026-11-27: Phase 13: rectangle presets
 
