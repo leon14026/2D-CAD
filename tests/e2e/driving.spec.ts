@@ -45,8 +45,10 @@ test('place a dimension, type a new number, undo restores it in one step', async
   const shown = resolveNotes(doc).get(dim.id);
   expect(shown?.ok && shown.r.text).toBe('100.00');
 
-  const p = await toPage(page, 50, -12);
-  await page.mouse.dblclick(p.x, p.y);
+  await clickWorld(page, 50, -12);
+  await expect(page.locator('#al-entry')).toBeHidden();
+  // ISO text sits 1 mm above the dimension line, 3.5 mm high; click the number, not the line.
+  await clickWorld(page, 50, -12 + 1 + 1.75);
   await expect(page.locator('.al-entry-prompt')).toContainText('New value');
   await page.keyboard.type('120');
   await page.keyboard.press('Enter');
