@@ -28,6 +28,14 @@ Manual tests waiting for you: see [TEST-BACKLOG.md](TEST-BACKLOG.md).
 
 ## Log
 
+### 2026-11-27: Manual test list written for every merged phase
+
+- `TEST-BACKLOG.md` now has tests for Phases 0 to 9, 11, 12 and 13, plus a short "all merged
+  phases together" section (smoothness, a full part, undo walk, console and network, fresh
+  machine). New: M11.3 to M11.9 (phone), M12.3 to M12.5, M13.9 to M13.12, MX.1 to MX.5.
+  The stale "coming with later phases" text for 11, 12 and 13 is gone; only Phase 10 remains.
+  Docs only: no code or test changes.
+
 ### 2026-11-27: Phase 11 (phone browser) started
 
 - Same site at 700px and under: bottom tool strip, sheets, one-finger pan, two-finger pinch.
